@@ -18,7 +18,8 @@
       "http://localhost:8080",
       "http://localhost:8081",
       "https://globalsecurity.community",
-      "https://www.globalsecurity.community"
+      "https://www.globalsecurity.community",
+      "https://cuddly-halibut-54jq775r4vx24xr4-8080.app.github.dev/"
     ],
     "supportCredentials": false
   }
