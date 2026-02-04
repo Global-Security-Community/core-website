@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }} | Global Security Community</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-brand">
+        <img src="/assets/GlobalSecurityCommunityLogo2.png" alt="Global Security Community" class="logo">
+        <span class="brand-text">Global Security Community</span>
+      </div>
+      <ul class="nav-menu">
+        <li><a href="/" class="nav-link">Home</a></li>
+        <li><a href="/about/" class="nav-link">About Us</a></li>
+        <li><a href="/chapters/" class="nav-link">Chapters</a></li>
+        <li><a href="/events/" class="nav-link">Events</a></li>
+        <li><a href="/contact/" class="nav-link">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    {{ content | safe }}
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>&copy; 2026 Global Security Community. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>

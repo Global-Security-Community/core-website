@@ -1,0 +1,34 @@
+# Node modules
+node_modules/
+
+# Build output
+_site/
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment variables and secrets
+.env
+local.settings.json
+
+# Azure Functions
+bin/
+obj/
+.Azure/
+.funcignore

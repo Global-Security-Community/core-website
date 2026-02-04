@@ -1,0 +1,17 @@
+{
+  "name": "gsc-contact-function",
+  "version": "1.0.0",
+  "description": "Azure Function to handle contact form submissions and send to Discord",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "func start",
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.5.0"
+  },
+  "devDependencies": {
+    "azure-functions-core-tools": "^4.x"
+  }
+}

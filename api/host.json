@@ -1,0 +1,25 @@
+{
+  "version": "2.0",
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": true,
+        "maxTelemetryItemsPerSecond": 20
+      }
+    }
+  },
+  "extensionBundle": {
+    "id": "Microsoft.Azure.Functions.ExtensionBundle",
+    "version": "[4.*, 5.0.0)"
+  },
+  "functionTimeout": "00:05:00",
+  "cors": {
+    "allowedOrigins": [
+      "http://localhost:8080",
+      "http://localhost:8081",
+      "https://globalsecurity.community",
+      "https://www.globalsecurity.community"
+    ],
+    "supportCredentials": false
+  }
+}
