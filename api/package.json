@@ -13,6 +13,5 @@
   },
   "devDependencies": {
     "azure-functions-core-tools": "^4.x"
-    "typescript": "^5.0.0"
   }
 }
