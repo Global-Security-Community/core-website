@@ -1,0 +1,10 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "DISCORD_WEBHOOK_URL": "YOUR_DISCORD_WEBHOOK_URL_HERE",
+    "RATE_LIMIT_WINDOW_MS": "3600000",
+    "MAX_REQUESTS_PER_WINDOW": "5"
+  }
+}

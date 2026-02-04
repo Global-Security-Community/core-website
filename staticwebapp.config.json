@@ -3,20 +3,27 @@
     {
       "route": "/api/*",
       "allowedRoles": ["anonymous"]
-    },
-    {
-      "route": "/*",
-      "serveMatchingFiles": [
-        "index.html"
-      ]
     }
   ],
   "navigationFallback": {
-    "rewrite": "index.html",
+    "rewrite": "/index.html",
     "exclude": [
       "/images/*",
       "/css/*",
+      "/assets/*",
       "/api/*"
     ]
+  },
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/index.html"
+    }
+  },
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "X-XSS-Protection": "1; mode=block",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'"
   }
 }
