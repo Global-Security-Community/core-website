@@ -90,9 +90,4 @@ title: Contact Us
     }
   });
 </script>
-
-  <h2 style="margin-top: 3rem;">Quick Contact Info</h2>
-  <p><strong>Email:</strong> info@globalsecuritycommunity.org</p>
-  <p><strong>General Inquiries:</strong> hello@globalsecuritycommunity.org</p>
-  <p><strong>Chapter Support:</strong> chapters@globalsecuritycommunity.org</p>
 </div>
