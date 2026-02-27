@@ -1,0 +1,47 @@
+name: Delete Chapter Page
+
+on:
+  workflow_dispatch:
+    inputs:
+      chapter_slug:
+        description: 'Chapter slug to delete (e.g. "perth", "london")'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  delete-chapter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: live-version-swa
+
+      - name: Verify chapter exists
+        run: |
+          SLUG="${{ inputs.chapter_slug }}"
+          if [ ! -f "src/chapters/${SLUG}/index.md" ]; then
+            echo "❌ Chapter 'src/chapters/${SLUG}/index.md' not found"
+            exit 1
+          fi
+          echo "Found chapter: ${SLUG}"
+
+      - name: Delete chapter
+        run: |
+          SLUG="${{ inputs.chapter_slug }}"
+          rm -rf "src/chapters/${SLUG}"
+          echo "Deleted src/chapters/${SLUG}/"
+
+      - name: Commit and push
+        run: |
+          SLUG="${{ inputs.chapter_slug }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Remove chapter page: ${SLUG}
+
+          Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          git push
