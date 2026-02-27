@@ -1,5 +1,6 @@
 const { app } = require('@azure/functions');
 const { sendMessage } = require('../helpers/discordBot');
+const { stripHtml } = require('../helpers/sanitise');
 
 // Simple in-memory rate limiting (IP-based)
 // In production, consider using Azure Cache for Redis
@@ -83,8 +84,13 @@ module.exports = async function (request, context) {
       };
     }
 
+    // Sanitise text fields
+    const safeName = stripHtml(name);
+    const safeSubject = stripHtml(subject);
+    const safeMessage = stripHtml(message);
+
     // Validate field lengths to prevent abuse
-    if (name.length > 100 || subject.length > 200 || message.length > 5000) {
+    if (safeName.length > 100 || safeSubject.length > 200 || safeMessage.length > 5000) {
       return {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -122,7 +128,7 @@ module.exports = async function (request, context) {
           fields: [
             {
               name: 'Name',
-              value: name,
+              value: safeName,
               inline: true
             },
             {
@@ -132,12 +138,12 @@ module.exports = async function (request, context) {
             },
             {
               name: 'Subject',
-              value: subject,
+              value: safeSubject,
               inline: false
             },
             {
               name: 'Message',
-              value: message,
+              value: safeMessage,
               inline: false
             },
             {

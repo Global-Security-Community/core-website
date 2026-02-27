@@ -4,6 +4,7 @@ module.exports = function(eleventyConfig) {
   // Copy static assets
   eleventyConfig.addPassthroughCopy("src/assets");
   eleventyConfig.addPassthroughCopy("src/css");
+  eleventyConfig.addPassthroughCopy("src/js");
 
   // MD5 hash filter for Gravatar
   eleventyConfig.addFilter("md5", function(value) {

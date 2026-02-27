@@ -2,6 +2,7 @@ const { randomUUID } = require('crypto');
 const { storeApplication } = require('../helpers/tableStorage');
 const { generateApprovalToken } = require('../helpers/tokenHelper');
 const { sendMessage } = require('../helpers/discordBot');
+const { sanitiseFields } = require('../helpers/sanitise');
 
 const rateLimitMap = new Map();
 const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '3600000');
@@ -127,20 +128,26 @@ module.exports = async function (request, context) {
     }
 
     const applicationId = randomUUID();
+    const sanitised = sanitiseFields(
+      { fullName, email, city, country, linkedIn, aboutYou, whyLead, existingCommunity,
+        secondLeadName, secondLeadEmail, secondLeadLinkedIn, secondLeadAbout },
+      ['fullName', 'city', 'country', 'aboutYou', 'whyLead', 'existingCommunity',
+       'secondLeadName', 'secondLeadAbout']
+    );
     const application = {
       id: applicationId,
-      fullName: fullName.trim(),
+      fullName: sanitised.fullName.trim(),
       email: email.trim(),
-      city: city.trim(),
-      country: country.trim(),
+      city: sanitised.city.trim(),
+      country: sanitised.country.trim(),
       linkedIn: linkedIn ? linkedIn.trim() : '',
-      aboutYou: aboutYou.trim(),
-      whyLead: whyLead.trim(),
-      existingCommunity: existingCommunity ? existingCommunity.trim() : '',
-      secondLeadName: secondLeadName ? secondLeadName.trim() : '',
+      aboutYou: sanitised.aboutYou.trim(),
+      whyLead: sanitised.whyLead.trim(),
+      existingCommunity: sanitised.existingCommunity ? sanitised.existingCommunity.trim() : '',
+      secondLeadName: sanitised.secondLeadName ? sanitised.secondLeadName.trim() : '',
       secondLeadEmail: secondLeadEmail ? secondLeadEmail.trim() : '',
       secondLeadLinkedIn: secondLeadLinkedIn ? secondLeadLinkedIn.trim() : '',
-      secondLeadAbout: secondLeadAbout ? secondLeadAbout.trim() : ''
+      secondLeadAbout: sanitised.secondLeadAbout ? sanitised.secondLeadAbout.trim() : ''
     };
 
     // Store in Azure Table Storage

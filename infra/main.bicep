@@ -5,6 +5,8 @@ param location string = resourceGroup().location
 
 var storageAccountName = 'gsccoresa'
 var keyVaultName = 'gsc-core-kv'
+var logAnalyticsName = 'gsc-core-law'
+var appInsightsName = 'gsc-core-ai'
 
 // Storage Account for Table Storage (chapter applications)
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
@@ -63,3 +65,29 @@ output storageAccountName string = storageAccount.name
 output storageAccountId string = storageAccount.id
 output keyVaultName string = keyVault.name
 output keyVaultUri string = keyVault.properties.vaultUri
+output appInsightsConnectionString string = appInsights.properties.ConnectionString
+output appInsightsInstrumentationKey string = appInsights.properties.InstrumentationKey
+
+// Log Analytics Workspace (required by Application Insights)
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
+  name: logAnalyticsName
+  location: location
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+    retentionInDays: 30
+  }
+}
+
+// Application Insights (free tier: 5GB/month ingestion)
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: appInsightsName
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logAnalytics.id
+    RetentionInDays: 30
+  }
+}
