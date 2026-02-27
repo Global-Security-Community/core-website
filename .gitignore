@@ -32,3 +32,4 @@ bin/
 obj/
 .Azure/
 .funcignore
+api/coverage/

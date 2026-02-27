@@ -1,0 +1,48 @@
+---
+layout: base.njk
+---
+
+<div class="container">
+  <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:1rem;">
+    <a href="/events/" style="font-size:0.9rem;">&larr; All Events</a>
+    <span style="color:#ccc;">|</span>
+    <a href="/chapters/{{ chapterSlug }}/" style="font-size:0.9rem;">{{ chapterSlug }} Chapter</a>
+  </div>
+
+  <h1>{{ title }}</h1>
+
+  <div class="cards" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom: 2rem;">
+    <div class="card" style="text-align:center;">
+      <p style="font-size:2rem; margin:0;">📅</p>
+      <p style="margin:0; font-weight:600;">{{ date }}{% if endDate %} – {{ endDate }}{% endif %}</p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <p style="font-size:2rem; margin:0;">📍</p>
+      <p style="margin:0; font-weight:600;">{{ location }}</p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <p style="font-size:2rem; margin:0;">🎟️</p>
+      <p style="margin:0; font-weight:600;" id="reg-count">Loading...</p>
+    </div>
+  </div>
+
+  <div style="margin-bottom:2rem;">
+    <a href="/register/?event={{ slug }}" style="display:inline-block; background-color:var(--color-primary-teal); color:white; padding:0.75rem 2rem; border-radius:4px; font-weight:600; text-decoration:none; font-size:1.1rem;" id="register-btn">Register Now</a>
+  </div>
+
+  <h2>About This Event</h2>
+  <p>{{ description }}</p>
+
+  {% if sessionizeApiId %}
+  <h2>Agenda</h2>
+  <div id="sessionize-agenda"><p>Loading agenda...</p></div>
+
+  <h2>Speakers</h2>
+  <div id="sessionize-speakers" class="cards"><p>Loading speakers...</p></div>
+  {% endif %}
+
+  <h2>Location</h2>
+  <p>📍 {{ location }}</p>
+</div>
+
+<script src="/js/event-page.js"></script>

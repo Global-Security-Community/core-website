@@ -1,0 +1,80 @@
+name: Generate Event Page
+
+on:
+  repository_dispatch:
+    types: [event-created]
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout live branch
+        uses: actions/checkout@v4
+        with:
+          ref: live-version-swa
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate event page
+        run: |
+          SLUG="${{ github.event.client_payload.event_slug }}"
+          TITLE="${{ github.event.client_payload.event_title }}"
+          DATE="${{ github.event.client_payload.event_date }}"
+          END_DATE="${{ github.event.client_payload.event_end_date }}"
+          LOCATION="${{ github.event.client_payload.event_location }}"
+          DESCRIPTION="${{ github.event.client_payload.event_description }}"
+          SESSIONIZE_ID="${{ github.event.client_payload.event_sessionize_id }}"
+          REG_CAP="${{ github.event.client_payload.event_registration_cap }}"
+          CHAPTER_SLUG="${{ github.event.client_payload.chapter_slug }}"
+
+          mkdir -p "src/events/${SLUG}"
+
+          cat > "src/events/${SLUG}/index.md" << 'FRONTMATTER'
+          ---
+          layout: event.njk
+          title: "${TITLE}"
+          slug: "${SLUG}"
+          date: "${DATE}"
+          endDate: "${END_DATE}"
+          location: "${LOCATION}"
+          description: "${DESCRIPTION}"
+          sessionizeApiId: "${SESSIONIZE_ID}"
+          registrationCap: ${REG_CAP}
+          chapterSlug: "${CHAPTER_SLUG}"
+          ---
+          FRONTMATTER
+
+          # Use envsubst-like approach with sed for proper escaping
+          cat > "src/events/${SLUG}/index.md" << EOF
+          ---
+          layout: event.njk
+          title: "${TITLE}"
+          slug: "${SLUG}"
+          date: "${DATE}"
+          endDate: "${END_DATE}"
+          location: "${LOCATION}"
+          description: >
+            ${DESCRIPTION}
+          sessionizeApiId: "${SESSIONIZE_ID}"
+          registrationCap: ${REG_CAP:-0}
+          chapterSlug: "${CHAPTER_SLUG}"
+          ---
+
+          <div data-event-slug="${SLUG}" data-sessionize-id="${SESSIONIZE_ID}"></div>
+          EOF
+
+          echo "Generated event page at src/events/${SLUG}/index.md"
+
+      - name: Commit and push
+        run: |
+          git config user.name "GSC Chapter Generator[bot]"
+          git config user.email "gsc-bot@globalsecurity.community"
+          git add .
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Add event page: ${{ github.event.client_payload.event_title }}
+
+          Event: ${{ github.event.client_payload.event_title }}
+          Date: ${{ github.event.client_payload.event_date }}
+          Chapter: ${{ github.event.client_payload.chapter_slug }}
+
+          Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          git push

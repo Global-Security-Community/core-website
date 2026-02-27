@@ -1,0 +1,21 @@
+{
+  "name": "Global Security Community",
+  "short_name": "GSC",
+  "description": "Global Security Community — connecting cybersecurity professionals worldwide",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#001f3f",
+  "theme_color": "#001f3f",
+  "icons": [
+    {
+      "src": "/assets/GlobalSecurityCommunityLogo2.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/GlobalSecurityCommunityLogo2.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

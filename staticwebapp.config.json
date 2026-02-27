@@ -1,5 +1,71 @@
 {
+  "auth": {
+    "identityProviders": {
+      "customOpenIdConnectProviders": {
+        "ciam": {
+          "registration": {
+            "clientIdSettingName": "CIAM_CLIENT_ID",
+            "clientCredential": {
+              "clientSecretSettingName": "CIAM_CLIENT_SECRET"
+            },
+            "openIdConnectConfiguration": {
+              "wellKnownOpenIdConfiguration": "https://gsc-external.ciamlogin.com/{CIAM_TENANT_ID}/v2.0/.well-known/openid-configuration"
+            }
+          },
+          "login": {
+            "nameClaimType": "name",
+            "scopes": ["openid", "profile", "email"]
+          }
+        }
+      }
+    },
+    "rolesSource": "/api/roles"
+  },
   "routes": [
+    {
+      "route": "/dashboard/*",
+      "allowedRoles": ["admin"]
+    },
+    {
+      "route": "/scanner/*",
+      "allowedRoles": ["admin"]
+    },
+    {
+      "route": "/register/*",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/my-tickets/*",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/createEvent",
+      "allowedRoles": ["admin"]
+    },
+    {
+      "route": "/api/checkIn",
+      "allowedRoles": ["admin"]
+    },
+    {
+      "route": "/api/issueBadges",
+      "allowedRoles": ["admin"]
+    },
+    {
+      "route": "/api/eventAttendance",
+      "allowedRoles": ["admin"]
+    },
+    {
+      "route": "/api/registerEvent",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/myTickets",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/badge",
+      "allowedRoles": ["authenticated"]
+    },
     {
       "route": "/api/*",
       "allowedRoles": ["anonymous"]
@@ -10,11 +76,18 @@
     "exclude": [
       "/images/*",
       "/css/*",
+      "/js/*",
       "/assets/*",
-      "/api/*"
+      "/api/*",
+      "/manifest.json",
+      "/sw.js"
     ]
   },
   "responseOverrides": {
+    "401": {
+      "redirect": "/.auth/login/ciam",
+      "statusCode": 302
+    },
     "404": {
       "rewrite": "/index.html"
     }
@@ -24,6 +97,7 @@
     "X-Frame-Options": "DENY",
     "X-XSS-Protection": "1; mode=block",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: www.gravatar.com; connect-src 'self' https://sessionize.com"
+    "Permissions-Policy": "camera=(self), microphone=()",
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: www.gravatar.com; connect-src 'self' https://sessionize.com; worker-src 'self'"
   }
 }

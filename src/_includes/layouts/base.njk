@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ title }} | Global Security Community</title>
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#001f3f">
+  <link rel="apple-touch-icon" href="/assets/GlobalSecurityCommunityLogo2.png">
 </head>
 <body>
   <!-- Navigation -->
@@ -21,6 +24,7 @@
         <li><a href="/events/" class="nav-link">Events</a></li>
         <li><a href="/contact/" class="nav-link">Contact</a></li>
         <li><a href="https://wiki.globalsecurity.community" class="nav-link" target="_blank" rel="noopener noreferrer">Wiki</a></li>
+        <li id="nav-auth"></li>
       </ul>
     </div>
   </nav>
@@ -36,5 +40,7 @@
       <p>&copy; 2026 Global Security Community. All rights reserved.</p>
     </div>
   </footer>
+
+  <script src="/js/auth-nav.js"></script>
 </body>
 </html>
