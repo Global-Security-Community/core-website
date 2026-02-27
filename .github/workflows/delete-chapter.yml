@@ -29,6 +29,33 @@ jobs:
           fi
           echo "Found chapter: ${SLUG}"
 
+      - name: Archive Discord channel
+        run: |
+          SLUG="${{ inputs.chapter_slug }}"
+          # Extract discord_channel_id from frontmatter
+          CHANNEL_ID=$(grep 'discord_channel_id:' "src/chapters/${SLUG}/index.md" | sed 's/.*discord_channel_id: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/' | tr -d ' ')
+          
+          if [ -z "$CHANNEL_ID" ] || [ "$CHANNEL_ID" = "" ]; then
+            echo "No Discord channel ID found — skipping archive"
+            exit 0
+          fi
+
+          echo "Archiving Discord channel: ${CHANNEL_ID}"
+
+          # Rename channel with archived- prefix and move out of chapters category
+          curl -s -X PATCH "https://discord.com/api/v10/channels/${CHANNEL_ID}" \
+            -H "Authorization: Bot ${{ secrets.DISCORD_BOT_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\": \"archived-${SLUG}\", \"permission_overwrites\": [{\"id\": \"${{ secrets.DISCORD_GUILD_ID }}\", \"type\": 0, \"deny\": \"2048\"}]}"
+
+          # Post archive notice
+          curl -s -X POST "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages" \
+            -H "Authorization: Bot ${{ secrets.DISCORD_BOT_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"embeds": [{"title": "📦 Chapter Archived", "description": "This chapter has been archived. The channel is now read-only.", "color": 16753920}]}'
+
+          echo "Discord channel archived"
+
       - name: Delete chapter
         run: |
           SLUG="${{ inputs.chapter_slug }}"
