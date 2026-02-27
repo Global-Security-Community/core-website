@@ -1,7 +1,15 @@
+const crypto = require('crypto');
+
 module.exports = function(eleventyConfig) {
   // Copy static assets
   eleventyConfig.addPassthroughCopy("src/assets");
   eleventyConfig.addPassthroughCopy("src/css");
+
+  // MD5 hash filter for Gravatar
+  eleventyConfig.addFilter("md5", function(value) {
+    if (!value) return '';
+    return crypto.createHash('md5').update(value.trim().toLowerCase()).digest('hex');
+  });
 
   return {
     dir: {

@@ -1,4 +1,5 @@
 const { app } = require('@azure/functions');
+const { sendMessage } = require('../helpers/discordBot');
 
 // Simple in-memory rate limiting (IP-based)
 // In production, consider using Azure Cache for Redis
@@ -101,10 +102,10 @@ module.exports = async function (request, context) {
       };
     }
 
-    // Get Discord webhook URL from environment
-    const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL;
-    if (!discordWebhookUrl) {
-      context.log('Discord webhook URL not configured');
+    // Get Discord channel ID from environment
+    const discordChannelId = process.env.DISCORD_CONTACT_CHANNEL_ID;
+    if (!discordChannelId) {
+      context.log('Discord contact channel ID not configured');
       return {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
@@ -117,7 +118,7 @@ module.exports = async function (request, context) {
       embeds: [
         {
           title: '📧 New Contact Form Submission',
-          color: 0x20b2aa, // Teal color from your site
+          color: 0x20b2aa,
           fields: [
             {
               name: 'Name',
@@ -152,17 +153,11 @@ module.exports = async function (request, context) {
       ]
     };
 
-    // Send to Discord
-    const discordResponse = await fetch(discordWebhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(discordMessage)
-    });
+    // Send to Discord via bot
+    const sent = await sendMessage(discordChannelId, discordMessage, context);
 
-    if (!discordResponse.ok) {
-      context.log(`Discord API error: ${discordResponse.status}`);
+    if (!sent) {
+      context.log('Discord message send failed');
       return {
         status: 500,
         headers: { 'Content-Type': 'application/json' },

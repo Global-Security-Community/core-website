@@ -1,0 +1,38 @@
+---
+layout: base.njk
+---
+
+<div class="container">
+  <h1>Global Security {{ city }}</h1>
+  <p class="chapter-location">📍 {{ city }}, {{ country }}</p>
+
+  <h2>About This Chapter</h2>
+  <p>Welcome to the Global Security Community chapter in {{ city }}! We bring together security professionals and enthusiasts in the {{ city }} area to share knowledge, network, and grow together.</p>
+
+  <h2>Chapter Leads</h2>
+  {% for lead in leads %}
+  <div class="card" style="max-width: 600px;{% if not loop.first %} margin-top: 1rem;{% endif %} display: flex; gap: 1.5rem; align-items: flex-start;">
+    <img src="https://www.gravatar.com/avatar/{{ lead.email_hash }}?s=120&d=mp" alt="{{ lead.name }}" style="width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0;">
+    <div>
+      <h3 style="margin-top: 0;">{{ lead.name }}</h3>
+      <p>{{ lead.bio }}</p>
+    </div>
+  </div>
+  {% endfor %}
+
+  <h2>Upcoming Events</h2>
+  <p>Events for this chapter are coming soon. Check back here for meetups, workshops, and other community gatherings in {{ city }}.</p>
+
+  <h2>Get Involved</h2>
+  {% if discord_channel_id and discord_guild_id %}
+  <div class="card" style="max-width: 600px; display: flex; gap: 1rem; align-items: center;">
+    <span style="font-size: 2rem;">💬</span>
+    <div>
+      <h3 style="margin-top: 0;">Join Us on Discord</h3>
+      <p style="margin-bottom: 0.5rem;">Connect with the {{ city }} chapter on our Discord server.</p>
+      <a href="https://discord.com/channels/{{ discord_guild_id }}/{{ discord_channel_id }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background-color: #5865F2; color: white; padding: 0.5rem 1rem; border-radius: 4px; font-weight: 600; text-decoration: none;">Open Discord Channel</a>
+    </div>
+  </div>
+  {% endif %}
+  <p style="margin-top: 1rem;">Interested in joining the {{ city }} chapter? Stay tuned for upcoming events and opportunities to connect with the local security community.</p>
+</div>

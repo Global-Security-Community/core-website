@@ -1,0 +1,79 @@
+name: Generate Chapter Page
+
+on:
+  repository_dispatch:
+    types: [chapter-approved]
+
+permissions:
+  contents: write
+
+jobs:
+  generate-chapter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate chapter page
+        run: |
+          CITY="${{ github.event.client_payload.chapter_city }}"
+          COUNTRY="${{ github.event.client_payload.chapter_country }}"
+          SLUG="${{ github.event.client_payload.chapter_slug }}"
+          LEAD_NAME="${{ github.event.client_payload.lead_name }}"
+          LEAD_BIO="${{ github.event.client_payload.lead_bio }}"
+          SECOND_LEAD_NAME="${{ github.event.client_payload.second_lead_name }}"
+          SECOND_LEAD_BIO="${{ github.event.client_payload.second_lead_bio }}"
+          DISCORD_CHANNEL_ID="${{ github.event.client_payload.discord_channel_id }}"
+          DISCORD_GUILD_ID="${{ vars.DISCORD_GUILD_ID }}"
+
+          mkdir -p "src/chapters/${SLUG}"
+
+          # Build the YAML leads list with Gravatar email hashes
+          LEAD_EMAIL="${{ github.event.client_payload.lead_email }}"
+          LEAD_HASH=$(echo -n "${LEAD_EMAIL}" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | md5sum | cut -d' ' -f1)
+
+          LEADS="  - name: \"${LEAD_NAME}\"
+            bio: \"${LEAD_BIO}\"
+            email_hash: \"${LEAD_HASH}\""
+
+          if [ -n "${SECOND_LEAD_NAME}" ]; then
+            SECOND_LEAD_EMAIL="${{ github.event.client_payload.second_lead_email }}"
+            SECOND_HASH=$(echo -n "${SECOND_LEAD_EMAIL}" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | md5sum | cut -d' ' -f1)
+            LEADS="${LEADS}
+            - name: \"${SECOND_LEAD_NAME}\"
+            bio: \"${SECOND_LEAD_BIO}\"
+            email_hash: \"${SECOND_HASH}\""
+          fi
+
+          cat > "src/chapters/${SLUG}/index.md" << CHAPTEREOF
+          ---
+          layout: chapter.njk
+          title: "Global Security ${CITY}"
+          city: "${CITY}"
+          country: "${COUNTRY}"
+          discord_channel_id: "${DISCORD_CHANNEL_ID}"
+          discord_guild_id: "${DISCORD_GUILD_ID}"
+          leads:
+          ${LEADS}
+          ---
+          CHAPTEREOF
+
+          # Remove leading whitespace from heredoc
+          sed -i 's/^          //' "src/chapters/${SLUG}/index.md"
+
+          echo "Generated chapter page at src/chapters/${SLUG}/index.md"
+
+      - name: Commit and push
+        run: |
+          CITY="${{ github.event.client_payload.chapter_city }}"
+          SLUG="${{ github.event.client_payload.chapter_slug }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "src/chapters/${SLUG}/index.md"
+          git commit -m "Add chapter page for ${CITY}
+
+          Auto-generated from approved chapter application.
+
+          Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          git push
