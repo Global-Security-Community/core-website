@@ -21,10 +21,14 @@ jobs:
           SLUG="${{ github.event.client_payload.chapter_slug }}"
           LEAD_NAME="${{ github.event.client_payload.lead_name }}"
           LEAD_BIO="${{ github.event.client_payload.lead_bio }}"
-          SECOND_LEAD_NAME="${{ github.event.client_payload.second_lead_name }}"
-          SECOND_LEAD_BIO="${{ github.event.client_payload.second_lead_bio }}"
           DISCORD_CHANNEL_ID="${{ github.event.client_payload.discord_channel_id }}"
           DISCORD_GUILD_ID="${{ vars.DISCORD_GUILD_ID }}"
+
+          # Parse second lead from JSON string
+          SECOND_LEAD_JSON='${{ github.event.client_payload.second_lead }}'
+          SECOND_LEAD_NAME=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('name',''))" 2>/dev/null || echo "")
+          SECOND_LEAD_BIO=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('bio',''))" 2>/dev/null || echo "")
+          SECOND_LEAD_EMAIL=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('email',''))" 2>/dev/null || echo "")
 
           mkdir -p "src/chapters/${SLUG}"
 
@@ -37,7 +41,6 @@ jobs:
             email_hash: \"${LEAD_HASH}\""
 
           if [ -n "${SECOND_LEAD_NAME}" ]; then
-            SECOND_LEAD_EMAIL="${{ github.event.client_payload.second_lead_email }}"
             SECOND_HASH=$(echo -n "${SECOND_LEAD_EMAIL}" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | md5sum | cut -d' ' -f1)
             LEADS="${LEADS}
             - name: \"${SECOND_LEAD_NAME}\"

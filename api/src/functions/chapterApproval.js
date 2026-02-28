@@ -104,9 +104,11 @@ module.exports = async function (request, context) {
             lead_name: application.fullName,
             lead_bio: application.aboutYou,
             lead_email: application.email,
-            second_lead_name: application.secondLeadName || '',
-            second_lead_bio: application.secondLeadAbout || '',
-            second_lead_email: application.secondLeadEmail || '',
+            second_lead: JSON.stringify({
+              name: application.secondLeadName || '',
+              bio: application.secondLeadAbout || '',
+              email: application.secondLeadEmail || ''
+            }),
             discord_channel_id: discordChannel ? discordChannel.channelId : ''
           }
         });
