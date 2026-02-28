@@ -22,7 +22,7 @@ title: Dashboard
   <div id="section-create" style="display:none;">
     <h2>Create New Event</h2>
     <div id="create-message" class="form-message" style="display:none;"></div>
-    <div class="reg-form-wrap">
+    <div id="create-form-wrap" class="reg-form-wrap">
       <div class="form-group">
         <label for="ev-title">Event Title *</label>
         <input type="text" id="ev-title" maxlength="200" placeholder="e.g. Global Security Bootcamp Perth 2026">
@@ -74,6 +74,26 @@ title: Dashboard
         <input type="text" id="ev-chapter" placeholder="e.g. perth">
       </div>
       <button id="create-btn" type="button">Create Event</button>
+    </div>
+    <div id="create-progress" class="pipeline-progress" style="display:none;">
+      <h3 id="create-progress-title"></h3>
+      <ul class="pipeline-steps">
+        <li id="step-stored" class="pipeline-step pending">
+          <span class="step-icon">⏳</span>
+          <span class="step-label">Event saved to database</span>
+        </li>
+        <li id="step-page" class="pipeline-step pending">
+          <span class="step-icon">⏳</span>
+          <span class="step-label">Event page generation triggered</span>
+        </li>
+        <li id="step-live" class="pipeline-step pending">
+          <span class="step-icon">⏳</span>
+          <span class="step-label">Event page deployed &amp; live</span>
+        </li>
+      </ul>
+      <p class="pipeline-note">Page generation typically takes 1–2 minutes. You can navigate away — the pipeline will continue in the background.</p>
+      <a id="create-progress-link" href="#" class="btn" style="display:none; margin-top:1rem;">View Event Page →</a>
+      <button id="create-another-btn" type="button" style="display:none; margin-top:0.5rem;">Create Another Event</button>
     </div>
   </div>
 

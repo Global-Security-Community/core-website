@@ -151,7 +151,10 @@
   }
 
   // Create event handler
+  var createSubmitting = false;
   document.getElementById('create-btn').addEventListener('click', function() {
+    if (createSubmitting) return;
+    createSubmitting = true;
     var btn = this;
     var msg = document.getElementById('create-message');
     btn.disabled = true;
@@ -178,22 +181,111 @@
     })
     .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
     .then(function(res) {
-      msg.style.display = 'block';
       if (res.ok) {
-        msg.style.backgroundColor = '#d4edda'; msg.style.color = '#155724';
-        msg.textContent = 'Event created! Page will be generated shortly. Slug: ' + res.data.event.slug;
+        showCreateProgress(res.data.event);
         loadEvents();
       } else {
+        msg.style.display = 'block';
         msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
         msg.textContent = res.data.error || 'Failed to create event.';
+        btn.disabled = false; btn.textContent = 'Create Event';
+        createSubmitting = false;
       }
     })
     .catch(function() {
       msg.style.display = 'block';
       msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
       msg.textContent = 'Network error. Please try again.';
-    })
-    .finally(function() { btn.disabled = false; btn.textContent = 'Create Event'; });
+      btn.disabled = false; btn.textContent = 'Create Event';
+      createSubmitting = false;
+    });
+  });
+
+  function setStepState(stepId, state) {
+    var el = document.getElementById(stepId);
+    el.className = 'pipeline-step ' + state;
+    var icon = el.querySelector('.step-icon');
+    if (state === 'done') icon.textContent = '✅';
+    else if (state === 'active') icon.textContent = '🔄';
+    else if (state === 'error') icon.textContent = '❌';
+    else icon.textContent = '⏳';
+  }
+
+  function showCreateProgress(event) {
+    document.getElementById('create-form-wrap').style.display = 'none';
+    document.getElementById('create-message').style.display = 'none';
+    var progress = document.getElementById('create-progress');
+    progress.style.display = 'block';
+    document.getElementById('create-progress-title').textContent = event.title;
+
+    // Step 1: Stored — already done
+    setStepState('step-stored', 'done');
+
+    // Step 2: Page generation triggered
+    setStepState('step-page', 'active');
+
+    // Poll for event page to come live
+    var slug = event.slug;
+    var pageUrl = '/events/' + slug + '/';
+    var attempts = 0;
+    var maxAttempts = 30; // ~2.5 minutes
+
+    var pollTimer = setInterval(function() {
+      attempts++;
+      fetch(pageUrl, { method: 'HEAD' })
+        .then(function(r) {
+          if (r.ok) {
+            clearInterval(pollTimer);
+            setStepState('step-page', 'done');
+            setStepState('step-live', 'done');
+            var link = document.getElementById('create-progress-link');
+            link.href = pageUrl;
+            link.style.display = 'inline-block';
+            document.getElementById('create-another-btn').style.display = 'inline-block';
+          } else if (attempts >= maxAttempts) {
+            clearInterval(pollTimer);
+            setStepState('step-page', 'done');
+            setStepState('step-live', 'error');
+            document.querySelector('.pipeline-note').textContent = 'Page generation is taking longer than expected. It may still be deploying — check back in a few minutes.';
+            document.getElementById('create-another-btn').style.display = 'inline-block';
+          }
+        })
+        .catch(function() {
+          if (attempts >= maxAttempts) {
+            clearInterval(pollTimer);
+            setStepState('step-page', 'done');
+            setStepState('step-live', 'error');
+            document.querySelector('.pipeline-note').textContent = 'Could not verify page deployment. It may still be in progress.';
+            document.getElementById('create-another-btn').style.display = 'inline-block';
+          }
+        });
+    }, 5000);
+
+    // Mark page generation as done after ~15s (workflow dispatch is near-instant)
+    setTimeout(function() {
+      if (document.getElementById('step-page').classList.contains('active')) {
+        setStepState('step-page', 'done');
+        setStepState('step-live', 'active');
+      }
+    }, 15000);
+  }
+
+  // "Create Another Event" resets the form
+  document.getElementById('create-another-btn').addEventListener('click', function() {
+    createSubmitting = false;
+    document.getElementById('create-form-wrap').style.display = '';
+    document.getElementById('create-progress').style.display = 'none';
+    document.getElementById('create-btn').disabled = false;
+    document.getElementById('create-btn').textContent = 'Create Event';
+    // Clear form fields
+    ['ev-title','ev-date','ev-enddate','ev-building','ev-address1','ev-address2','ev-city','ev-state','ev-description','ev-sessionize','ev-chapter'].forEach(function(id) {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('ev-cap').value = '0';
+    // Reset pipeline steps
+    ['step-stored','step-page','step-live'].forEach(function(id) { setStepState(id, 'pending'); });
+    document.getElementById('create-progress-link').style.display = 'none';
+    document.getElementById('create-another-btn').style.display = 'none';
   });
 
   function loadVolunteers(eventId) {
