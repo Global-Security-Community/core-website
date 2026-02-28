@@ -52,6 +52,11 @@ body {
   color: var(--color-dark-gray);
 }
 
+.nav-brand:hover {
+  color: var(--color-dark-gray);
+  text-decoration: none;
+}
+
 .logo {
   height: 50px;
   width: auto;
