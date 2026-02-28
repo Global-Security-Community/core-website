@@ -224,6 +224,7 @@ a:hover {
   overflow: hidden;
   text-decoration: none;
   color: inherit;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -238,13 +239,13 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
-  min-height: 120px;
+  padding: 1rem;
+  min-height: 80px;
 }
 
 .chapter-card-logo {
-  width: 64px;
-  height: 64px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
 }
 
