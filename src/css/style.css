@@ -885,3 +885,96 @@ tr:hover {
 thead tr:hover {
   background-color: transparent;
 }
+
+/* Event Cards */
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+@media (max-width: 900px) {
+  .events-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .events-grid { grid-template-columns: 1fr; }
+}
+
+.event-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.event-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.event-card-header {
+  background: linear-gradient(135deg, var(--color-primary-navy), #1a3a5c);
+  color: #fff;
+  padding: 1.25rem;
+}
+
+.event-card-date {
+  font-size: 0.85rem;
+  opacity: 0.85;
+  margin-bottom: 0.5rem;
+}
+
+.event-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.event-card-body {
+  padding: 1.25rem;
+  flex: 1;
+}
+
+.event-card-location {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 0.75rem;
+}
+
+.event-card-description {
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.event-card-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #eee;
+  text-align: center;
+}
+
+.event-card-btn {
+  display: inline-block;
+  padding: 0.5rem 1.5rem;
+  background-color: var(--color-accent-teal);
+  color: #fff;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.event-card-btn:hover {
+  background-color: #1a9e96;
+}

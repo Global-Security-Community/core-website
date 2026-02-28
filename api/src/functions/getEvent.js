@@ -1,13 +1,42 @@
-const { getEventBySlug, countRegistrations } = require('../helpers/tableStorage');
+const { getEventBySlug, countRegistrations, listEvents } = require('../helpers/tableStorage');
 
 /**
- * GET /api/getEvent?slug={slug}
- * Public endpoint — returns event details + registration count.
+ * GET /api/getEvent?slug={slug}       — returns a single event
+ * GET /api/getEvent?action=list       — returns all published events
+ * GET /api/getEvent?action=list&chapter={slug} — returns published events for a chapter
+ * Public endpoint.
  */
 module.exports = async function (request, context) {
   try {
     const url = new URL(request.url);
+    const action = url.searchParams.get('action');
     const slug = url.searchParams.get('slug');
+    const chapterSlug = url.searchParams.get('chapter');
+
+    if (action === 'list') {
+      const events = await listEvents(chapterSlug || undefined);
+      const published = events
+        .filter(e => e.status === 'published')
+        .map(e => ({
+          id: e.rowKey,
+          title: e.title,
+          slug: e.slug,
+          chapterSlug: e.partitionKey,
+          date: e.date,
+          endDate: e.endDate || '',
+          location: e.location,
+          description: e.description,
+          registrationCap: e.registrationCap || 0,
+          status: e.status
+        }))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      return {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(published)
+      };
+    }
 
     if (!slug) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },

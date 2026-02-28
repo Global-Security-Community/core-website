@@ -32,7 +32,43 @@ layout: base.njk
   </div>
 
   <h2>Upcoming Events</h2>
-  <p>Events for this chapter are coming soon. Check back here for meetups, workshops, and other community gatherings in {{ city }}.</p>
+  <div id="chapter-events">
+    <p>Loading events...</p>
+  </div>
+
+  <script>
+  (async function() {
+    var container = document.getElementById('chapter-events');
+    var chapterSlug = '{{ city | lower | replace(" ", "-") }}';
+    try {
+      var res = await fetch('/api/getEvent?action=list&chapter=' + encodeURIComponent(chapterSlug));
+      if (!res.ok) throw new Error('Failed');
+      var events = await res.json();
+      if (!events.length) {
+        container.innerHTML = '<p>Events for this chapter are coming soon. Check back here for meetups, workshops, and other community gatherings in {{ city }}.</p>';
+        return;
+      }
+      container.innerHTML = '<div class="events-grid">' + events.map(function(e) {
+        var dateStr = new Date(e.date).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        var endStr = e.endDate ? ' – ' + new Date(e.endDate).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
+        return '<div class="event-card">' +
+          '<div class="event-card-header">' +
+            '<div class="event-card-date">📅 ' + dateStr + endStr + '</div>' +
+            '<h3 class="event-card-title">' + e.title + '</h3>' +
+          '</div>' +
+          '<div class="event-card-body">' +
+            '<div class="event-card-location">📍 ' + e.location + '</div>' +
+          '</div>' +
+          '<div class="event-card-footer">' +
+            '<a href="/events/' + e.slug + '/" class="event-card-btn">View Event →</a>' +
+          '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+    } catch (err) {
+      container.innerHTML = '<p>Events for this chapter are coming soon.</p>';
+    }
+  })();
+  </script>
 
   <h2>Get Involved</h2>
   {% if discord_channel_id and discord_guild_id %}
