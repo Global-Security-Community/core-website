@@ -310,19 +310,57 @@ a:hover {
   margin-bottom: 2rem;
 }
 
-.lead-card {
-  max-width: 700px;
+.leads-grid {
   display: flex;
-  gap: 1.5rem;
-  align-items: flex-start;
-  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin: 1.5rem 0;
 }
 
-.lead-avatar {
-  width: 80px;
-  height: 80px;
+.lead-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 140px;
+}
+
+.lead-compact-avatar {
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
-  flex-shrink: 0;
+  object-fit: cover;
+  border: 3px solid var(--color-border);
+  margin-bottom: 0.5rem;
+}
+
+.lead-compact-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-primary-navy);
+  margin: 0 0 0.4rem 0;
+}
+
+.lead-socials {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.lead-social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #666;
+  transition: color 0.2s ease, background-color 0.2s ease;
+  text-decoration: none;
+}
+
+.lead-social-link:hover {
+  color: var(--color-primary-teal);
+  background-color: var(--color-light-gray);
 }
 
 .discord-card {

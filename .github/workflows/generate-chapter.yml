@@ -36,9 +36,6 @@ jobs:
           LEAD_EMAIL="${{ github.event.client_payload.lead_email }}"
           LEAD_HASH=$(echo -n "${LEAD_EMAIL}" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | md5sum | cut -d' ' -f1)
 
-          # Sanitise bio text: escape quotes, remove problematic characters
-          LEAD_BIO_SAFE=$(echo "${LEAD_BIO}" | sed 's/"/\\"/g' | tr -d '\n')
-
           # Build chapter page with proper YAML indentation
           {
             echo "---"
@@ -51,13 +48,10 @@ jobs:
             echo "discord_guild_id: \"${DISCORD_GUILD_ID}\""
             echo "leads:"
             echo "  - name: \"${LEAD_NAME}\""
-            echo "    bio: \"${LEAD_BIO_SAFE}\""
             echo "    email_hash: \"${LEAD_HASH}\""
             if [ -n "${SECOND_LEAD_NAME}" ]; then
-              SECOND_BIO_SAFE=$(echo "${SECOND_LEAD_BIO}" | sed 's/"/\\"/g' | tr -d '\n')
               SECOND_HASH=$(echo -n "${SECOND_LEAD_EMAIL}" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | md5sum | cut -d' ' -f1)
               echo "  - name: \"${SECOND_LEAD_NAME}\""
-              echo "    bio: \"${SECOND_BIO_SAFE}\""
               echo "    email_hash: \"${SECOND_HASH}\""
             fi
             echo "---"
