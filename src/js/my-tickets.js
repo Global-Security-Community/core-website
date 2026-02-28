@@ -52,7 +52,13 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ registrationId: regId })
           })
-          .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+          .then(function(r) {
+            var contentType = r.headers.get('content-type') || '';
+            if (contentType.indexOf('application/json') === -1) {
+              throw new Error('Unexpected response (status ' + r.status + '). Please refresh the page and try again.');
+            }
+            return r.json().then(function(d) { return { ok: r.ok, data: d }; });
+          })
           .then(function(res) {
             if (res.ok) {
               var ticketEl = document.getElementById('ticket-' + regId);
@@ -67,8 +73,8 @@
               cancelBtn.textContent = 'Cancel Registration';
             }
           })
-          .catch(function() {
-            alert('Network error. Please try again.');
+          .catch(function(err) {
+            alert(err.message || 'Network error. Please try again.');
             cancelBtn.disabled = false;
             cancelBtn.textContent = 'Cancel Registration';
           });
