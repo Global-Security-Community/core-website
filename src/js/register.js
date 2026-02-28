@@ -35,12 +35,24 @@
       document.getElementById('reg-form-wrap').style.display = 'block';
 
       // Pre-fill from auth
+      // TODO: Once CIAM token configuration includes optional claims (jobTitle, city, country,
+      // companyName, etc.), update scopes in staticwebapp.config.json and pre-fill demographic
+      // fields below from d.clientPrincipal.claims — so returning users don't re-enter info.
+      // Steps: 1) CIAM Portal → App registration → Token configuration → Add optional claims
+      //        2) Add scopes to staticwebapp.config.json auth.identityProviders.ciam.login.scopes
+      //        3) Map claims to form fields here (e.g. reg-jobtitle, reg-industry, reg-name)
       fetch('/.auth/me')
         .then(function(r) { return r.json(); })
         .then(function(d) {
           if (d.clientPrincipal && d.clientPrincipal.userDetails) {
             document.getElementById('reg-email').value = d.clientPrincipal.userDetails;
           }
+          // TODO: Pre-fill from CIAM claims when available:
+          // var claims = d.clientPrincipal && d.clientPrincipal.claims || [];
+          // var getClaim = function(type) { var c = claims.find(function(x) { return x.typ === type; }); return c ? c.val : ''; };
+          // if (getClaim('name')) document.getElementById('reg-name').value = getClaim('name');
+          // if (getClaim('jobTitle')) document.getElementById('reg-jobtitle').value = getClaim('jobTitle');
+          // if (getClaim('city')) document.getElementById('reg-industry').value = getClaim('city');
         });
     })
     .catch(function() {
