@@ -132,3 +132,59 @@ output keyVaultUri string = keyVault.properties.vaultUri
 output appInsightsConnectionString string = appInsights.properties.ConnectionString
 output appInsightsInstrumentationKey string = appInsights.properties.InstrumentationKey
 output communicationServiceName string = communicationService.name
+
+// Azure Monitor Alert: 5xx error spike (free tier)
+resource serverErrorAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
+  name: 'gsc-core-5xx-alert'
+  location: 'global'
+  properties: {
+    severity: 2
+    enabled: true
+    scopes: [appInsights.id]
+    evaluationFrequency: 'PT5M'
+    windowSize: 'PT15M'
+    criteria: {
+      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
+      allOf: [
+        {
+          name: 'ServerErrors'
+          metricName: 'requests/failed'
+          metricNamespace: 'microsoft.insights/components'
+          operator: 'GreaterThan'
+          threshold: 10
+          timeAggregation: 'Count'
+          criterionType: 'StaticThresholdCriterion'
+        }
+      ]
+    }
+    description: 'Alert when more than 10 failed requests in 15 minutes'
+  }
+}
+
+// Azure Monitor Alert: high response time
+resource latencyAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
+  name: 'gsc-core-latency-alert'
+  location: 'global'
+  properties: {
+    severity: 3
+    enabled: true
+    scopes: [appInsights.id]
+    evaluationFrequency: 'PT5M'
+    windowSize: 'PT15M'
+    criteria: {
+      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
+      allOf: [
+        {
+          name: 'HighLatency'
+          metricName: 'requests/duration'
+          metricNamespace: 'microsoft.insights/components'
+          operator: 'GreaterThan'
+          threshold: 5000
+          timeAggregation: 'Average'
+          criterionType: 'StaticThresholdCriterion'
+        }
+      ]
+    }
+    description: 'Alert when average response time exceeds 5 seconds'
+  }
+}

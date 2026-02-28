@@ -3,37 +3,16 @@ const { storeApplication } = require('../helpers/tableStorage');
 const { generateApprovalToken } = require('../helpers/tokenHelper');
 const { sendMessage } = require('../helpers/discordBot');
 const { sanitiseFields } = require('../helpers/sanitise');
+const { checkRateLimit, getClientIP } = require('../helpers/rateLimiter');
 
-const rateLimitMap = new Map();
-const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '3600000');
 const MAX_REQUESTS_PER_WINDOW = parseInt(process.env.MAX_CHAPTER_REQUESTS_PER_WINDOW || '3');
-
-function getClientIP(request) {
-  return request.headers.get('x-forwarded-for') ||
-         request.headers.get('client-ip') ||
-         'unknown';
-}
-
-function checkRateLimit(clientIP) {
-  const now = Date.now();
-  if (!rateLimitMap.has(clientIP)) {
-    rateLimitMap.set(clientIP, []);
-  }
-  const timestamps = rateLimitMap.get(clientIP).filter(ts => now - ts < RATE_LIMIT_WINDOW_MS);
-  if (timestamps.length >= MAX_REQUESTS_PER_WINDOW) {
-    return false;
-  }
-  timestamps.push(now);
-  rateLimitMap.set(clientIP, timestamps);
-  return true;
-}
 
 module.exports = async function (request, context) {
   context.log('Chapter application received');
 
   try {
     const clientIP = getClientIP(request);
-    if (!checkRateLimit(clientIP)) {
+    if (!checkRateLimit(clientIP, 'chapter-apply', MAX_REQUESTS_PER_WINDOW)) {
       return {
         status: 429,
         headers: { 'Content-Type': 'application/json' },

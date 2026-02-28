@@ -3,6 +3,7 @@ const { getAuthUser, unauthorised } = require('../helpers/auth');
 const { getEventBySlug, storeRegistration, storeDemographics, countRegistrations, getRegistrationsByEvent } = require('../helpers/tableStorage');
 const { sanitiseFields } = require('../helpers/sanitise');
 const { sendTicketEmail } = require('../helpers/emailService');
+const { checkRateLimit, getClientIP } = require('../helpers/rateLimiter');
 
 /**
  * POST /api/registerEvent
@@ -14,6 +15,13 @@ module.exports = async function (request, context) {
   try {
     const user = getAuthUser(request);
     if (!user) return unauthorised();
+
+    // Rate limit: max 10 registrations per IP per hour
+    const clientIP = getClientIP(request);
+    if (!checkRateLimit(clientIP, 'register', 10)) {
+      return { status: 429, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Too many requests. Please try again later.' }) };
+    }
 
     let body;
     try { body = await request.json(); } catch {
