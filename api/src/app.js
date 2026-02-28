@@ -22,6 +22,14 @@ app.get('getEvent', { authLevel: 'anonymous', handler: getEventHandler });
 // ─── Auth: role assignment ───
 app.post('roles', { authLevel: 'anonymous', handler: rolesHandler });
 
+// ─── Diagnostic: shows auth state (temporary, remove after debugging) ───
+app.get('debugAuth', { authLevel: 'anonymous', handler: async function(request) {
+  const header = request.headers.get('x-ms-client-principal');
+  if (!header) return { status: 200, headers: {'Content-Type':'application/json'}, body: JSON.stringify({ authenticated: false }) };
+  const decoded = Buffer.from(header, 'base64').toString('utf-8');
+  return { status: 200, headers: {'Content-Type':'application/json'}, body: decoded };
+}});
+
 // ─── Authenticated endpoints ───
 app.post('registerEvent', { authLevel: 'anonymous', handler: registerEventHandler });
 app.get('myTickets', { authLevel: 'anonymous', handler: myTicketsHandler });
