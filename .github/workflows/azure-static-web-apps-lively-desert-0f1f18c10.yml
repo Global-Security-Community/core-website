@@ -25,6 +25,8 @@ jobs:
         node-version: '18'
     - name: Install dependencies
       run: npm install
+    - name: Install API dependencies
+      run: cd api && npm install
     - name: Audit dependencies
       run: cd api && npm audit --audit-level=high || true
     - name: Build
