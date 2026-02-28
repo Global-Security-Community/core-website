@@ -15,21 +15,25 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       with:
         submodules: true
         lfs: false
     - name: Set up Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
       with:
         node-version: '18'
     - name: Install dependencies
       run: npm install
+    - name: Audit dependencies
+      run: cd api && npm audit --audit-level=high || true
     - name: Build
       run: npm run build
+    - name: Run API tests
+      run: cd api && npm test
     - name: Build And Deploy
       id: builddeploy
-      uses: Azure/static-web-apps-deploy@v1
+      uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9 # v1
       with:
         azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LIVELY_DESERT_0F1F18C10 }}
         repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -46,8 +50,7 @@ jobs:
     steps:
       - name: Close Pull Request
         id: closepullrequest
-        uses: Azure/static-web-apps-deploy@v1
+        uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9 # v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LIVELY_DESERT_0F1F18C10 }}
           action: "close"
-
