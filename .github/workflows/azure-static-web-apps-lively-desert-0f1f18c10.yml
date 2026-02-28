@@ -25,14 +25,14 @@ jobs:
         node-version: '18'
     - name: Install dependencies
       run: npm install
-    - name: Install API dependencies
-      run: cd api && npm install
+    - name: Install API dependencies and test
+      run: cd api && npm install && npm test
     - name: Audit dependencies
       run: cd api && npm audit --audit-level=high || true
     - name: Build
       run: npm run build
-    - name: Run API tests
-      run: cd api && npm test
+    - name: Clean API dev dependencies
+      run: cd api && rm -rf node_modules && npm install --omit=dev
     - name: Build And Deploy
       id: builddeploy
       uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9 # v1
