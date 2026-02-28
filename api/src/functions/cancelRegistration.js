@@ -34,8 +34,8 @@ async function cancelRegistration(request, context) {
 
     if (!reg) {
       context.log(`Cancel: no matching registration. User regs: ${userRegs.map(r => r.rowKey).join(', ')}`);
-      return { status: 404, headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ error: 'Registration not found' }) };
+      return { status: 400, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Registration not found or does not belong to you' }) };
     }
 
     // Don't allow cancellation if already checked in
