@@ -59,5 +59,7 @@ jobs:
           Chapter: ${{ github.event.client_payload.chapter_slug }}
 
           Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          # Pull latest changes before pushing to avoid rejection
+          git pull --rebase origin main
           git push
           git push origin main:live-version-swa

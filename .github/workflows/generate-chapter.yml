@@ -86,5 +86,6 @@ jobs:
           Auto-generated from approved chapter application.
 
           Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          git pull --rebase origin main
           git push
           git push origin main:live-version-swa
