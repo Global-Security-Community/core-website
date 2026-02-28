@@ -7,23 +7,34 @@
         el.innerHTML = '<p>You have no tickets yet. <a href="/events/">Browse upcoming events</a> to register.</p>';
         return;
       }
-      var html = '<div class="cards">';
+      var html = '';
       data.tickets.forEach(function(t) {
-        html += '<div class="card" style="text-align:center;">';
-        html += '<h3 style="margin-top:0;">Ticket</h3>';
-        html += '<p style="font-family:monospace; font-size:1.2rem; font-weight:600;">' + esc(t.ticketCode) + '</p>';
-        if (t.qrDataUrl && t.qrDataUrl.indexOf('data:image/') === 0) {
-          html += '<img src="' + t.qrDataUrl + '" alt="QR Code" style="width:160px;height:160px;margin:0.5rem 0;">';
-        }
-        html += '<p style="margin:0.5rem 0;">Registered: ' + esc(t.registeredAt ? new Date(t.registeredAt).toLocaleDateString() : '') + '</p>';
-        if (t.checkedIn) {
-          html += '<p style="color:var(--color-primary-teal);font-weight:600;">✅ Checked In</p>';
-        } else {
-          html += '<p style="color:#666;">Not yet checked in</p>';
-        }
-        html += '</div>';
+        html += '<div class="ticket">' +
+          '<div class="ticket-header">' +
+            '<img src="/assets/GlobalSecurityCommunityLogo2.png" alt="GSC" class="ticket-logo">' +
+            '<div class="ticket-event-info">' +
+              '<div class="ticket-event-name">' + esc(t.eventTitle || 'Event') + '</div>' +
+              '<div class="ticket-event-date">\ud83d\udcc5 ' + formatDate(t.eventDate) +
+                (t.eventEndDate ? ' \u2013 ' + formatDate(t.eventEndDate) : '') + '</div>' +
+              '<div class="ticket-event-location">\ud83d\udccd ' + esc(t.eventLocation || '') + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="ticket-body">' +
+            '<div class="ticket-qr">' +
+              (t.qrDataUrl && t.qrDataUrl.indexOf('data:image/') === 0 ? '<img src="' + t.qrDataUrl + '" alt="QR Code">' : '') +
+            '</div>' +
+            '<div class="ticket-code">' + esc(t.ticketCode) + '</div>' +
+            '<div class="ticket-type">ATTENDEE</div>' +
+            '<div class="ticket-name">' + esc(t.fullName) + '</div>' +
+          '</div>' +
+          '<div class="ticket-footer">' +
+            (t.checkedIn
+              ? '<span class="ticket-status ticket-status--checked">\u2705 Checked In</span>'
+              : '<span class="ticket-status ticket-status--pending">Awaiting Check-in</span>') +
+            (t.eventSlug ? '<a href="/events/' + esc(t.eventSlug) + '/" class="ticket-event-link">View Event</a>' : '') +
+          '</div>' +
+        '</div>';
       });
-      html += '</div>';
       el.innerHTML = html;
     })
     .catch(function() {
@@ -35,5 +46,10 @@
     var d = document.createElement('span');
     d.textContent = str;
     return d.innerHTML;
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   }
 })();

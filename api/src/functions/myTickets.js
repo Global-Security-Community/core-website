@@ -1,5 +1,5 @@
 const { getAuthUser, unauthorised } = require('../helpers/auth');
-const { getRegistrationsByUser, getEventBySlug, getBadgesByEvent } = require('../helpers/tableStorage');
+const { getRegistrationsByUser, getEventById } = require('../helpers/tableStorage');
 
 /**
  * GET /api/myTickets
@@ -12,7 +12,6 @@ module.exports = async function (request, context) {
 
     const registrations = await getRegistrationsByUser(user.userId);
 
-    // Enrich with event details
     const tickets = [];
     const eventCache = {};
 
@@ -20,14 +19,11 @@ module.exports = async function (request, context) {
       const eventId = reg.partitionKey;
       if (!eventCache[eventId]) {
         try {
-          // We need to find the event by ID — iterate all partitions
-          // Since reg.partitionKey = eventId, we need a different approach
-          // Store a minimal version
-          eventCache[eventId] = { id: eventId };
-        } catch { /* skip */ }
+          eventCache[eventId] = await getEventById(eventId);
+        } catch { eventCache[eventId] = null; }
       }
+      const event = eventCache[eventId];
 
-      // Generate QR from ticket code
       let qrDataUrl = '';
       try {
         const QRCode = require('qrcode');
@@ -42,7 +38,12 @@ module.exports = async function (request, context) {
         checkedIn: reg.checkedIn || false,
         checkedInAt: reg.checkedInAt || '',
         registeredAt: reg.registeredAt,
-        qrDataUrl
+        qrDataUrl,
+        eventTitle: event ? event.title : '',
+        eventDate: event ? event.date : '',
+        eventEndDate: event ? (event.endDate || '') : '',
+        eventLocation: event ? event.location : '',
+        eventSlug: event ? event.slug : ''
       });
     }
 

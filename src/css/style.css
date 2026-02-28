@@ -979,3 +979,127 @@ thead tr:hover {
   background-color: #178a84;
   color: #fff;
 }
+
+/* Ticket Card */
+.ticket {
+  max-width: 420px;
+  margin: 1.5rem auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  background: #fff;
+}
+
+.ticket-header {
+  background: linear-gradient(135deg, var(--color-primary-navy), #1a3a5c);
+  color: #fff;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ticket-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.ticket-event-info {
+  min-width: 0;
+}
+
+.ticket-event-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 0.25rem;
+}
+
+.ticket-event-date,
+.ticket-event-location {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
+.ticket-body {
+  padding: 1.5rem;
+  text-align: center;
+  border-bottom: 2px dashed #ddd;
+  position: relative;
+}
+
+.ticket-body::before,
+.ticket-body::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  width: 24px;
+  height: 24px;
+  background: var(--color-bg-light, #f5f5f5);
+  border-radius: 50%;
+}
+
+.ticket-body::before { left: -12px; }
+.ticket-body::after { right: -12px; }
+
+.ticket-qr img {
+  width: 180px;
+  height: 180px;
+  margin-bottom: 0.75rem;
+}
+
+.ticket-code {
+  font-family: 'Courier New', monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--color-primary-navy);
+  margin-bottom: 0.5rem;
+}
+
+.ticket-type {
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  background: var(--color-primary-teal);
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.ticket-name {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 0.25rem;
+}
+
+.ticket-footer {
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ticket-status {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ticket-status--checked { color: var(--color-primary-teal); }
+.ticket-status--pending { color: #999; }
+
+.ticket-event-link {
+  font-size: 0.85rem;
+  color: var(--color-primary-teal);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.ticket-event-link:hover {
+  text-decoration: underline;
+}

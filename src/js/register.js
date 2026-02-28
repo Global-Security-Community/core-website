@@ -83,12 +83,28 @@
     .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, status: r.status, data: d}; }); })
     .then(function(res) {
       if (res.ok || res.status === 201) {
+        var r = res.data.registration;
         document.getElementById('reg-form-wrap').style.display = 'none';
         document.getElementById('reg-success').style.display = 'block';
-        document.getElementById('success-details').textContent = 'Ticket Code: ' + res.data.registration.ticketCode;
-        if (res.data.registration.qrDataUrl && res.data.registration.qrDataUrl.indexOf('data:image/') === 0) {
-          document.getElementById('success-qr').innerHTML = '<img src="' + res.data.registration.qrDataUrl + '" alt="Ticket QR Code" style="width:200px;height:200px;">';
-        }
+        var ticketHtml = '<div class="ticket">' +
+          '<div class="ticket-header">' +
+            '<img src="/assets/GlobalSecurityCommunityLogo2.png" alt="GSC" class="ticket-logo">' +
+            '<div class="ticket-event-info">' +
+              '<div class="ticket-event-name">' + esc(r.eventTitle) + '</div>' +
+              '<div class="ticket-event-date">\ud83d\udcc5 ' + formatDate(r.eventDate) + '</div>' +
+              '<div class="ticket-event-location">\ud83d\udccd ' + esc(r.eventLocation) + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="ticket-body">' +
+            '<div class="ticket-qr">' +
+              (r.qrDataUrl && r.qrDataUrl.indexOf('data:image/') === 0 ? '<img src="' + r.qrDataUrl + '" alt="Ticket QR Code">' : '') +
+            '</div>' +
+            '<div class="ticket-code">' + esc(r.ticketCode) + '</div>' +
+            '<div class="ticket-type">ATTENDEE</div>' +
+          '</div>' +
+        '</div>';
+        document.getElementById('success-qr').innerHTML = ticketHtml;
+        document.getElementById('success-details').textContent = '';
       } else if (res.status === 409) {
         msg.style.display = 'block';
         msg.style.backgroundColor = '#fff3cd'; msg.style.color = '#856404';
@@ -115,5 +131,10 @@
     var d = document.createElement('span');
     d.textContent = str;
     return d.innerHTML;
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   }
 })();

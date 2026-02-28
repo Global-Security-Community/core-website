@@ -78,6 +78,17 @@ async function getEvent(chapterSlug, eventId) {
   return await client.getEntity(chapterSlug, eventId);
 }
 
+async function getEventById(eventId) {
+  const client = getTableClient('Events');
+  const entities = client.listEntities({
+    queryOptions: { filter: `RowKey eq '${eventId.replace(/'/g, "''")}'` }
+  });
+  for await (const entity of entities) {
+    return entity;
+  }
+  return null;
+}
+
 async function getEventBySlug(slug) {
   const client = getTableClient('Events');
   const entities = client.listEntities({
@@ -291,7 +302,7 @@ async function getApprovedApplicationByEmail(email) {
 
 module.exports = {
   storeApplication, getApplication, updateApplicationStatus,
-  storeEvent, getEvent, getEventBySlug, listEvents, updateEvent,
+  storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent,
   storeRegistration, getRegistrationByTicketCode, getRegistrationsByUser,
   getRegistrationsByEvent, countRegistrations, updateRegistration,
   storeDemographics,
