@@ -109,6 +109,6 @@
     "Cross-Origin-Opener-Policy": "same-origin",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "Cache-Control": "no-cache, no-store, must-revalidate",
-    "Content-Security-Policy": "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.gravatar.com https://gravatar.com https://*.wp.com https://sessionize.com; connect-src 'self' https://sessionize.com; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://globalsecuritycommunity.ciamlogin.com"
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.gravatar.com https://gravatar.com https://*.wp.com https://sessionize.com https://cache.sessionize.com; connect-src 'self' https://sessionize.com; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://globalsecuritycommunity.ciamlogin.com"
   }
 }
