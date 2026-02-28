@@ -80,3 +80,4 @@ jobs:
 
           Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
           git push
+          git push origin main:live-version-swa
