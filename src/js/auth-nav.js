@@ -1,4 +1,22 @@
 (function() {
+  // Hamburger menu toggle
+  var toggle = document.getElementById('nav-toggle');
+  var menu = document.getElementById('nav-menu');
+  if (toggle && menu) {
+    toggle.addEventListener('click', function() {
+      var expanded = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!expanded));
+      menu.classList.toggle('open');
+    });
+    // Close menu when a link is clicked
+    menu.addEventListener('click', function(e) {
+      if (e.target.classList.contains('nav-link')) {
+        menu.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
   // Register service worker for PWA support
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(function() {});
