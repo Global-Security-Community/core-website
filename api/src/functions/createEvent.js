@@ -50,7 +50,7 @@ module.exports = async function (request, context) {
       id: eventId,
       title: safe.title,
       slug,
-      chapterSlug,
+      chapterSlug: chapterSlug.toLowerCase().trim(),
       date,
       endDate: endDate || '',
       location: safe.location,

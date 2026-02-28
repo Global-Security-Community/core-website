@@ -14,9 +14,12 @@ module.exports = async function (request, context) {
     const chapterSlug = url.searchParams.get('chapter');
 
     if (action === 'list') {
-      const events = await listEvents(chapterSlug || undefined);
+      // Fetch all events — filter by chapter case-insensitively in code
+      const events = await listEvents();
+      const lowerChapter = chapterSlug ? chapterSlug.toLowerCase() : null;
       const published = events
         .filter(e => e.status === 'published')
+        .filter(e => !lowerChapter || (e.partitionKey || '').toLowerCase() === lowerChapter)
         .map(e => ({
           id: e.rowKey,
           title: e.title,
