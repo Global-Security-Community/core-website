@@ -23,10 +23,14 @@
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         onScanSuccess,
-        function() {} // ignore scan failures
-      );
+        function() {} // ignore per-frame scan misses
+      ).catch(function(err) {
+        document.getElementById('reader').innerHTML =
+          '<p style="color:#856404;background:#fff3cd;padding:1rem;border-radius:6px;">📷 Camera not available: ' + esc(String(err)) + '<br>Use manual entry below.</p>';
+      });
     } catch (err) {
-      document.getElementById('reader').innerHTML = '<p>Camera not available. Use manual entry below.</p>';
+      document.getElementById('reader').innerHTML =
+        '<p style="color:#856404;background:#fff3cd;padding:1rem;border-radius:6px;">📷 Camera not available. Use manual entry below.</p>';
     }
   });
 
