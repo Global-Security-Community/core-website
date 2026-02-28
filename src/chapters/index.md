@@ -18,7 +18,10 @@ title: Chapters
       <div class="chapter-card-body">
         <span class="chapter-card-badge">Official Chapter</span>
         <h3 class="chapter-card-title">Global Security Community {{ chapter.data.city }}</h3>
-        <p class="chapter-card-location">{{ chapter.data.city }} / {{ chapter.data.country }}</p>
+        <p class="chapter-card-location">📍 {{ chapter.data.city }} / {{ chapter.data.country }}</p>
+      </div>
+      <div class="chapter-card-footer">
+        <span class="chapter-card-btn">View Chapter</span>
       </div>
     </a>
     {%- endfor %}
