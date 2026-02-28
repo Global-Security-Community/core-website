@@ -64,19 +64,21 @@
               return;
             }
             var html = '';
-            data.forEach(function(room) {
-              html += '<h3>' + esc(room.name || 'Main') + '</h3>';
-              html += '<div class="cards" style="grid-template-columns: 1fr;">';
-              (room.sessions || []).forEach(function(session) {
-                var time = session.startsAt ? new Date(session.startsAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-                html += '<div class="card"><p style="color:var(--color-primary-teal);font-weight:600;margin:0 0 0.25rem 0;">' + esc(time) + '</p>';
-                html += '<h4 style="margin:0 0 0.5rem 0;">' + esc(session.title) + '</h4>';
-                if (session.speakers && session.speakers.length) {
-                  html += '<p style="color:#666;margin:0;">' + session.speakers.map(function(s) { return esc(s.name); }).join(', ') + '</p>';
-                }
+            data.forEach(function(day) {
+              (day.rooms || []).forEach(function(room) {
+                html += '<h3>' + esc(room.name || 'Main') + '</h3>';
+                html += '<div class="cards" style="grid-template-columns: 1fr;">';
+                (room.sessions || []).forEach(function(session) {
+                  var time = session.startsAt ? new Date(session.startsAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+                  html += '<div class="card"><p style="color:var(--color-primary-teal);font-weight:600;margin:0 0 0.25rem 0;">' + esc(time) + '</p>';
+                  html += '<h4 style="margin:0 0 0.5rem 0;">' + esc(session.title) + '</h4>';
+                  if (session.speakers && session.speakers.length) {
+                    html += '<p style="color:#666;margin:0;">' + session.speakers.map(function(s) { return esc(s.name); }).join(', ') + '</p>';
+                  }
+                  html += '</div>';
+                });
                 html += '</div>';
               });
-              html += '</div>';
             });
             agendaEl.innerHTML = html;
           })

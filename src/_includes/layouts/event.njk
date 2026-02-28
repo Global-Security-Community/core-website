@@ -2,7 +2,7 @@
 layout: base.njk
 ---
 
-<div class="container">
+<div class="container" data-event-slug="{{ slug }}"{% if sessionizeApiId %} data-sessionize-id="{{ sessionizeApiId }}"{% endif %}>
   <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:1rem;">
     <a href="/events/" style="font-size:0.9rem;">&larr; All Events</a>
     <span style="color:#ccc;">|</span>
