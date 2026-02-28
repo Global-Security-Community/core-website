@@ -214,7 +214,7 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(32, 178, 170, 0.1);
 }
 
-button {
+button:not(.nav-toggle) {
   background-color: var(--color-primary-teal);
   color: white;
   padding: 0.75rem 1.5rem;
@@ -225,7 +225,7 @@ button {
   transition: background-color 0.3s ease;
 }
 
-button:hover {
+button:not(.nav-toggle):hover {
   background-color: var(--color-primary-navy);
 }
 
@@ -241,10 +241,16 @@ button:hover {
 /* Hamburger toggle button */
 .nav-toggle {
   display: none;
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
   padding: 0.5rem;
+  border-radius: 0;
+}
+
+.nav-toggle:hover,
+.nav-toggle:focus {
+  background: transparent;
 }
 
 .hamburger,
