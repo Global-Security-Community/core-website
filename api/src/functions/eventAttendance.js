@@ -1,5 +1,5 @@
 const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
-const { getRegistrationsByEvent, countRegistrations, getEvent, listEvents, updateEvent } = require('../helpers/tableStorage');
+const { getRegistrationsByEvent, countRegistrations, getEvent, listEvents, updateEvent, getApprovedApplicationByEmail } = require('../helpers/tableStorage');
 
 /**
  * GET /api/eventAttendance?eventId={eventId}&chapterSlug={chapterSlug}
@@ -62,8 +62,24 @@ module.exports = async function (request, context) {
           registrationCount: count
         });
       }
+
+      // Look up chapter city from admin's application
+      var chapterCity = '';
+      try {
+        var emailClaims = ['preferred_username', 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress', 'email', 'emails'];
+        var adminEmail = '';
+        for (var ct of emailClaims) {
+          var claim = (user.claims || []).find(function(c) { return c.typ === ct; });
+          if (claim && claim.val && claim.val.includes('@')) { adminEmail = claim.val; break; }
+        }
+        if (adminEmail) {
+          var app = await getApprovedApplicationByEmail(adminEmail);
+          if (app) chapterCity = app.city || '';
+        }
+      } catch (e) { /* non-critical */ }
+
       return { status: 200, headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ events: enriched }) };
+               body: JSON.stringify({ events: enriched, chapterCity: chapterCity }) };
     }
 
     // Attendance detail

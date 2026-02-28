@@ -4,7 +4,7 @@ title: Dashboard
 ---
 
 <div class="container">
-  <h1>Chapter Lead Dashboard</h1>
+  <h1 id="dash-title">Chapter Lead Dashboard</h1>
   <p id="dash-user" aria-live="polite">Loading...</p>
 
   <div class="dash-actions">

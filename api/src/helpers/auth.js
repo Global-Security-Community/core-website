@@ -15,7 +15,8 @@ function getAuthUser(request) {
       userId: principal.userId || '',
       userDetails: principal.userDetails || '',
       userRoles: (principal.userRoles || []).map(r => r.toLowerCase()),
-      identityProvider: principal.identityProvider || ''
+      identityProvider: principal.identityProvider || '',
+      claims: principal.claims || []
     };
   } catch {
     return null;

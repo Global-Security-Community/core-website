@@ -33,6 +33,9 @@
       .then(function(r) { return r.json(); })
       .then(function(data) {
         var el = document.getElementById('events-list');
+        if (data.chapterCity) {
+          document.getElementById('dash-title').textContent = data.chapterCity + ' Chapter Management';
+        }
         if (!data.events || data.events.length === 0) {
           el.innerHTML = '<p>No events yet. Create your first event!</p>';
           return;
