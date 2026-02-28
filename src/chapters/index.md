@@ -8,8 +8,18 @@ title: Chapters
 
   <p>Our chapters are the foundation of the Global Security Community. Find your local chapter or start one in your city.</p>
 
-  <h2>Coming Soon</h2>
-  <p>We're currently building our global chapter network. Our first chapters are launching soon in major cities worldwide. Check back here to find chapters in your region and to learn how you can start a chapter in your community.</p>
+  {% if collections.chapter and collections.chapter.length > 0 %}
+  <div class="cards">
+    {% for chapter in collections.chapter %}
+    <a href="{{ chapter.url }}" class="card" style="text-decoration: none; color: inherit;">
+      <h3 style="margin-top: 0;">📍 {{ chapter.data.city }}, {{ chapter.data.country }}</h3>
+      <p>{{ chapter.data.leads.length }} Chapter Lead{% if chapter.data.leads.length > 1 %}s{% endif %}</p>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>We're currently building our global chapter network. Our first chapters are launching soon.</p>
+  {% endif %}
 
   <h2>Interested in Starting a Chapter?</h2>
   <p>If you're passionate about building a security community in your city, we'd love to hear from you. We provide resources, guidance, and support to help your chapter thrive.</p>

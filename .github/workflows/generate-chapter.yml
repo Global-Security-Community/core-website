@@ -36,33 +36,32 @@ jobs:
           LEAD_EMAIL="${{ github.event.client_payload.lead_email }}"
           LEAD_HASH=$(echo -n "${LEAD_EMAIL}" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | md5sum | cut -d' ' -f1)
 
-          LEADS="  - name: \"${LEAD_NAME}\"
-            bio: \"${LEAD_BIO}\"
-            email_hash: \"${LEAD_HASH}\""
+          # Sanitise bio text: escape quotes, remove problematic characters
+          LEAD_BIO_SAFE=$(echo "${LEAD_BIO}" | sed 's/"/\\"/g' | tr -d '\n')
 
-          if [ -n "${SECOND_LEAD_NAME}" ]; then
-            SECOND_HASH=$(echo -n "${SECOND_LEAD_EMAIL}" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | md5sum | cut -d' ' -f1)
-            LEADS="${LEADS}
-            - name: \"${SECOND_LEAD_NAME}\"
-            bio: \"${SECOND_LEAD_BIO}\"
-            email_hash: \"${SECOND_HASH}\""
-          fi
-
-          cat > "src/chapters/${SLUG}/index.md" << CHAPTEREOF
-          ---
-          layout: chapter.njk
-          title: "Global Security ${CITY}"
-          city: "${CITY}"
-          country: "${COUNTRY}"
-          discord_channel_id: "${DISCORD_CHANNEL_ID}"
-          discord_guild_id: "${DISCORD_GUILD_ID}"
-          leads:
-          ${LEADS}
-          ---
-          CHAPTEREOF
-
-          # Remove leading whitespace from heredoc
-          sed -i 's/^          //' "src/chapters/${SLUG}/index.md"
+          # Build chapter page with proper YAML indentation
+          {
+            echo "---"
+            echo "layout: chapter.njk"
+            echo "title: \"Global Security ${CITY}\""
+            echo "city: \"${CITY}\""
+            echo "country: \"${COUNTRY}\""
+            echo "tags: chapter"
+            echo "discord_channel_id: \"${DISCORD_CHANNEL_ID}\""
+            echo "discord_guild_id: \"${DISCORD_GUILD_ID}\""
+            echo "leads:"
+            echo "  - name: \"${LEAD_NAME}\""
+            echo "    bio: \"${LEAD_BIO_SAFE}\""
+            echo "    email_hash: \"${LEAD_HASH}\""
+            if [ -n "${SECOND_LEAD_NAME}" ]; then
+              SECOND_BIO_SAFE=$(echo "${SECOND_LEAD_BIO}" | sed 's/"/\\"/g' | tr -d '\n')
+              SECOND_HASH=$(echo -n "${SECOND_LEAD_EMAIL}" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | md5sum | cut -d' ' -f1)
+              echo "  - name: \"${SECOND_LEAD_NAME}\""
+              echo "    bio: \"${SECOND_BIO_SAFE}\""
+              echo "    email_hash: \"${SECOND_HASH}\""
+            fi
+            echo "---"
+          } > "src/chapters/${SLUG}/index.md"
 
           echo "Generated chapter page at src/chapters/${SLUG}/index.md"
 
