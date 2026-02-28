@@ -104,6 +104,7 @@
     "Permissions-Policy": "camera=(self), microphone=()",
     "Cross-Origin-Opener-Policy": "same-origin",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-    "Content-Security-Policy": "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.gravatar.com https://gravatar.com https://*.wp.com; connect-src 'self' https://sessionize.com; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://globalsecuritycommunity.ciamlogin.com"
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.gravatar.com https://gravatar.com https://*.wp.com https://sessionize.com; connect-src 'self' https://sessionize.com; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://globalsecuritycommunity.ciamlogin.com"
   }
 }
