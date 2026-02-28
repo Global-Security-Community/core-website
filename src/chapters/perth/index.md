@@ -13,4 +13,6 @@ leads:
     linkedin: "https://linkedin.com/in/georgecoldham"
   - name: "Anthony Porter"
     email_hash: "0372ec0437fd2099f34b68da28660323"
+    github: "https://github.com/AntoPorter"
+    linkedin: "https://www.linkedin.com/in/anthonyantoporter/"
 ---
