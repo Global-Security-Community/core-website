@@ -9,7 +9,7 @@
       }
       var html = '';
       data.tickets.forEach(function(t) {
-        html += '<div class="ticket">' +
+        html += '<div class="ticket" id="ticket-' + esc(t.registrationId) + '">' +
           '<div class="ticket-header">' +
             '<div>' +
               '<div class="ticket-event-name">' + esc(t.eventTitle || 'Event') + '</div>' +
@@ -32,10 +32,48 @@
               ? '<span class="ticket-status ticket-status--checked">\u2705 Checked In</span>'
               : '<span class="ticket-status ticket-status--pending">Awaiting Check-in</span>') +
             (t.eventSlug ? '<a href="/events/' + esc(t.eventSlug) + '/" class="ticket-event-link">View Event</a>' : '') +
+            (!t.checkedIn ? '<button class="ticket-cancel-btn" data-reg-id="' + esc(t.registrationId) + '" data-event="' + esc(t.eventTitle) + '">Cancel Registration</button>' : '') +
           '</div>' +
         '</div>';
       });
       el.innerHTML = html;
+
+      // Attach cancel handlers
+      el.querySelectorAll('.ticket-cancel-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var regId = this.getAttribute('data-reg-id');
+          var eventName = this.getAttribute('data-event');
+          if (!confirm('Are you sure you want to cancel your registration for ' + eventName + '? This cannot be undone.')) return;
+          var cancelBtn = this;
+          cancelBtn.disabled = true;
+          cancelBtn.textContent = 'Cancelling...';
+          fetch('/api/cancelRegistration', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ registrationId: regId })
+          })
+          .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+          .then(function(res) {
+            if (res.ok) {
+              var ticketEl = document.getElementById('ticket-' + regId);
+              if (ticketEl) {
+                ticketEl.style.opacity = '0.5';
+                ticketEl.innerHTML = '<div style="padding:2rem;text-align:center;"><p>\u2705 Registration cancelled.</p></div>';
+                setTimeout(function() { ticketEl.remove(); }, 2000);
+              }
+            } else {
+              alert(res.data.error || 'Failed to cancel registration.');
+              cancelBtn.disabled = false;
+              cancelBtn.textContent = 'Cancel Registration';
+            }
+          })
+          .catch(function() {
+            alert('Network error. Please try again.');
+            cancelBtn.disabled = false;
+            cancelBtn.textContent = 'Cancel Registration';
+          });
+        });
+      });
     })
     .catch(function() {
       document.getElementById('tickets-list').innerHTML = '<p>Error loading tickets. Please try again.</p>';

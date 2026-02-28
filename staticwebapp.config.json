@@ -63,6 +63,10 @@
       "allowedRoles": ["authenticated"]
     },
     {
+      "route": "/api/cancelRegistration",
+      "allowedRoles": ["authenticated"]
+    },
+    {
       "route": "/api/myTickets",
       "allowedRoles": ["authenticated"]
     },

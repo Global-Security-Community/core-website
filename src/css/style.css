@@ -1101,6 +1101,25 @@ thead tr:hover {
   text-decoration: underline;
 }
 
+.ticket-cancel-btn {
+  background: none;
+  border: 1px solid #dc3545;
+  color: #dc3545;
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.2s, color 0.2s;
+}
+.ticket-cancel-btn:hover {
+  background: #dc3545;
+  color: #fff;
+}
+.ticket-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Pipeline progress steps */
 .pipeline-progress {
   max-width: 600px;

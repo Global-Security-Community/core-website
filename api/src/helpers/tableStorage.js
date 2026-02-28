@@ -195,6 +195,21 @@ async function updateRegistration(eventId, registrationId, updates) {
   return entity;
 }
 
+async function deleteRegistration(eventId, registrationId) {
+  const client = getTableClient('EventRegistrations');
+  await client.deleteEntity(eventId, registrationId);
+}
+
+async function deleteDemographics(eventId, registrationId) {
+  const client = getTableClient('EventDemographics');
+  try {
+    await client.deleteEntity(eventId, registrationId);
+  } catch (err) {
+    // Demographics may not exist — ignore 404
+    if (err.statusCode !== 404) throw err;
+  }
+}
+
 // ─── Demographics ───
 
 async function storeDemographics(demographics) {
@@ -311,6 +326,7 @@ module.exports = {
   storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent,
   storeRegistration, getRegistrationByTicketCode, getRegistrationsByUser,
   getRegistrationsByEvent, countRegistrations, updateRegistration,
+  deleteRegistration, deleteDemographics,
   storeDemographics,
   storeBadge, getBadge, getBadgesByEvent,
   storeVolunteer, getVolunteersByEvent, removeVolunteer, isVolunteerForAnyEvent,
