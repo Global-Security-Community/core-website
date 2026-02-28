@@ -8,8 +8,8 @@ title: Dashboard
   <p id="dash-user">Loading...</p>
 
   <div style="display:flex; gap:1rem; margin-bottom:2rem; flex-wrap:wrap;">
-    <button onclick="showSection('events')" id="btn-events" style="background-color:var(--color-primary-teal);">My Events</button>
-    <button onclick="showSection('create')" id="btn-create" style="background-color:var(--color-primary-navy);">Create Event</button>
+    <button id="btn-events" style="background-color:var(--color-primary-teal);">My Events</button>
+    <button id="btn-create" style="background-color:var(--color-primary-navy);">Create Event</button>
   </div>
 
   <!-- Events List -->
@@ -62,7 +62,7 @@ title: Dashboard
   <!-- Event Detail (attendance) -->
   <div id="section-detail" style="display:none;">
     <div style="margin-bottom:1rem;">
-      <button onclick="showSection('events')" style="background:none; color:var(--color-primary-teal); border:1px solid var(--color-primary-teal);">&larr; Back to Events</button>
+      <button id="btn-back-events" style="background:none; color:var(--color-primary-teal); border:1px solid var(--color-primary-teal);">&larr; Back to Events</button>
     </div>
     <h2 id="detail-title">Event Details</h2>
     <div id="detail-stats" style="display:flex; gap:1rem; margin-bottom:1rem;"></div>

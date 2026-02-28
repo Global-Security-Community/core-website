@@ -1,5 +1,19 @@
 (function() {
   var currentSection = 'events';
+  var currentEventId = '';
+  var currentChapterSlug = '';
+
+  function showSection(s) {
+    currentSection = s;
+    ['events','create','detail'].forEach(function(id) {
+      document.getElementById('section-' + id).style.display = id === s ? 'block' : 'none';
+    });
+  }
+
+  // Wire up navigation buttons
+  document.getElementById('btn-events').addEventListener('click', function() { showSection('events'); });
+  document.getElementById('btn-create').addEventListener('click', function() { showSection('create'); });
+  document.getElementById('btn-back-events').addEventListener('click', function() { showSection('events'); });
 
   // Check auth
   fetch('/.auth/me')
@@ -10,13 +24,6 @@
         loadEvents();
       }
     });
-
-  window.showSection = function(s) {
-    currentSection = s;
-    ['events','create','detail'].forEach(function(id) {
-      document.getElementById('section-' + id).style.display = id === s ? 'block' : 'none';
-    });
-  };
 
   function loadEvents() {
     fetch('/api/eventAttendance?action=list')
@@ -29,7 +36,7 @@
         }
         var html = '<div class="cards">';
         data.events.forEach(function(ev) {
-          html += '<div class="card" style="cursor:pointer;" onclick="viewEvent(\'' + esc(ev.id) + '\',\'' + esc(ev.chapterSlug) + '\')">';
+          html += '<div class="card event-card" style="cursor:pointer;" data-event-id="' + esc(ev.id) + '" data-chapter-slug="' + esc(ev.chapterSlug) + '">';
           html += '<h3 style="margin-top:0;">' + esc(ev.title) + '</h3>';
           html += '<p>📅 ' + esc(ev.date) + ' &nbsp; 📍 ' + esc(ev.location) + '</p>';
           html += '<p>🎟️ ' + ev.registrationCount + (ev.registrationCap > 0 ? ' / ' + ev.registrationCap : '') + ' registered</p>';
@@ -38,13 +45,22 @@
         });
         html += '</div>';
         el.innerHTML = html;
+
+        // Attach click handlers to event cards
+        el.querySelectorAll('.event-card').forEach(function(card) {
+          card.addEventListener('click', function() {
+            viewEvent(card.dataset.eventId, card.dataset.chapterSlug);
+          });
+        });
       })
       .catch(function() {
         document.getElementById('events-list').innerHTML = '<p>Failed to load events.</p>';
       });
   }
 
-  window.viewEvent = function(eventId, chapterSlug) {
+  function viewEvent(eventId, chapterSlug) {
+    currentEventId = eventId;
+    currentChapterSlug = chapterSlug;
     showSection('detail');
     document.getElementById('detail-title').textContent = 'Loading...';
     document.getElementById('detail-attendees').innerHTML = '<p>Loading...</p>';
@@ -57,11 +73,16 @@
           '<div class="card" style="text-align:center;flex:1;"><p style="font-size:2rem;margin:0;">' + data.total + '</p><p style="margin:0;">Registered</p></div>' +
           '<div class="card" style="text-align:center;flex:1;"><p style="font-size:2rem;margin:0;">' + data.checkedIn + '</p><p style="margin:0;">Checked In</p></div>';
 
-        var actions = '<button onclick="exportCSV(\'' + esc(eventId) + '\')" style="margin-right:0.5rem;">Export CSV</button>';
-        actions += '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" style="display:inline-block;padding:0.75rem 1.5rem;background:var(--color-primary-teal);color:white;border-radius:4px;text-decoration:none;font-weight:600;margin-right:0.5rem;">Open Scanner</a>';
-        actions += '<button onclick="closeReg(\'' + esc(eventId) + '\',\'' + esc(chapterSlug) + '\')" style="background:var(--color-accent-orange);margin-right:0.5rem;">Close Registration</button>';
-        actions += '<button onclick="completeEvent(\'' + esc(eventId) + '\',\'' + esc(chapterSlug) + '\')" style="background:#e74c3c;">Mark Completed & Issue Badges</button>';
-        document.getElementById('detail-actions').innerHTML = actions;
+        var actionsEl = document.getElementById('detail-actions');
+        actionsEl.innerHTML =
+          '<button id="btn-export" style="margin-right:0.5rem;">Export CSV</button>' +
+          '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" style="display:inline-block;padding:0.75rem 1.5rem;background:var(--color-primary-teal);color:white;border-radius:4px;text-decoration:none;font-weight:600;margin-right:0.5rem;">Open Scanner</a>' +
+          '<button id="btn-close-reg" style="background:var(--color-accent-orange);margin-right:0.5rem;">Close Registration</button>' +
+          '<button id="btn-complete" style="background:#e74c3c;">Mark Completed & Issue Badges</button>';
+
+        document.getElementById('btn-export').addEventListener('click', function() { exportCSV(eventId); });
+        document.getElementById('btn-close-reg').addEventListener('click', function() { closeReg(eventId, chapterSlug); });
+        document.getElementById('btn-complete').addEventListener('click', function() { completeEvent(eventId, chapterSlug); });
 
         // Load volunteers
         loadVolunteers(eventId);
@@ -85,21 +106,21 @@
         html += '</tbody></table>';
         document.getElementById('detail-attendees').innerHTML = html;
       });
-  };
+  }
 
-  window.exportCSV = function(eventId) {
+  function exportCSV(eventId) {
     window.open('/api/eventAttendance?eventId=' + encodeURIComponent(eventId) + '&format=csv', '_blank');
   };
 
-  window.closeReg = function(eventId, chapterSlug) {
+  function closeReg(eventId, chapterSlug) {
     if (!confirm('Close registration for this event?')) return;
     fetch('/api/eventAttendance', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug, status: 'closed' })
     }).then(function() { alert('Registration closed.'); loadEvents(); });
-  };
+  }
 
-  window.completeEvent = function(eventId, chapterSlug) {
+  function completeEvent(eventId, chapterSlug) {
     if (!confirm('Mark event as completed and issue attendee badges?')) return;
     fetch('/api/eventAttendance', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -111,7 +132,7 @@
       });
     }).then(function(r) { return r.json(); })
     .then(function(d) { alert('Event completed. ' + (d.issued || 0) + ' badges issued.'); loadEvents(); });
-  };
+  }
 
   // Create event handler
   document.getElementById('create-btn').addEventListener('click', function() {
@@ -177,11 +198,18 @@
           html += '<tr style="border-bottom:1px solid var(--color-border);">';
           html += '<td style="padding:0.5rem;">' + esc(v.name) + '</td>';
           html += '<td style="padding:0.5rem;">' + esc(v.email) + '</td>';
-          html += '<td style="padding:0.5rem;"><button onclick="removeVol(\'' + esc(eventId) + '\',\'' + esc(v.id) + '\')" style="background:#e74c3c;padding:0.25rem 0.75rem;font-size:0.8rem;">Remove</button></td>';
+          html += '<td style="padding:0.5rem;"><button class="vol-remove-btn" data-vol-id="' + esc(v.id) + '" style="background:#e74c3c;padding:0.25rem 0.75rem;font-size:0.8rem;">Remove</button></td>';
           html += '</tr>';
         });
         html += '</tbody></table>';
         el.innerHTML = html;
+
+        // Attach remove handlers
+        el.querySelectorAll('.vol-remove-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            removeVol(eventId, btn.dataset.volId);
+          });
+        });
       })
       .catch(function() { el.innerHTML = '<p>Failed to load volunteers.</p>'; });
   }
@@ -208,14 +236,14 @@
     .catch(function() { alert('Network error.'); });
   }
 
-  window.removeVol = function(eventId, volunteerId) {
+  function removeVol(eventId, volunteerId) {
     if (!confirm('Remove this volunteer?')) return;
     fetch('/api/eventVolunteers', {
       method: 'DELETE', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ eventId: eventId, volunteerId: volunteerId })
     })
     .then(function() { loadVolunteers(eventId); });
-  };
+  }
 
   function esc(str) {
     if (!str) return '';
