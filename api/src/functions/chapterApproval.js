@@ -102,12 +102,14 @@ module.exports = async function (request, context) {
             chapter_country: application.country,
             chapter_slug: citySlug,
             lead_name: application.fullName,
-            lead_bio: application.aboutYou,
             lead_email: application.email,
+            lead_linkedin: application.linkedIn || '',
+            lead_github: application.github || '',
             second_lead: JSON.stringify({
               name: application.secondLeadName || '',
-              bio: application.secondLeadAbout || '',
-              email: application.secondLeadEmail || ''
+              email: application.secondLeadEmail || '',
+              linkedin: application.secondLeadLinkedIn || '',
+              github: application.secondLeadGitHub || ''
             }),
             discord_channel_id: discordChannel ? discordChannel.channelId : ''
           }

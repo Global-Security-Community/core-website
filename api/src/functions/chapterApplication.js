@@ -31,8 +31,8 @@ module.exports = async function (request, context) {
       };
     }
 
-    const { fullName, email, city, country, linkedIn, aboutYou, whyLead, existingCommunity, website,
-            secondLeadName, secondLeadEmail, secondLeadLinkedIn, secondLeadAbout } = body;
+    const { fullName, email, city, country, linkedIn, github, whyLead, existingCommunity, website,
+            secondLeadName, secondLeadEmail, secondLeadLinkedIn, secondLeadGitHub } = body;
 
     // Honeypot check — 'website' field should be empty (hidden from real users)
     if (website) {
@@ -45,7 +45,7 @@ module.exports = async function (request, context) {
     }
 
     // Validate required fields
-    if (!fullName || !email || !city || !country || !aboutYou || !whyLead) {
+    if (!fullName || !email || !city || !country || !whyLead) {
       return {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -54,7 +54,7 @@ module.exports = async function (request, context) {
     }
 
     // Validate field lengths
-    if (fullName.length > 100 || city.length > 100 || country.length > 100 || aboutYou.length > 2000 || whyLead.length > 2000) {
+    if (fullName.length > 100 || city.length > 100 || country.length > 100 || whyLead.length > 2000) {
       return {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -81,8 +81,17 @@ module.exports = async function (request, context) {
       };
     }
 
+    // Validate GitHub URL if provided
+    if (github && !github.match(/^https?:\/\/(www\.)?github\.com\//i)) {
+      return {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Please enter a valid GitHub URL.' })
+      };
+    }
+
     // Validate second lead fields if partially filled
-    if (secondLeadName || secondLeadEmail || secondLeadAbout) {
+    if (secondLeadName || secondLeadEmail) {
       if (secondLeadName && secondLeadName.length > 100) {
         return {
           status: 400,
@@ -104,14 +113,20 @@ module.exports = async function (request, context) {
           body: JSON.stringify({ error: 'Please enter a valid LinkedIn URL for the second lead.' })
         };
       }
+      if (secondLeadGitHub && !secondLeadGitHub.match(/^https?:\/\/(www\.)?github\.com\//i)) {
+        return {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ error: 'Please enter a valid GitHub URL for the second lead.' })
+        };
+      }
     }
 
     const applicationId = randomUUID();
     const sanitised = sanitiseFields(
-      { fullName, email, city, country, linkedIn, aboutYou, whyLead, existingCommunity,
-        secondLeadName, secondLeadEmail, secondLeadLinkedIn, secondLeadAbout },
-      ['fullName', 'city', 'country', 'aboutYou', 'whyLead', 'existingCommunity',
-       'secondLeadName', 'secondLeadAbout']
+      { fullName, email, city, country, linkedIn, github, whyLead, existingCommunity,
+        secondLeadName, secondLeadEmail, secondLeadLinkedIn, secondLeadGitHub },
+      ['fullName', 'city', 'country', 'whyLead', 'existingCommunity', 'secondLeadName']
     );
     const application = {
       id: applicationId,
@@ -120,13 +135,13 @@ module.exports = async function (request, context) {
       city: sanitised.city.trim(),
       country: sanitised.country.trim(),
       linkedIn: linkedIn ? linkedIn.trim() : '',
-      aboutYou: sanitised.aboutYou.trim(),
+      github: github ? github.trim() : '',
       whyLead: sanitised.whyLead.trim(),
       existingCommunity: sanitised.existingCommunity ? sanitised.existingCommunity.trim() : '',
       secondLeadName: sanitised.secondLeadName ? sanitised.secondLeadName.trim() : '',
       secondLeadEmail: secondLeadEmail ? secondLeadEmail.trim() : '',
       secondLeadLinkedIn: secondLeadLinkedIn ? secondLeadLinkedIn.trim() : '',
-      secondLeadAbout: sanitised.secondLeadAbout ? sanitised.secondLeadAbout.trim() : ''
+      secondLeadGitHub: secondLeadGitHub ? secondLeadGitHub.trim() : ''
     };
 
     // Store in Azure Table Storage
@@ -151,7 +166,6 @@ module.exports = async function (request, context) {
               { name: 'City', value: application.city, inline: true },
               { name: 'Country', value: application.country, inline: true },
               { name: 'Applicant', value: application.fullName, inline: true },
-              { name: 'About', value: application.aboutYou.substring(0, 500), inline: false },
               { name: 'Why Lead?', value: application.whyLead.substring(0, 500), inline: false },
               ...(application.existingCommunity ? [{ name: 'Existing Community', value: application.existingCommunity.substring(0, 300), inline: false }] : []),
               ...(application.secondLeadName ? [{ name: 'Second Lead', value: application.secondLeadName, inline: true }] : []),

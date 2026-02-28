@@ -20,15 +20,17 @@ jobs:
           COUNTRY="${{ github.event.client_payload.chapter_country }}"
           SLUG="${{ github.event.client_payload.chapter_slug }}"
           LEAD_NAME="${{ github.event.client_payload.lead_name }}"
-          LEAD_BIO="${{ github.event.client_payload.lead_bio }}"
+          LEAD_LINKEDIN="${{ github.event.client_payload.lead_linkedin }}"
+          LEAD_GITHUB="${{ github.event.client_payload.lead_github }}"
           DISCORD_CHANNEL_ID="${{ github.event.client_payload.discord_channel_id }}"
           DISCORD_GUILD_ID="${{ vars.DISCORD_GUILD_ID }}"
 
           # Parse second lead from JSON string
           SECOND_LEAD_JSON='${{ github.event.client_payload.second_lead }}'
           SECOND_LEAD_NAME=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('name',''))" 2>/dev/null || echo "")
-          SECOND_LEAD_BIO=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('bio',''))" 2>/dev/null || echo "")
           SECOND_LEAD_EMAIL=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('email',''))" 2>/dev/null || echo "")
+          SECOND_LEAD_LINKEDIN=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('linkedin',''))" 2>/dev/null || echo "")
+          SECOND_LEAD_GITHUB=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('github',''))" 2>/dev/null || echo "")
 
           mkdir -p "src/chapters/${SLUG}"
 
@@ -49,10 +51,22 @@ jobs:
             echo "leads:"
             echo "  - name: \"${LEAD_NAME}\""
             echo "    email_hash: \"${LEAD_HASH}\""
+            if [ -n "${LEAD_GITHUB}" ]; then
+              echo "    github: \"${LEAD_GITHUB}\""
+            fi
+            if [ -n "${LEAD_LINKEDIN}" ]; then
+              echo "    linkedin: \"${LEAD_LINKEDIN}\""
+            fi
             if [ -n "${SECOND_LEAD_NAME}" ]; then
               SECOND_HASH=$(echo -n "${SECOND_LEAD_EMAIL}" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | md5sum | cut -d' ' -f1)
               echo "  - name: \"${SECOND_LEAD_NAME}\""
               echo "    email_hash: \"${SECOND_HASH}\""
+              if [ -n "${SECOND_LEAD_GITHUB}" ]; then
+                echo "    github: \"${SECOND_LEAD_GITHUB}\""
+              fi
+              if [ -n "${SECOND_LEAD_LINKEDIN}" ]; then
+                echo "    linkedin: \"${SECOND_LEAD_LINKEDIN}\""
+              fi
             fi
             echo "---"
           } > "src/chapters/${SLUG}/index.md"
