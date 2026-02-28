@@ -117,11 +117,11 @@ module.exports = async function (request, context) {
             event_slug: slug,
             event_date: date,
             event_end_date: endDate || '',
-            event_location: safe.location,
+            event_location: location,
             event_description: safe.description,
             event_sessionize_id: sessionizeApiId || '',
             event_registration_cap: (parseInt(registrationCap) || 0).toString(),
-            chapter_slug: chapterSlug
+            chapter_slug: chapterSlug.toLowerCase().trim()
           }
         });
         context.log(`GitHub dispatch sent for event ${slug}`);
