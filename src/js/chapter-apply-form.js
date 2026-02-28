@@ -1,3 +1,17 @@
+// Live character counters
+document.querySelectorAll('.char-count').forEach(function(counter) {
+  var field = document.getElementById(counter.getAttribute('data-for'));
+  if (!field) return;
+  var max = field.maxLength;
+  field.addEventListener('input', function() {
+    var len = field.value.length;
+    counter.textContent = len + ' / ' + max;
+    counter.classList.remove('near-limit', 'at-limit');
+    if (len >= max) counter.classList.add('at-limit');
+    else if (len >= max * 0.85) counter.classList.add('near-limit');
+  });
+});
+
 document.getElementById('chapter-apply-form').addEventListener('submit', async function(e) {
   e.preventDefault();
 
@@ -39,6 +53,11 @@ document.getElementById('chapter-apply-form').addEventListener('submit', async f
       formMessage.style.borderLeft = '4px solid #28a745';
       formMessage.textContent = data.message || 'Application submitted successfully!';
       document.getElementById('chapter-apply-form').reset();
+      document.querySelectorAll('.char-count').forEach(function(c) {
+        var f = document.getElementById(c.getAttribute('data-for'));
+        c.textContent = '0 / ' + f.maxLength;
+        c.classList.remove('near-limit', 'at-limit');
+      });
     } else {
       formMessage.style.backgroundColor = '#f8d7da';
       formMessage.style.color = '#721c24';

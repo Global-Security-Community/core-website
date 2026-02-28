@@ -29,8 +29,9 @@ title: Apply to Lead a Chapter
       </div>
 
       <div class="form-group">
-        <label for="aboutYou">About You *</label>
-        <textarea id="aboutYou" name="aboutYou" rows="4" required maxlength="2000" placeholder="Tell us about yourself, your background in security, and your experience in community building."></textarea>
+        <label for="aboutYou">About You * <span class="char-hint">(max 500 characters)</span></label>
+        <textarea id="aboutYou" name="aboutYou" rows="4" required maxlength="500" placeholder="Tell us about yourself, your background in security, and your experience in community building."></textarea>
+        <span class="char-count" data-for="aboutYou">0 / 500</span>
       </div>
 
       <h2>Second Chapter Lead <span style="font-weight: normal; font-size: 0.8em; color: #666;">(Optional)</span></h2>
@@ -51,8 +52,9 @@ title: Apply to Lead a Chapter
       </div>
 
       <div class="form-group">
-        <label for="secondLeadAbout">About Them</label>
-        <textarea id="secondLeadAbout" name="secondLeadAbout" rows="4" maxlength="2000" placeholder="Tell us about the second lead, their background in security, and their experience."></textarea>
+        <label for="secondLeadAbout">About Them <span class="char-hint">(max 500 characters)</span></label>
+        <textarea id="secondLeadAbout" name="secondLeadAbout" rows="4" maxlength="500" placeholder="Tell us about the second lead, their background in security, and their experience."></textarea>
+        <span class="char-count" data-for="secondLeadAbout">0 / 500</span>
       </div>
 
       <h2>Chapter Details</h2>
@@ -140,13 +142,15 @@ title: Apply to Lead a Chapter
       </div>
 
       <div class="form-group">
-        <label for="whyLead">Why Do You Want to Lead a Chapter? *</label>
-        <textarea id="whyLead" name="whyLead" rows="4" required maxlength="2000" placeholder="What motivates you to start a security community in your city?"></textarea>
+        <label for="whyLead">Why Do You Want to Lead a Chapter? * <span class="char-hint">(max 500 characters)</span></label>
+        <textarea id="whyLead" name="whyLead" rows="4" required maxlength="500" placeholder="What motivates you to start a security community in your city?"></textarea>
+        <span class="char-count" data-for="whyLead">0 / 500</span>
       </div>
 
       <div class="form-group">
-        <label for="existingCommunity">Do You Have an Existing Community?</label>
-        <textarea id="existingCommunity" name="existingCommunity" rows="3" maxlength="1000" placeholder="If you already run a meetup group, Discord server, or similar community, tell us about it."></textarea>
+        <label for="existingCommunity">Do You Have an Existing Community? <span class="char-hint">(max 300 characters)</span></label>
+        <textarea id="existingCommunity" name="existingCommunity" rows="3" maxlength="300" placeholder="If you already run a meetup group, Discord server, or similar community, tell us about it."></textarea>
+        <span class="char-count" data-for="existingCommunity">0 / 300</span>
       </div>
 
       <!-- Honeypot field — hidden from real users, bots will fill it -->

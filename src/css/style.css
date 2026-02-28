@@ -214,6 +214,29 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(32, 178, 170, 0.1);
 }
 
+.char-hint {
+  font-weight: 400;
+  font-size: 0.85em;
+  color: #888;
+}
+
+.char-count {
+  display: block;
+  text-align: right;
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 0.25rem;
+}
+
+.char-count.near-limit {
+  color: #e67e22;
+}
+
+.char-count.at-limit {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
 button:not(.nav-toggle) {
   background-color: var(--color-primary-teal);
   color: white;
