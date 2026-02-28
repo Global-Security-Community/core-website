@@ -190,6 +190,7 @@ Reverse the three steps above:
 
 - **CSP** defined in `staticwebapp.config.json` → `globalHeaders` → `Content-Security-Policy`
 - When adding external scripts/images/connections, update the relevant CSP directive
+- External services may redirect to CDN subdomains (e.g. `sessionize.com` → `cache.sessionize.com`) — check with `curl -sI <url>` and add all domains to CSP
 - Always sanitise user input with helpers from `api/src/helpers/sanitise.js`
 - Rate limiting available via `api/src/helpers/rateLimiter.js`
 - SWA's `responseOverrides` rewrites 401 → CIAM login redirect, 404 → `index.html`
