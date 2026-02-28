@@ -29,6 +29,14 @@ Requires the **admin** role. Only approved chapter leads are automatically assig
 
 - **Event Status** — Update event status (open, closed, completed)
 
+### Volunteers / Committee
+
+- **Add Volunteers** — Assign volunteers or committee members to an event by entering their name and email
+- **Volunteer Access** — Volunteers get access to the QR check-in scanner for the event without full admin privileges
+- **Remove Volunteers** — Remove volunteer access at any time from the event detail view
+
+> **Note:** Volunteers must have a GSC account (signed up via the website). When they log in, the system automatically detects their email and grants them the volunteer role.
+
 ### Attendance
 
 - **Attendance Dashboard** — Real-time view of check-ins for an event:

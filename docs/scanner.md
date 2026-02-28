@@ -8,7 +8,7 @@ The Scanner page provides a QR code scanning tool for checking in attendees at e
 
 ## Access
 
-Requires the **admin** role. Only chapter leads can access the scanner.
+Requires the **admin** or **volunteer** role. Chapter leads and assigned volunteers can access the scanner.
 
 ## Features
 
@@ -17,6 +17,15 @@ Requires the **admin** role. Only chapter leads can access the scanner.
 - **Duplicate detection** — If a ticket has already been scanned, displays a warning instead of checking in again
 - **Live statistics** — Shows real-time count of checked-in vs registered attendees
 - **Scan debounce** — 5-second cooldown after scanning the same code to prevent accidental double-scans
+
+## How Volunteers Access the Scanner
+
+1. A chapter lead adds the volunteer's email to the event via the [Dashboard](/dashboard/) (under "Volunteers / Committee")
+2. The volunteer logs in to the GSC website
+3. They see a **Scanner** link in the navigation bar
+4. They open the scanner, select the event, and begin checking in attendees
+
+> **Note:** Volunteers can only scan tickets — they cannot create events, view attendance reports, or manage other settings.
 
 ## How to Use
 

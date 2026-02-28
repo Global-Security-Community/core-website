@@ -23,7 +23,8 @@ GSC uses Microsoft Entra External ID (CIAM) for user authentication, providing a
 |------|--------|---------------|
 | **Anonymous** | Browse events, chapters, and public pages | No login required |
 | **Authenticated** | Register for events, view tickets, download badges | Create an account |
-| **Admin** | Create events, manage attendance, scan tickets, issue badges | Become an approved chapter lead |
+| **Volunteer** | Check-in scanner access for assigned events | Added by a chapter lead via the Dashboard |
+| **Admin** | Create events, manage attendance, scan tickets, issue badges, manage volunteers | Become an approved chapter lead |
 
 > **Note:** The admin role is automatically assigned when your email matches an approved chapter lead in the system. No manual role assignment is needed.
 
@@ -33,8 +34,8 @@ GSC uses Microsoft Entra External ID (CIAM) for user authentication, providing a
 |------|--------------|
 | /register/ | Authenticated |
 | /my-tickets/ | Authenticated |
+| /scanner/ | Admin or Volunteer |
 | /dashboard/ | Admin |
-| /scanner/ | Admin |
 
 Attempting to access a protected page without the required role will redirect you to the login page.
 
