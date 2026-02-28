@@ -12,7 +12,7 @@
   "dependencies": {
     "@azure/communication-email": "^1.0.0",
     "@azure/data-tables": "^13.3.0",
-    "@azure/functions": "^4.5.0",
+    "@azure/functions": "^4.11.2",
     "@octokit/auth-app": "^7.1.5",
     "@octokit/rest": "^21.1.1",
     "qrcode": "^1.5.4"
