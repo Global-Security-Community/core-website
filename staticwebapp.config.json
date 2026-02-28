@@ -9,7 +9,7 @@
               "clientSecretSettingName": "CIAM_CLIENT_SECRET"
             },
             "openIdConnectConfiguration": {
-              "wellKnownOpenIdConfiguration": "https://gsc-external.ciamlogin.com/{CIAM_TENANT_ID}/v2.0/.well-known/openid-configuration"
+              "wellKnownOpenIdConfiguration": "https://globalsecuritycommunity.ciamlogin.com/c812121a-18f7-492e-a9a9-66fd73d522f7/v2.0/.well-known/openid-configuration"
             }
           },
           "login": {
