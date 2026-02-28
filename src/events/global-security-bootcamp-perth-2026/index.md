@@ -7,7 +7,7 @@ endDate: ""
 location: "Microsoft Perth\n10/100 St Georges Tce\nPerth WA"
 description: >
   This event will have a mix of speaker sessions and hands on workshops!
-sessionizeApiId: "r6hcv0bp"
+sessionizeApiId: "2arq0ql8"
 registrationCap: 234
 chapterSlug: "perth"
 ---
