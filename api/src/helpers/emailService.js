@@ -11,10 +11,18 @@ function getEmailClient() {
 }
 
 /**
- * Sends a ticket confirmation email with QR code.
+ * Sends a ticket confirmation email with QR code as inline attachment.
+ * qrDataUrl is a data:image/png;base64,... string from the qrcode library.
  */
 async function sendTicketEmail(registration, event, qrDataUrl, context) {
   const client = getEmailClient();
+
+  // Extract base64 content from data URI for inline attachment
+  const qrBase64 = qrDataUrl ? qrDataUrl.replace(/^data:image\/png;base64,/, '') : '';
+  const qrHtml = qrBase64
+    ? '<img src="cid:qrcode" alt="Ticket QR Code" style="width: 200px; height: 200px;">'
+    : '<p style="color: #999;">[QR code unavailable — use your ticket code at check-in]</p>';
+
   const message = {
     senderAddress: SENDER_ADDRESS,
     content: {
@@ -33,7 +41,7 @@ async function sendTicketEmail(registration, event, qrDataUrl, context) {
             <p><strong>Ticket Code:</strong> ${escapeHtml(registration.ticketCode)}</p>
             <div style="text-align: center; margin: 24px 0;">
               <p style="color: #666; margin-bottom: 8px;">Present this QR code at check-in:</p>
-              <img src="${qrDataUrl}" alt="Ticket QR Code" style="width: 200px; height: 200px;">
+              ${qrHtml}
             </div>
             <p style="color: #666; font-size: 0.9em;">You can also view your tickets at <a href="https://globalsecurity.community/my-tickets/">My Tickets</a>.</p>
           </div>
@@ -46,6 +54,18 @@ async function sendTicketEmail(registration, event, qrDataUrl, context) {
       to: [{ address: registration.email, displayName: registration.fullName }]
     }
   };
+
+  // Attach QR code as inline image (CID) so email clients render it
+  if (qrBase64) {
+    message.attachments = [
+      {
+        name: 'qrcode.png',
+        contentType: 'image/png',
+        contentInBase64: qrBase64,
+        contentId: 'qrcode'
+      }
+    ];
+  }
 
   try {
     const poller = await client.beginSend(message);
