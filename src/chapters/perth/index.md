@@ -1,6 +1,6 @@
 ---
 layout: chapter.njk
-title: "Global Security Perth"
+title: "Global Security Community Perth"
 city: "Perth"
 country: "Australia"
 tags: chapter

@@ -43,7 +43,7 @@ jobs:
           {
             echo "---"
             echo "layout: chapter.njk"
-            echo "title: \"Global Security ${CITY}\""
+            echo "title: \"Global Security Community ${CITY}\""
             echo "city: \"${CITY}\""
             echo "country: \"${COUNTRY}\""
             echo "tags: chapter"
