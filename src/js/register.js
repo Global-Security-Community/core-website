@@ -68,6 +68,7 @@
       eventSlug: eventSlug,
       fullName: document.getElementById('reg-name').value,
       email: document.getElementById('reg-email').value,
+      company: document.getElementById('reg-company').value,
       employmentStatus: document.getElementById('reg-employment').value,
       industry: document.getElementById('reg-industry').value,
       jobTitle: document.getElementById('reg-jobtitle').value,
@@ -88,12 +89,9 @@
         document.getElementById('reg-success').style.display = 'block';
         var ticketHtml = '<div class="ticket">' +
           '<div class="ticket-header">' +
-            '<img src="/assets/GlobalSecurityCommunityLogo2.png" alt="GSC" class="ticket-logo">' +
-            '<div class="ticket-event-info">' +
-              '<div class="ticket-event-name">' + esc(r.eventTitle) + '</div>' +
-              '<div class="ticket-event-date">\ud83d\udcc5 ' + formatDate(r.eventDate) + '</div>' +
-              '<div class="ticket-event-location">\ud83d\udccd ' + esc(r.eventLocation) + '</div>' +
-            '</div>' +
+            '<div class="ticket-event-name">' + esc(r.eventTitle) + '</div>' +
+            '<div class="ticket-event-date">\ud83d\udcc5 ' + formatDate(r.eventDate) + '</div>' +
+            '<div class="ticket-event-location">\ud83d\udccd ' + esc(r.eventLocation) + '</div>' +
           '</div>' +
           '<div class="ticket-body">' +
             '<div class="ticket-qr">' +
@@ -101,6 +99,7 @@
             '</div>' +
             '<div class="ticket-code">' + esc(r.ticketCode) + '</div>' +
             '<div class="ticket-type">ATTENDEE</div>' +
+            '<div class="ticket-name">' + esc(r.fullName) + (r.company ? ' \u2013 ' + esc(r.company) : '') + '</div>' +
           '</div>' +
         '</div>';
         document.getElementById('success-qr').innerHTML = ticketHtml;

@@ -132,6 +132,7 @@ async function storeRegistration(registration) {
     userId: registration.userId,
     fullName: registration.fullName,
     email: registration.email,
+    company: registration.company || '',
     ticketCode: registration.ticketCode,
     checkedIn: false,
     checkedInAt: '',

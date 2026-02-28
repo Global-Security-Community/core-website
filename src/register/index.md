@@ -54,6 +54,10 @@ title: Register for Event
         <input type="text" id="reg-jobtitle" maxlength="100" placeholder="e.g. Security Analyst">
       </div>
       <div class="form-group">
+        <label for="reg-company">Company / Organisation</label>
+        <input type="text" id="reg-company" maxlength="100" placeholder="e.g. Microsoft">
+      </div>
+      <div class="form-group">
         <label for="reg-company-size">Company Size</label>
         <select id="reg-company-size">
           <option value="">Prefer not to say</option>

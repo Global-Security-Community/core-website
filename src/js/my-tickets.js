@@ -11,13 +11,10 @@
       data.tickets.forEach(function(t) {
         html += '<div class="ticket">' +
           '<div class="ticket-header">' +
-            '<img src="/assets/GlobalSecurityCommunityLogo2.png" alt="GSC" class="ticket-logo">' +
-            '<div class="ticket-event-info">' +
-              '<div class="ticket-event-name">' + esc(t.eventTitle || 'Event') + '</div>' +
-              '<div class="ticket-event-date">\ud83d\udcc5 ' + formatDate(t.eventDate) +
-                (t.eventEndDate ? ' \u2013 ' + formatDate(t.eventEndDate) : '') + '</div>' +
-              '<div class="ticket-event-location">\ud83d\udccd ' + esc(t.eventLocation || '') + '</div>' +
-            '</div>' +
+            '<div class="ticket-event-name">' + esc(t.eventTitle || 'Event') + '</div>' +
+            '<div class="ticket-event-date">\ud83d\udcc5 ' + formatDate(t.eventDate) +
+              (t.eventEndDate ? ' \u2013 ' + formatDate(t.eventEndDate) : '') + '</div>' +
+            '<div class="ticket-event-location">\ud83d\udccd ' + esc(t.eventLocation || '') + '</div>' +
           '</div>' +
           '<div class="ticket-body">' +
             '<div class="ticket-qr">' +
@@ -25,7 +22,7 @@
             '</div>' +
             '<div class="ticket-code">' + esc(t.ticketCode) + '</div>' +
             '<div class="ticket-type">ATTENDEE</div>' +
-            '<div class="ticket-name">' + esc(t.fullName) + '</div>' +
+            '<div class="ticket-name">' + esc(t.fullName) + (t.company ? ' \u2013 ' + esc(t.company) : '') + '</div>' +
           '</div>' +
           '<div class="ticket-footer">' +
             (t.checkedIn

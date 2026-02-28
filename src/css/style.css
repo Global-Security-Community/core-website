@@ -993,28 +993,14 @@ thead tr:hover {
 .ticket-header {
   background: linear-gradient(135deg, var(--color-primary-navy), #1a3a5c);
   color: #fff;
-  padding: 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.ticket-logo {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  flex-shrink: 0;
-}
-
-.ticket-event-info {
-  min-width: 0;
+  padding: 1.5rem 1.25rem;
 }
 
 .ticket-event-name {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   line-height: 1.3;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.35rem;
 }
 
 .ticket-event-date,

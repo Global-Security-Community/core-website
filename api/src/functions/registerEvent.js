@@ -29,14 +29,14 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Invalid JSON' }) };
     }
 
-    const { eventSlug, fullName, email, employmentStatus, industry, jobTitle, companySize, experienceLevel } = body;
+    const { eventSlug, fullName, email, company, employmentStatus, industry, jobTitle, companySize, experienceLevel } = body;
 
     if (!eventSlug || !fullName || !email) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Missing required fields: eventSlug, fullName, email' }) };
     }
 
-    const safe = sanitiseFields({ fullName, jobTitle: jobTitle || '' }, ['fullName', 'jobTitle']);
+    const safe = sanitiseFields({ fullName, jobTitle: jobTitle || '', company: company || '' }, ['fullName', 'jobTitle', 'company']);
 
     // Get the event
     const event = await getEventBySlug(eventSlug);
@@ -76,6 +76,7 @@ module.exports = async function (request, context) {
       userId: user.userId,
       fullName: safe.fullName.trim(),
       email: email.trim(),
+      company: (safe.company || '').trim(),
       ticketCode
     };
 
@@ -116,6 +117,8 @@ module.exports = async function (request, context) {
         registration: {
           id: registrationId,
           ticketCode,
+          fullName: safe.fullName.trim(),
+          company: (safe.company || '').trim(),
           eventTitle: event.title,
           eventDate: event.date,
           eventLocation: event.location,
