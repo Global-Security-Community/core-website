@@ -36,8 +36,26 @@ title: Dashboard
         <input type="date" id="ev-enddate">
       </div>
       <div class="form-group">
-        <label for="ev-location">Location *</label>
-        <input type="text" id="ev-location" maxlength="300" placeholder="Venue name, City">
+        <label for="ev-building">Building / Venue Name</label>
+        <input type="text" id="ev-building" maxlength="200" placeholder="e.g. Microsoft Office">
+      </div>
+      <div class="form-group">
+        <label for="ev-address1">Address Line 1 *</label>
+        <input type="text" id="ev-address1" maxlength="200" placeholder="e.g. 10/100 St Georges Terrace">
+      </div>
+      <div class="form-group">
+        <label for="ev-address2">Address Line 2</label>
+        <input type="text" id="ev-address2" maxlength="200" placeholder="">
+      </div>
+      <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <div>
+          <label for="ev-city">City *</label>
+          <input type="text" id="ev-city" maxlength="100" placeholder="e.g. Perth">
+        </div>
+        <div>
+          <label for="ev-state">State</label>
+          <input type="text" id="ev-state" maxlength="100" placeholder="e.g. WA">
+        </div>
       </div>
       <div class="form-group">
         <label for="ev-description">Description *</label>

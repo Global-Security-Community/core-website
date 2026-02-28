@@ -11,10 +11,13 @@
       data.tickets.forEach(function(t) {
         html += '<div class="ticket">' +
           '<div class="ticket-header">' +
-            '<div class="ticket-event-name">' + esc(t.eventTitle || 'Event') + '</div>' +
-            '<div class="ticket-event-date">\ud83d\udcc5 ' + formatDate(t.eventDate) +
-              (t.eventEndDate ? ' \u2013 ' + formatDate(t.eventEndDate) : '') + '</div>' +
-            '<div class="ticket-event-location">\ud83d\udccd ' + esc(t.eventLocation || '') + '</div>' +
+            '<div>' +
+              '<div class="ticket-event-name">' + esc(t.eventTitle || 'Event') + '</div>' +
+              '<div class="ticket-event-date">\ud83d\udcc5 ' + formatDate(t.eventDate) +
+                (t.eventEndDate ? ' \u2013 ' + formatDate(t.eventEndDate) : '') + '</div>' +
+              '<div class="ticket-event-location">' + formatLocation(t.eventLocation) + '</div>' +
+            '</div>' +
+            '<img src="/assets/GSC-Shield-Transparent.png" alt="" class="ticket-header-logo">' +
           '</div>' +
           '<div class="ticket-body">' +
             '<div class="ticket-qr">' +
@@ -48,5 +51,10 @@
   function formatDate(dateStr) {
     if (!dateStr) return '';
     return new Date(dateStr).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  function formatLocation(loc) {
+    if (!loc) return '';
+    return loc.split('\n').map(function(line) { return esc(line.trim()); }).filter(Boolean).join('<br>');
   }
 })();

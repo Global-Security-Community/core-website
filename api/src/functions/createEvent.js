@@ -20,20 +20,45 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Invalid JSON' }) };
     }
 
-    const { title, date, endDate, location, description, sessionizeApiId, registrationCap, chapterSlug } = body;
+    const { title, date, endDate, description, sessionizeApiId, registrationCap, chapterSlug,
+            locationBuilding, locationAddress1, locationAddress2, locationCity, locationState,
+            location: legacyLocation } = body;
 
-    if (!title || !date || !location || !description || !chapterSlug) {
+    if (!title || !date || !description || !chapterSlug) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ error: 'Missing required fields: title, date, location, description, chapterSlug' }) };
+               body: JSON.stringify({ error: 'Missing required fields: title, date, description, chapterSlug' }) };
+    }
+
+    // Accept structured address OR legacy single location field
+    if (!locationAddress1 && !legacyLocation) {
+      return { status: 400, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Missing required field: address' }) };
     }
 
     // Sanitise user inputs
     const safe = sanitiseFields(
-      { title, location, description },
-      ['title', 'location', 'description']
+      { title, description,
+        locationBuilding: locationBuilding || '',
+        locationAddress1: locationAddress1 || '',
+        locationAddress2: locationAddress2 || '',
+        locationCity: locationCity || '',
+        locationState: locationState || '',
+        legacyLocation: legacyLocation || '' },
+      ['title', 'description', 'locationBuilding', 'locationAddress1', 'locationAddress2', 'locationCity', 'locationState', 'legacyLocation']
     );
 
-    if (safe.title.length > 200 || safe.location.length > 300 || safe.description.length > 5000) {
+    // Compose display location from structured fields or use legacy
+    let location;
+    if (locationAddress1) {
+      const parts = [safe.locationBuilding, safe.locationAddress1, safe.locationAddress2].filter(Boolean);
+      const cityState = [safe.locationCity, safe.locationState].filter(Boolean).join(' ');
+      if (cityState) parts.push(cityState);
+      location = parts.join('\n');
+    } else {
+      location = safe.legacyLocation;
+    }
+
+    if (safe.title.length > 200 || location.length > 500 || safe.description.length > 5000) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Field length exceeds maximum' }) };
     }
@@ -53,7 +78,12 @@ module.exports = async function (request, context) {
       chapterSlug: chapterSlug.toLowerCase().trim(),
       date,
       endDate: endDate || '',
-      location: safe.location,
+      location,
+      locationBuilding: safe.locationBuilding,
+      locationAddress1: safe.locationAddress1,
+      locationAddress2: safe.locationAddress2,
+      locationCity: safe.locationCity,
+      locationState: safe.locationState,
       description: safe.description,
       sessionizeApiId: sessionizeApiId || '',
       registrationCap: parseInt(registrationCap) || 0,

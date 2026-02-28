@@ -22,7 +22,7 @@
             '<h3 class="event-card-title">' + e.title + '</h3>' +
           '</div>' +
           '<div class="event-card-body">' +
-            '<div class="event-card-location">\ud83d\udccd ' + e.location + '</div>' +
+            '<div class="event-card-location">\ud83d\udccd ' + (e.location || '').split('\n').join(', ') + '</div>' +
           '</div>' +
           '<div class="event-card-footer">' +
             '<a href="/events/' + e.slug + '/" class="event-card-btn">View Event \u2192</a>' +

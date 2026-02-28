@@ -994,6 +994,17 @@ thead tr:hover {
   background: linear-gradient(135deg, var(--color-primary-navy), #1a3a5c);
   color: #fff;
   padding: 1.5rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.ticket-header-logo {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  opacity: 0.9;
 }
 
 .ticket-event-name {

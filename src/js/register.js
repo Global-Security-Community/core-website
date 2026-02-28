@@ -89,9 +89,12 @@
         document.getElementById('reg-success').style.display = 'block';
         var ticketHtml = '<div class="ticket">' +
           '<div class="ticket-header">' +
-            '<div class="ticket-event-name">' + esc(r.eventTitle) + '</div>' +
-            '<div class="ticket-event-date">\ud83d\udcc5 ' + formatDate(r.eventDate) + '</div>' +
-            '<div class="ticket-event-location">\ud83d\udccd ' + esc(r.eventLocation) + '</div>' +
+            '<div>' +
+              '<div class="ticket-event-name">' + esc(r.eventTitle) + '</div>' +
+              '<div class="ticket-event-date">\ud83d\udcc5 ' + formatDate(r.eventDate) + '</div>' +
+              '<div class="ticket-event-location">' + formatLocation(r.eventLocation) + '</div>' +
+            '</div>' +
+            '<img src="/assets/GSC-Shield-Transparent.png" alt="" class="ticket-header-logo">' +
           '</div>' +
           '<div class="ticket-body">' +
             '<div class="ticket-qr">' +
@@ -135,5 +138,10 @@
   function formatDate(dateStr) {
     if (!dateStr) return '';
     return new Date(dateStr).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  function formatLocation(loc) {
+    if (!loc) return '';
+    return loc.split('\n').map(function(line) { return esc(line.trim()); }).filter(Boolean).join('<br>');
   }
 })();

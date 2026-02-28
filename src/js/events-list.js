@@ -20,7 +20,7 @@
           '<h3 class="event-card-title">' + e.title + '</h3>' +
         '</div>' +
         '<div class="event-card-body">' +
-          '<div class="event-card-location">\ud83d\udccd ' + e.location + '</div>' +
+          '<div class="event-card-location">\ud83d\udccd ' + (e.location || '').split('\n').join(', ') + '</div>' +
           (e.description ? '<div class="event-card-description">' + e.description + '</div>' : '') +
         '</div>' +
         '<div class="event-card-footer">' +
