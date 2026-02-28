@@ -23,6 +23,9 @@
         document.getElementById('dash-user').textContent = 'Welcome, ' + (d.clientPrincipal.userDetails || 'Admin');
         loadEvents();
       }
+    })
+    .catch(function() {
+      document.getElementById('dash-user').textContent = 'Error loading user info.';
     });
 
   function loadEvents() {
@@ -36,11 +39,11 @@
         }
         var html = '<div class="cards">';
         data.events.forEach(function(ev) {
-          html += '<div class="card event-card" style="cursor:pointer;" data-event-id="' + esc(ev.id) + '" data-chapter-slug="' + esc(ev.chapterSlug) + '">';
-          html += '<h3 style="margin-top:0;">' + esc(ev.title) + '</h3>';
+          html += '<div class="card event-card" data-event-id="' + esc(ev.id) + '" data-chapter-slug="' + esc(ev.chapterSlug) + '">';
+          html += '<h3>' + esc(ev.title) + '</h3>';
           html += '<p>📅 ' + esc(ev.date) + ' &nbsp; 📍 ' + esc(ev.location) + '</p>';
           html += '<p>🎟️ ' + ev.registrationCount + (ev.registrationCap > 0 ? ' / ' + ev.registrationCap : '') + ' registered</p>';
-          html += '<span style="display:inline-block;padding:0.25rem 0.75rem;border-radius:12px;font-size:0.8rem;background:' + statusColour(ev.status) + ';color:white;">' + esc(ev.status) + '</span>';
+          html += '<span class="status-badge status-badge--' + esc(ev.status || 'default') + '">' + esc(ev.status) + '</span>';
           html += '</div>';
         });
         html += '</div>';
@@ -70,15 +73,15 @@
       .then(function(data) {
         document.getElementById('detail-title').textContent = 'Attendance: ' + data.eventId;
         document.getElementById('detail-stats').innerHTML =
-          '<div class="card" style="text-align:center;flex:1;"><p style="font-size:2rem;margin:0;">' + data.total + '</p><p style="margin:0;">Registered</p></div>' +
-          '<div class="card" style="text-align:center;flex:1;"><p style="font-size:2rem;margin:0;">' + data.checkedIn + '</p><p style="margin:0;">Checked In</p></div>';
+          '<div class="card stat-card"><p class="stat-number">' + data.total + '</p><p class="stat-label">Registered</p></div>' +
+          '<div class="card stat-card"><p class="stat-number">' + data.checkedIn + '</p><p class="stat-label">Checked In</p></div>';
 
         var actionsEl = document.getElementById('detail-actions');
         actionsEl.innerHTML =
-          '<button id="btn-export" style="margin-right:0.5rem;">Export CSV</button>' +
-          '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" style="display:inline-block;padding:0.75rem 1.5rem;background:var(--color-primary-teal);color:white;border-radius:4px;text-decoration:none;font-weight:600;margin-right:0.5rem;">Open Scanner</a>' +
-          '<button id="btn-close-reg" style="background:var(--color-accent-orange);margin-right:0.5rem;">Close Registration</button>' +
-          '<button id="btn-complete" style="background:#e74c3c;">Mark Completed & Issue Badges</button>';
+          '<button id="btn-export">Export CSV</button>' +
+          '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" class="btn-link">Open Scanner</a>' +
+          '<button id="btn-close-reg" class="btn-warning">Close Registration</button>' +
+          '<button id="btn-complete" class="btn-danger">Mark Completed & Issue Badges</button>';
 
         document.getElementById('btn-export').addEventListener('click', function() { exportCSV(eventId); });
         document.getElementById('btn-close-reg').addEventListener('click', function() { closeReg(eventId, chapterSlug); });
@@ -88,23 +91,27 @@
         loadVolunteers(eventId);
         // Wire up add volunteer button
         var addBtn = document.getElementById('vol-add-btn');
-        addBtn.onclick = function() { addVolunteer(eventId); };
+        addBtn.addEventListener('click', function() { addVolunteer(eventId); });
 
         if (!data.attendees || data.attendees.length === 0) {
           document.getElementById('detail-attendees').innerHTML = '<p>No registrations yet.</p>';
           return;
         }
-        var html = '<table style="width:100%;border-collapse:collapse;"><thead><tr style="border-bottom:2px solid var(--color-border);"><th style="text-align:left;padding:0.5rem;">Name</th><th style="text-align:left;padding:0.5rem;">Email</th><th style="text-align:left;padding:0.5rem;">Ticket</th><th style="text-align:left;padding:0.5rem;">Checked In</th></tr></thead><tbody>';
+        var html = '<table><thead><tr><th>Name</th><th>Email</th><th>Ticket</th><th>Checked In</th></tr></thead><tbody>';
         data.attendees.forEach(function(a) {
-          html += '<tr style="border-bottom:1px solid var(--color-border);">';
-          html += '<td style="padding:0.5rem;">' + esc(a.name) + '</td>';
-          html += '<td style="padding:0.5rem;">' + esc(a.email) + '</td>';
-          html += '<td style="padding:0.5rem;font-family:monospace;">' + esc(a.ticketCode) + '</td>';
-          html += '<td style="padding:0.5rem;">' + (a.checkedIn ? '✅ ' + esc(a.checkedInAt) : '—') + '</td>';
+          html += '<tr>';
+          html += '<td>' + esc(a.name) + '</td>';
+          html += '<td>' + esc(a.email) + '</td>';
+          html += '<td style="font-family:monospace;">' + esc(a.ticketCode) + '</td>';
+          html += '<td>' + (a.checkedIn ? '✅ ' + esc(a.checkedInAt) : '—') + '</td>';
           html += '</tr>';
         });
         html += '</tbody></table>';
         document.getElementById('detail-attendees').innerHTML = html;
+      })
+      .catch(function() {
+        document.getElementById('detail-title').textContent = 'Error loading event details';
+        document.getElementById('detail-attendees').innerHTML = '<p>Failed to load. Please try again.</p>';
       });
   }
 
@@ -117,7 +124,12 @@
     fetch('/api/eventAttendance', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug, status: 'closed' })
-    }).then(function() { alert('Registration closed.'); loadEvents(); });
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('Failed');
+      alert('Registration closed.'); loadEvents();
+    })
+    .catch(function() { alert('Failed to close registration. Please try again.'); });
   }
 
   function completeEvent(eventId, chapterSlug) {
@@ -131,7 +143,8 @@
         body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug, badgeType: 'Attendee' })
       });
     }).then(function(r) { return r.json(); })
-    .then(function(d) { alert('Event completed. ' + (d.issued || 0) + ' badges issued.'); loadEvents(); });
+    .then(function(d) { alert('Event completed. ' + (d.issued || 0) + ' badges issued.'); loadEvents(); })
+    .catch(function() { alert('Failed to complete event. Please try again.'); });
   }
 
   // Create event handler
@@ -176,13 +189,6 @@
     .finally(function() { btn.disabled = false; btn.textContent = 'Create Event'; });
   });
 
-  function statusColour(s) {
-    if (s === 'published') return 'var(--color-primary-teal)';
-    if (s === 'closed') return 'var(--color-accent-orange)';
-    if (s === 'completed') return '#666';
-    return '#999';
-  }
-
   function loadVolunteers(eventId) {
     var el = document.getElementById('volunteer-list');
     el.innerHTML = '<p>Loading volunteers...</p>';
@@ -190,15 +196,15 @@
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (!data.volunteers || data.volunteers.length === 0) {
-          el.innerHTML = '<p style="color:#666;">No volunteers added yet.</p>';
+          el.innerHTML = '<p class="text-muted">No volunteers added yet.</p>';
           return;
         }
-        var html = '<table style="width:100%;border-collapse:collapse;margin-bottom:1rem;"><thead><tr><th style="text-align:left;padding:0.5rem;">Name</th><th style="text-align:left;padding:0.5rem;">Email</th><th style="padding:0.5rem;"></th></tr></thead><tbody>';
+        var html = '<table><thead><tr><th>Name</th><th>Email</th><th></th></tr></thead><tbody>';
         data.volunteers.forEach(function(v) {
-          html += '<tr style="border-bottom:1px solid var(--color-border);">';
-          html += '<td style="padding:0.5rem;">' + esc(v.name) + '</td>';
-          html += '<td style="padding:0.5rem;">' + esc(v.email) + '</td>';
-          html += '<td style="padding:0.5rem;"><button class="vol-remove-btn" data-vol-id="' + esc(v.id) + '" style="background:#e74c3c;padding:0.25rem 0.75rem;font-size:0.8rem;">Remove</button></td>';
+          html += '<tr>';
+          html += '<td>' + esc(v.name) + '</td>';
+          html += '<td>' + esc(v.email) + '</td>';
+          html += '<td><button class="vol-remove-btn btn-danger" data-vol-id="' + esc(v.id) + '" style="padding:0.25rem 0.75rem;font-size:0.8rem;">Remove</button></td>';
           html += '</tr>';
         });
         html += '</tbody></table>';
@@ -242,7 +248,11 @@
       method: 'DELETE', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ eventId: eventId, volunteerId: volunteerId })
     })
-    .then(function() { loadVolunteers(eventId); });
+    .then(function(r) {
+      if (!r.ok) throw new Error('Failed');
+      loadVolunteers(eventId);
+    })
+    .catch(function() { alert('Failed to remove volunteer. Please try again.'); });
   }
 
   function esc(str) {

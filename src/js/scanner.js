@@ -95,6 +95,10 @@
         totalCheckedIn = data.checkedIn || 0;
         document.getElementById('scan-total').textContent = totalCheckedIn;
         document.getElementById('scan-registered').textContent = totalRegistered;
+      })
+      .catch(function() {
+        document.getElementById('scan-total').textContent = '?';
+        document.getElementById('scan-registered').textContent = '?';
       });
   }
 

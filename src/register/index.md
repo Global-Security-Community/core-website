@@ -7,8 +7,8 @@ title: Register for Event
   <h1>Register for Event</h1>
   <div id="event-info"><p>Loading event details...</p></div>
 
-  <div id="reg-form-wrap" style="display:none; max-width:600px; margin-top:2rem;">
-    <div id="reg-message" style="display:none; margin-bottom:1rem; padding:1rem; border-radius:4px;"></div>
+  <div id="reg-form-wrap" class="reg-form-wrap" style="display:none;">
+    <div id="reg-message" class="form-message" style="display:none;"></div>
     <form id="reg-form">
       <h2>Your Details</h2>
       <div class="form-group">
@@ -20,10 +20,10 @@ title: Register for Event
         <input type="email" id="reg-email" required>
       </div>
 
-      <h2>About You <span style="font-weight:normal; font-size:0.8em; color:#666;">(helps us understand our community)</span></h2>
+      <h2>About You <span class="form-hint">(helps us understand our community)</span></h2>
       <div class="form-group">
         <label for="reg-employment">Employment Status</label>
-        <select id="reg-employment" style="width:100%;padding:0.75rem;border:1px solid var(--color-border);border-radius:4px;font-size:1rem;">
+        <select id="reg-employment">
           <option value="">Prefer not to say</option>
           <option value="Employed">Employed</option>
           <option value="Self-employed">Self-employed</option>
@@ -34,7 +34,7 @@ title: Register for Event
       </div>
       <div class="form-group">
         <label for="reg-industry">Industry</label>
-        <select id="reg-industry" style="width:100%;padding:0.75rem;border:1px solid var(--color-border);border-radius:4px;font-size:1rem;">
+        <select id="reg-industry">
           <option value="">Prefer not to say</option>
           <option value="Technology">Technology</option>
           <option value="Finance">Finance / Banking</option>
@@ -55,7 +55,7 @@ title: Register for Event
       </div>
       <div class="form-group">
         <label for="reg-company-size">Company Size</label>
-        <select id="reg-company-size" style="width:100%;padding:0.75rem;border:1px solid var(--color-border);border-radius:4px;font-size:1rem;">
+        <select id="reg-company-size">
           <option value="">Prefer not to say</option>
           <option value="1-10">1-10</option>
           <option value="11-50">11-50</option>
@@ -66,7 +66,7 @@ title: Register for Event
       </div>
       <div class="form-group">
         <label for="reg-experience">Experience Level</label>
-        <select id="reg-experience" style="width:100%;padding:0.75rem;border:1px solid var(--color-border);border-radius:4px;font-size:1rem;">
+        <select id="reg-experience">
           <option value="">Prefer not to say</option>
           <option value="Student">Student</option>
           <option value="Junior">Junior (0-2 years)</option>
@@ -81,10 +81,10 @@ title: Register for Event
   </div>
 
   <!-- Success state -->
-  <div id="reg-success" style="display:none; text-align:center; margin-top:2rem;">
-    <h2 style="color:var(--color-primary-teal);">You're Registered! 🎉</h2>
+  <div id="reg-success" class="reg-success" style="display:none;">
+    <h2 class="success-title">You're Registered! 🎉</h2>
     <p id="success-details"></p>
-    <div id="success-qr" style="margin:1rem 0;"></div>
+    <div id="success-qr" class="success-qr"></div>
     <p>A confirmation email with your ticket has been sent.</p>
     <p><a href="/my-tickets/">View My Tickets</a></p>
   </div>

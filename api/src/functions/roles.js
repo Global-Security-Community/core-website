@@ -36,7 +36,7 @@ module.exports = async function (request, context) {
       email = userDetails;
     }
 
-    context.log(`Role check: userId=${userId}, userDetails=${userDetails}, email=${email}, claimTypes=${claims.map(c => c.typ).join(',')}, claimVals=${claims.map(c => c.typ + '=' + c.val).join(' | ')}`);
+    context.log(`Role check: userId=${userId}, email=${email}, claimTypes=${claims.map(c => c.typ).join(',')}`);
 
     if (!userId || !email) {
       return {

@@ -12,7 +12,7 @@
         html += '<div class="card" style="text-align:center;">';
         html += '<h3 style="margin-top:0;">Ticket</h3>';
         html += '<p style="font-family:monospace; font-size:1.2rem; font-weight:600;">' + esc(t.ticketCode) + '</p>';
-        if (t.qrDataUrl) {
+        if (t.qrDataUrl && t.qrDataUrl.indexOf('data:image/') === 0) {
           html += '<img src="' + t.qrDataUrl + '" alt="QR Code" style="width:160px;height:160px;margin:0.5rem 0;">';
         }
         html += '<p style="margin:0.5rem 0;">Registered: ' + esc(t.registeredAt ? new Date(t.registeredAt).toLocaleDateString() : '') + '</p>';

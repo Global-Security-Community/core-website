@@ -4,14 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ title }} | Global Security Community</title>
+  <meta name="description" content="{{ description or 'Global Security Community — connecting cybersecurity professionals worldwide through local chapters, events, and knowledge sharing.' }}">
+  <meta property="og:title" content="{{ title }} | Global Security Community">
+  <meta property="og:description" content="{{ description or 'Connecting cybersecurity professionals worldwide through local chapters, events, and knowledge sharing.' }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://globalsecurity.community">
+  <meta property="og:image" content="https://globalsecurity.community/assets/GlobalSecurityCommunityLogo2.png">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/assets/GlobalSecurityCommunityLogo2.png" type="image/png">
   <meta name="theme-color" content="#001f3f">
   <link rel="apple-touch-icon" href="/assets/GlobalSecurityCommunityLogo2.png">
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
   <!-- Navigation -->
-  <nav class="navbar">
+  <nav class="navbar" aria-label="Main navigation">
     <div class="container">
       <div class="nav-brand">
         <img src="/assets/GlobalSecurityCommunityLogo2.png" alt="Global Security Community" class="logo">
@@ -33,7 +42,7 @@
   </nav>
 
   <!-- Main Content -->
-  <main class="main-content">
+  <main id="main-content" class="main-content">
     {{ content | safe }}
   </main>
 

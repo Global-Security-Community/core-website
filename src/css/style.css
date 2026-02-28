@@ -100,14 +100,6 @@ body {
   flex: 1;
 }
 
-.hero-content p {
-  font-size: 1.25rem;
-  color: #666;
-  margin: 0;
-  text-align: left;
-  line-height: 1.8;
-}
-
 .hero-image {
   flex: 1;
   text-align: center;
@@ -130,6 +122,7 @@ body {
   color: #666;
   margin: 0 0 2rem 0;
   text-align: left;
+  line-height: 1.8;
 }
 
 /* Page Sections */
@@ -402,4 +395,242 @@ td {
   border-radius: 12px;
   font-size: 0.8rem;
   color: white;
+}
+
+.status-badge--published { background-color: var(--color-primary-teal); }
+.status-badge--closed { background-color: var(--color-accent-orange); }
+.status-badge--completed { background-color: #666; }
+.status-badge--default { background-color: #999; }
+
+/* Skip to content (accessibility) */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 1000;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary-navy);
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Focus indicators (accessibility) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--color-primary-teal);
+  outline-offset: 2px;
+}
+
+button:focus-visible {
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Button variants */
+.btn-navy {
+  background-color: var(--color-primary-navy);
+}
+
+.btn-navy:hover {
+  background-color: var(--color-primary-teal);
+}
+
+.btn-outline {
+  background: none;
+  color: var(--color-primary-teal);
+  border: 1px solid var(--color-primary-teal);
+}
+
+.btn-outline:hover {
+  background-color: var(--color-primary-teal);
+  color: white;
+}
+
+.btn-danger {
+  background-color: #e74c3c;
+}
+
+.btn-danger:hover {
+  background-color: #c0392b;
+}
+
+.btn-warning {
+  background-color: var(--color-accent-orange);
+}
+
+.btn-link {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary-teal);
+  color: white;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.btn-link:hover {
+  background: var(--color-primary-navy);
+  color: white;
+}
+
+/* Event cards in dashboard */
+.event-card {
+  cursor: pointer;
+}
+
+/* Utility classes */
+.text-muted {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.form-hint {
+  font-weight: normal;
+  font-size: 0.8em;
+  color: #666;
+}
+
+.form-message {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+/* Dashboard layout */
+.dash-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.detail-actions {
+  margin-bottom: 1rem;
+}
+
+.detail-actions button,
+.detail-actions a {
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.volunteer-add-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.volunteer-add-form input[type="text"],
+.volunteer-add-form input[type="email"] {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Stat cards (scanner + dashboard) */
+.stat-cards {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  text-align: center;
+  flex: 1;
+  min-width: 120px;
+}
+
+.stat-number {
+  font-size: 2rem;
+  margin: 0;
+  font-weight: 700;
+  color: var(--color-primary-navy);
+}
+
+.stat-label {
+  margin: 0;
+  color: #666;
+}
+
+/* Scanner page */
+.scanner-setup {
+  max-width: 400px;
+}
+
+.btn-start-scanner {
+  margin-top: 0.5rem;
+}
+
+.scan-result {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.qr-reader {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.manual-entry {
+  margin-top: 1rem;
+}
+
+.manual-entry-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.manual-entry-form input {
+  flex: 1;
+}
+
+.scan-log-title {
+  margin-top: 2rem;
+}
+
+/* Registration page */
+.reg-form-wrap {
+  max-width: 600px;
+  margin-top: 2rem;
+}
+
+.reg-success {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.success-title {
+  color: var(--color-primary-teal);
+}
+
+.success-qr {
+  margin: 1rem 0;
+}
+
+/* Table hover */
+tr:hover {
+  background-color: rgba(32, 178, 170, 0.05);
+}
+
+thead tr:hover {
+  background-color: transparent;
 }

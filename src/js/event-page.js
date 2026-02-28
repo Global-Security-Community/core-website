@@ -95,7 +95,7 @@
             var html = '';
             speakers.forEach(function(s) {
               html += '<div class="card" style="text-align:center;">';
-              if (s.profilePicture) {
+              if (s.profilePicture && (s.profilePicture.indexOf('https://') === 0)) {
                 html += '<img src="' + esc(s.profilePicture) + '" alt="' + esc(s.fullName) + '" style="width:80px;height:80px;border-radius:50%;margin-bottom:0.5rem;">';
               }
               html += '<h4 style="margin:0 0 0.25rem 0;">' + esc(s.fullName) + '</h4>';

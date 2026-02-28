@@ -34,26 +34,23 @@
 
       document.getElementById('reg-form-wrap').style.display = 'block';
 
-      // Pre-fill from auth
-      // TODO: Once CIAM token configuration includes optional claims (jobTitle, city, country,
-      // companyName, etc.), update scopes in staticwebapp.config.json and pre-fill demographic
-      // fields below from d.clientPrincipal.claims — so returning users don't re-enter info.
-      // Steps: 1) CIAM Portal → App registration → Token configuration → Add optional claims
-      //        2) Add scopes to staticwebapp.config.json auth.identityProviders.ciam.login.scopes
-      //        3) Map claims to form fields here (e.g. reg-jobtitle, reg-industry, reg-name)
       fetch('/.auth/me')
         .then(function(r) { return r.json(); })
         .then(function(d) {
           if (d.clientPrincipal && d.clientPrincipal.userDetails) {
             document.getElementById('reg-email').value = d.clientPrincipal.userDetails;
           }
-          // TODO: Pre-fill from CIAM claims when available:
-          // var claims = d.clientPrincipal && d.clientPrincipal.claims || [];
-          // var getClaim = function(type) { var c = claims.find(function(x) { return x.typ === type; }); return c ? c.val : ''; };
-          // if (getClaim('name')) document.getElementById('reg-name').value = getClaim('name');
-          // if (getClaim('jobTitle')) document.getElementById('reg-jobtitle').value = getClaim('jobTitle');
-          // if (getClaim('city')) document.getElementById('reg-industry').value = getClaim('city');
-        });
+          // Pre-fill name from CIAM claims if available
+          if (d.clientPrincipal && d.clientPrincipal.claims) {
+            var claims = d.clientPrincipal.claims;
+            var getClaim = function(type) { var c = claims.find(function(x) { return x.typ === type; }); return c ? c.val : ''; };
+            var name = getClaim('name');
+            if (name) document.getElementById('reg-name').value = name;
+            var email = getClaim('preferred_username') || getClaim('http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress');
+            if (email) document.getElementById('reg-email').value = email;
+          }
+        })
+        .catch(function() {});
     })
     .catch(function() {
       document.getElementById('event-info').innerHTML = '<p>Error loading event. Please try again.</p>';
@@ -89,7 +86,7 @@
         document.getElementById('reg-form-wrap').style.display = 'none';
         document.getElementById('reg-success').style.display = 'block';
         document.getElementById('success-details').textContent = 'Ticket Code: ' + res.data.registration.ticketCode;
-        if (res.data.registration.qrDataUrl) {
+        if (res.data.registration.qrDataUrl && res.data.registration.qrDataUrl.indexOf('data:image/') === 0) {
           document.getElementById('success-qr').innerHTML = '<img src="' + res.data.registration.qrDataUrl + '" alt="Ticket QR Code" style="width:200px;height:200px;">';
         }
       } else if (res.status === 409) {

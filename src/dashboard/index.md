@@ -5,24 +5,24 @@ title: Dashboard
 
 <div class="container">
   <h1>Chapter Lead Dashboard</h1>
-  <p id="dash-user">Loading...</p>
+  <p id="dash-user" aria-live="polite">Loading...</p>
 
-  <div style="display:flex; gap:1rem; margin-bottom:2rem; flex-wrap:wrap;">
-    <button id="btn-events" style="background-color:var(--color-primary-teal);">My Events</button>
-    <button id="btn-create" style="background-color:var(--color-primary-navy);">Create Event</button>
+  <div class="dash-actions">
+    <button id="btn-events">My Events</button>
+    <button id="btn-create" class="btn-navy">Create Event</button>
   </div>
 
   <!-- Events List -->
   <div id="section-events">
     <h2>Your Events</h2>
-    <div id="events-list"><p>Loading events...</p></div>
+    <div id="events-list" aria-live="polite"><p>Loading events...</p></div>
   </div>
 
   <!-- Create Event Form -->
   <div id="section-create" style="display:none;">
     <h2>Create New Event</h2>
-    <div id="create-message" style="display:none; margin-bottom:1rem; padding:1rem; border-radius:4px;"></div>
-    <div style="max-width:600px;">
+    <div id="create-message" class="form-message" style="display:none;"></div>
+    <div class="reg-form-wrap">
       <div class="form-group">
         <label for="ev-title">Event Title *</label>
         <input type="text" id="ev-title" maxlength="200" placeholder="e.g. Global Security Bootcamp Perth 2026">
@@ -61,17 +61,17 @@ title: Dashboard
 
   <!-- Event Detail (attendance) -->
   <div id="section-detail" style="display:none;">
-    <div style="margin-bottom:1rem;">
-      <button id="btn-back-events" style="background:none; color:var(--color-primary-teal); border:1px solid var(--color-primary-teal);">&larr; Back to Events</button>
+    <div class="detail-actions">
+      <button id="btn-back-events" class="btn-outline">&larr; Back to Events</button>
     </div>
     <h2 id="detail-title">Event Details</h2>
-    <div id="detail-stats" style="display:flex; gap:1rem; margin-bottom:1rem;"></div>
-    <div id="detail-actions" style="margin-bottom:1rem;"></div>
+    <div id="detail-stats" class="stat-cards"></div>
+    <div id="detail-actions" class="detail-actions"></div>
     <h3>Volunteers / Committee</h3>
-    <p style="color:#666; font-size:0.9rem;">Volunteers can access the check-in scanner for this event. They must have a GSC account.</p>
-    <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap;">
-      <input type="text" id="vol-name" placeholder="Name" style="flex:1; min-width:120px;">
-      <input type="email" id="vol-email" placeholder="Email" style="flex:1; min-width:200px;">
+    <p class="text-muted">Volunteers can access the check-in scanner for this event. They must have a GSC account.</p>
+    <div class="volunteer-add-form">
+      <input type="text" id="vol-name" placeholder="Name">
+      <input type="email" id="vol-email" placeholder="Email">
       <button id="vol-add-btn" type="button">Add Volunteer</button>
     </div>
     <div id="volunteer-list"></div>
