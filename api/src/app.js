@@ -12,6 +12,7 @@ const issueBadgesHandler = require('./functions/issueBadges');
 const badgeDownloadHandler = require('./functions/badgeDownload');
 const eventAttendanceHandler = require('./functions/eventAttendance');
 const eventVolunteersHandler = require('./functions/eventVolunteers');
+const cancelRegistrationHandler = require('./functions/cancelRegistration');
 
 // ─── Public endpoints ───
 app.post('contactForm', { authLevel: 'anonymous', handler: contactFormHandler });
@@ -24,6 +25,7 @@ app.post('roles', { authLevel: 'anonymous', handler: rolesHandler });
 
 // ─── Authenticated endpoints ───
 app.post('registerEvent', { authLevel: 'anonymous', handler: registerEventHandler });
+app.post('cancelRegistration', { authLevel: 'anonymous', handler: cancelRegistrationHandler });
 app.get('myTickets', { authLevel: 'anonymous', handler: myTicketsHandler });
 app.get('badge', { authLevel: 'anonymous', handler: badgeDownloadHandler });
 

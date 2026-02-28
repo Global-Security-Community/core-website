@@ -1,4 +1,3 @@
-const { app } = require('@azure/functions');
 const { getAuthUser, unauthorised } = require('../helpers/auth');
 const { getRegistrationsByUser, deleteRegistration, deleteDemographics, getEventById } = require('../helpers/tableStorage');
 const { sendCancellationEmail } = require('../helpers/emailService');
@@ -71,12 +70,5 @@ async function cancelRegistration(request, context) {
              body: JSON.stringify({ error: 'Internal server error' }) };
   }
 }
-
-app.http('cancelRegistration', {
-  methods: ['POST'],
-  authLevel: 'anonymous',
-  route: 'cancelRegistration',
-  handler: cancelRegistration
-});
 
 module.exports = cancelRegistration;
