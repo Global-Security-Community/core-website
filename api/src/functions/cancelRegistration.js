@@ -27,10 +27,13 @@ async function cancelRegistration(request, context) {
     }
 
     // Find the user's registration to verify ownership
+    context.log(`Cancel: userId=${user.userId}, registrationId=${registrationId}`);
     const userRegs = await getRegistrationsByUser(user.userId);
+    context.log(`Cancel: found ${userRegs.length} registrations for user`);
     const reg = userRegs.find(r => r.rowKey === registrationId);
 
     if (!reg) {
+      context.log(`Cancel: no matching registration. User regs: ${userRegs.map(r => r.rowKey).join(', ')}`);
       return { status: 404, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Registration not found' }) };
     }
