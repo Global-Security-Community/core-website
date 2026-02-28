@@ -966,7 +966,7 @@ thead tr:hover {
 .event-card-btn {
   display: inline-block;
   padding: 0.5rem 1.5rem;
-  background-color: var(--color-accent-teal);
+  background-color: var(--color-primary-teal);
   color: #fff;
   border-radius: 6px;
   text-decoration: none;
@@ -976,5 +976,6 @@ thead tr:hover {
 }
 
 .event-card-btn:hover {
-  background-color: #1a9e96;
+  background-color: #178a84;
+  color: #fff;
 }

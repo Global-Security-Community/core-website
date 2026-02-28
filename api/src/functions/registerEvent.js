@@ -67,7 +67,7 @@ module.exports = async function (request, context) {
     }
 
     // Generate ticket code (8 alphanumeric chars, cryptographically random)
-    const ticketCode = randomBytes(5).toString('base32').substring(0, 8).toUpperCase();
+    const ticketCode = randomBytes(5).toString('hex').substring(0, 8).toUpperCase();
     const registrationId = randomUUID();
 
     const registration = {
