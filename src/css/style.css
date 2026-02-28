@@ -190,40 +190,89 @@ a:hover {
   color: var(--color-primary-navy);
 }
 
+/* CTA button */
+.btn-cta {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--color-primary-teal);
+  color: white;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.btn-cta:hover {
+  background-color: var(--color-primary-navy);
+  color: white;
+}
+
 /* Chapter grid */
 .chapter-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  gap: 1.5rem;
   margin: 2rem 0;
 }
 
-.chapter-tile {
-  display: block;
-  padding: 1.25rem;
-  background-color: var(--color-light-gray);
+.chapter-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 10px;
+  overflow: hidden;
   text-decoration: none;
   color: inherit;
-  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.chapter-tile:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: var(--color-primary-teal);
+.chapter-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   color: inherit;
 }
 
-.chapter-tile h3 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.1rem;
-  color: var(--color-primary-navy);
+.chapter-card-banner {
+  background: linear-gradient(135deg, var(--color-primary-navy) 0%, #1a3a5c 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  min-height: 120px;
 }
 
-.chapter-tile p {
+.chapter-card-logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+.chapter-card-body {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.chapter-card-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-primary-teal);
+  margin-bottom: 0.4rem;
+}
+
+.chapter-card-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-primary-navy);
+  line-height: 1.3;
+}
+
+.chapter-card-location {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #666;
 }
 
