@@ -30,18 +30,19 @@
     .then(function(data) {
       var principal = data.clientPrincipal;
       if (principal) {
-        var name = principal.userDetails || 'Account';
         var isAdmin = (principal.userRoles || []).indexOf('admin') !== -1;
         var isVolunteer = (principal.userRoles || []).indexOf('volunteer') !== -1;
-        var html = '';
+        var items = [];
         if (isAdmin) {
-          html += '<a href="/dashboard/" class="nav-link" style="margin-right:0.5rem;">Dashboard</a> ';
+          items.push('<li><a href="/dashboard/" class="nav-link">Dashboard</a></li>');
         } else if (isVolunteer) {
-          html += '<a href="/scanner/" class="nav-link" style="margin-right:0.5rem;">Scanner</a> ';
+          items.push('<li><a href="/scanner/" class="nav-link">Scanner</a></li>');
         }
-        html += '<a href="/my-tickets/" class="nav-link" style="margin-right:0.5rem;">' + escNav(name) + '</a>';
-        html += '<a href="/.auth/logout" class="nav-link">Logout</a>';
-        container.innerHTML = html;
+        items.push('<li><a href="/my-tickets/" class="nav-link">My Tickets</a></li>');
+        items.push('<li><a href="https://wiki.globalsecurity.community" class="nav-link" target="_blank" rel="noopener noreferrer">Wiki</a></li>');
+        items.push('<li><a href="/.auth/logout" class="nav-link">Logout</a></li>');
+        // Replace the single auth <li> with multiple <li> elements
+        container.outerHTML = items.join('');
       } else {
         container.innerHTML = '<a href="/.auth/login/ciam" class="nav-link">Login</a>';
       }
@@ -49,10 +50,4 @@
     .catch(function() {
       container.innerHTML = '<a href="/.auth/login/ciam" class="nav-link">Login</a>';
     });
-
-  function escNav(str) {
-    var d = document.createElement('span');
-    d.textContent = str;
-    return d.innerHTML;
-  }
 })();
