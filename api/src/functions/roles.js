@@ -15,11 +15,28 @@ module.exports = async function (request, context) {
     const userDetails = body.userDetails || '';
     const claims = body.claims || [];
 
-    // Extract email from claims (OIDC providers put it in claims array)
-    const emailClaim = claims.find(c => c.typ === 'emails' || c.typ === 'email' || c.typ === 'preferred_username');
-    const email = emailClaim ? emailClaim.val : userDetails;
+    // Extract email from claims - try multiple claim types used by different OIDC providers
+    const emailClaimTypes = [
+      'emails',
+      'email', 
+      'preferred_username',
+      'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
+      'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'
+    ];
+    let email = '';
+    for (const typ of emailClaimTypes) {
+      const claim = claims.find(c => c.typ === typ);
+      if (claim && claim.val && claim.val.includes('@')) {
+        email = claim.val;
+        break;
+      }
+    }
+    // Fallback to userDetails if it looks like an email
+    if (!email && userDetails && userDetails.includes('@')) {
+      email = userDetails;
+    }
 
-    context.log(`Role check for userId=${userId}, userDetails=${userDetails}, email=${email}`);
+    context.log(`Role check: userId=${userId}, userDetails=${userDetails}, email=${email}, claimTypes=${claims.map(c => c.typ).join(',')}, claimVals=${claims.map(c => c.typ + '=' + c.val).join(' | ')}`);
 
     if (!userId || !email) {
       return {
