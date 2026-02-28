@@ -6,7 +6,7 @@ title: Home
 <div class="container">
   <div class="hero">
     <div class="hero-image">
-      <img src="/assets/GlobalSecurityCommunityLogo.png" alt="Global Security Community Logo">
+      <img src="/assets/GSC-Hero-Logo.png" alt="Global Security Community Logo">
     </div>
     <div class="hero-content">
       <p>Building a worldwide network of cybersecurity professionals committed to advancing global security practices and knowledge sharing.</p>
