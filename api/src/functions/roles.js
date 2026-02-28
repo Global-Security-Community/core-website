@@ -12,9 +12,16 @@ module.exports = async function (request, context) {
   try {
     const body = await request.json();
     const userId = body.userId || '';
-    const userDetails = body.userDetails || ''; // email for most providers
+    const userDetails = body.userDetails || '';
+    const claims = body.claims || [];
 
-    if (!userId || !userDetails) {
+    // Extract email from claims (OIDC providers put it in claims array)
+    const emailClaim = claims.find(c => c.typ === 'emails' || c.typ === 'email' || c.typ === 'preferred_username');
+    const email = emailClaim ? emailClaim.val : userDetails;
+
+    context.log(`Role check for userId=${userId}, userDetails=${userDetails}, email=${email}`);
+
+    if (!userId || !email) {
       return {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -25,18 +32,18 @@ module.exports = async function (request, context) {
     const roles = [];
 
     // Check if this email belongs to an approved chapter lead
-    const application = await getApprovedApplicationByEmail(userDetails);
+    const application = await getApprovedApplicationByEmail(email);
     if (application) {
       roles.push('admin');
-      context.log(`Assigned admin role to ${userDetails} (chapter lead for ${application.city})`);
+      context.log(`Assigned admin role to ${email} (chapter lead for ${application.city})`);
     }
 
     // Check if this email is a volunteer for any event
     if (!application) {
-      const volunteer = await isVolunteerForAnyEvent(userDetails);
+      const volunteer = await isVolunteerForAnyEvent(email);
       if (volunteer) {
         roles.push('volunteer');
-        context.log(`Assigned volunteer role to ${userDetails} (event ${volunteer.partitionKey})`);
+        context.log(`Assigned volunteer role to ${email} (event ${volunteer.partitionKey})`);
       }
     }
 
