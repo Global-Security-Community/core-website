@@ -1,6 +1,7 @@
 const { app } = require('@azure/functions');
 const { getAuthUser, unauthorised } = require('../helpers/auth');
-const { getRegistrationsByUser, deleteRegistration, deleteDemographics } = require('../helpers/tableStorage');
+const { getRegistrationsByUser, deleteRegistration, deleteDemographics, getEventById } = require('../helpers/tableStorage');
+const { sendCancellationEmail } = require('../helpers/emailService');
 
 /**
  * POST /api/cancelRegistration
@@ -43,6 +44,16 @@ async function cancelRegistration(request, context) {
     // Delete registration and demographics
     await deleteRegistration(reg.partitionKey, reg.rowKey);
     await deleteDemographics(reg.partitionKey, reg.rowKey);
+
+    // Send cancellation email (non-blocking)
+    try {
+      const event = await getEventById(reg.partitionKey);
+      if (event) {
+        await sendCancellationEmail(reg, event, context);
+      }
+    } catch (emailErr) {
+      context.log(`Cancellation email failed (non-fatal): ${emailErr.message}`);
+    }
 
     context.log(`Registration ${registrationId} cancelled by user ${user.userId}`);
 
