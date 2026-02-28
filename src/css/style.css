@@ -276,17 +276,6 @@ a:hover {
   color: #666;
 }
 
-/* Chapter cards (listing page) */
-.chapter-card {
-  text-decoration: none;
-  color: inherit;
-  cursor: pointer;
-}
-
-.chapter-card p {
-  color: #666;
-  margin-bottom: 0.5rem;
-}
 
 .chapter-subtitle {
   font-size: 1.2rem;
