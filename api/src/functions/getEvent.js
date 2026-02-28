@@ -17,8 +17,9 @@ module.exports = async function (request, context) {
       // Fetch all events — filter by chapter case-insensitively in code
       const events = await listEvents();
       const lowerChapter = chapterSlug ? chapterSlug.toLowerCase() : null;
+      const includeStatuses = ['published', 'closed', 'completed'];
       const published = events
-        .filter(e => e.status === 'published')
+        .filter(e => includeStatuses.includes(e.status))
         .filter(e => !lowerChapter || (e.partitionKey || '').toLowerCase() === lowerChapter)
         .map(e => ({
           id: e.rowKey,
@@ -32,7 +33,7 @@ module.exports = async function (request, context) {
           registrationCap: e.registrationCap || 0,
           status: e.status
         }))
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
 
       return {
         status: 200,

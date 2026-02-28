@@ -6,12 +6,19 @@
     if (!res.ok) throw new Error('Failed to load events');
     var events = await res.json();
 
-    if (!events.length) {
-      container.innerHTML = '<div class="card" style="text-align:center;"><h3>Events Coming Soon</h3><p>We\'re planning exciting events for 2026. Check back here for announcements about our global summit, regional meetups, and training workshops.</p></div>';
+    var now = new Date();
+    now.setHours(0, 0, 0, 0);
+    var upcoming = events.filter(function(e) {
+      var eventDate = new Date(e.endDate || e.date);
+      return eventDate >= now && e.status === 'published';
+    }).sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+
+    if (!upcoming.length) {
+      container.innerHTML = '<div class="card" style="text-align:center;"><h3>Events Coming Soon</h3><p>We\'re planning exciting events. Check back here for announcements about our global summit, regional meetups, and training workshops.</p></div>';
       return;
     }
 
-    container.innerHTML = '<div class="events-grid">' + events.map(function(e) {
+    container.innerHTML = '<div class="events-grid">' + upcoming.map(function(e) {
       var dateStr = new Date(e.date).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       var endStr = e.endDate ? ' \u2013 ' + new Date(e.endDate).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
       return '<div class="event-card">' +
