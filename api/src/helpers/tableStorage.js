@@ -229,6 +229,51 @@ async function getBadgesByEvent(eventId) {
   return results;
 }
 
+// ─── Volunteers ───
+
+async function storeVolunteer(volunteer) {
+  const client = getTableClient('EventVolunteers');
+  const entity = {
+    partitionKey: volunteer.eventId,
+    rowKey: volunteer.id,
+    email: volunteer.email.toLowerCase().trim(),
+    name: volunteer.name || '',
+    addedBy: volunteer.addedBy || '',
+    addedAt: new Date().toISOString()
+  };
+  await client.createEntity(entity);
+  return entity;
+}
+
+async function getVolunteersByEvent(eventId) {
+  const client = getTableClient('EventVolunteers');
+  const entities = client.listEntities({
+    queryOptions: { filter: `PartitionKey eq '${eventId.replace(/'/g, "''")}'` }
+  });
+  const results = [];
+  for await (const entity of entities) {
+    results.push(entity);
+  }
+  return results;
+}
+
+async function removeVolunteer(eventId, volunteerId) {
+  const client = getTableClient('EventVolunteers');
+  await client.deleteEntity(eventId, volunteerId);
+}
+
+async function isVolunteerForAnyEvent(email) {
+  const client = getTableClient('EventVolunteers');
+  const normalised = email.trim().toLowerCase();
+  const entities = client.listEntities({
+    queryOptions: { filter: `email eq '${normalised.replace(/'/g, "''")}'` }
+  });
+  for await (const entity of entities) {
+    return entity;
+  }
+  return null;
+}
+
 // ─── Chapter Leads (for role assignment) ───
 
 async function getApprovedApplicationByEmail(email) {
@@ -251,5 +296,6 @@ module.exports = {
   getRegistrationsByEvent, countRegistrations, updateRegistration,
   storeDemographics,
   storeBadge, getBadge, getBadgesByEvent,
+  storeVolunteer, getVolunteersByEvent, removeVolunteer, isVolunteerForAnyEvent,
   getApprovedApplicationByEmail
 };

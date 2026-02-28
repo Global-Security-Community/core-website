@@ -1,11 +1,12 @@
 const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
-const { getApprovedApplicationByEmail } = require('../helpers/tableStorage');
+const { getApprovedApplicationByEmail, isVolunteerForAnyEvent } = require('../helpers/tableStorage');
 
 /**
  * POST /api/roles
  * SWA custom role assignment function.
  * Called automatically by SWA after login to assign custom roles.
  * If the user's email matches an approved chapter lead, grants 'admin' role.
+ * If the user's email matches any event volunteer list, grants 'volunteer' role.
  */
 module.exports = async function (request, context) {
   try {
@@ -21,13 +22,22 @@ module.exports = async function (request, context) {
       };
     }
 
+    const roles = [];
+
     // Check if this email belongs to an approved chapter lead
     const application = await getApprovedApplicationByEmail(userDetails);
-
-    const roles = [];
     if (application) {
       roles.push('admin');
       context.log(`Assigned admin role to ${userDetails} (chapter lead for ${application.city})`);
+    }
+
+    // Check if this email is a volunteer for any event
+    if (!application) {
+      const volunteer = await isVolunteerForAnyEvent(userDetails);
+      if (volunteer) {
+        roles.push('volunteer');
+        context.log(`Assigned volunteer role to ${userDetails} (event ${volunteer.partitionKey})`);
+      }
     }
 
     return {

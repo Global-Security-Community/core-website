@@ -11,7 +11,7 @@ module.exports = async function (request, context) {
   try {
     const user = getAuthUser(request);
     if (!user) return unauthorised();
-    if (!hasRole(user, 'admin')) return forbidden('Only event organisers can check in attendees');
+    if (!hasRole(user, 'admin') && !hasRole(user, 'volunteer')) return forbidden('Only event organisers and volunteers can check in attendees');
 
     let body;
     try { body = await request.json(); } catch {

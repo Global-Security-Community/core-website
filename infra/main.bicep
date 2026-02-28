@@ -64,6 +64,12 @@ resource eventBadgesTable 'Microsoft.Storage/storageAccounts/tableServices/table
   name: 'EventBadges'
 }
 
+// Event Volunteers Table
+resource eventVolunteersTable 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = {
+  parent: tableService
+  name: 'EventVolunteers'
+}
+
 // Key Vault for GSC secrets
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName

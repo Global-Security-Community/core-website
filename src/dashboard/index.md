@@ -67,6 +67,14 @@ title: Dashboard
     <h2 id="detail-title">Event Details</h2>
     <div id="detail-stats" style="display:flex; gap:1rem; margin-bottom:1rem;"></div>
     <div id="detail-actions" style="margin-bottom:1rem;"></div>
+    <h3>Volunteers / Committee</h3>
+    <p style="color:#666; font-size:0.9rem;">Volunteers can access the check-in scanner for this event. They must have a GSC account.</p>
+    <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap;">
+      <input type="text" id="vol-name" placeholder="Name" style="flex:1; min-width:120px;">
+      <input type="email" id="vol-email" placeholder="Email" style="flex:1; min-width:200px;">
+      <button id="vol-add-btn" type="button">Add Volunteer</button>
+    </div>
+    <div id="volunteer-list"></div>
     <h3>Attendees</h3>
     <div id="detail-attendees"></div>
   </div>

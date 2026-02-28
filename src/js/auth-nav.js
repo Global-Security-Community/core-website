@@ -32,9 +32,12 @@
       if (principal) {
         var name = principal.userDetails || 'Account';
         var isAdmin = (principal.userRoles || []).indexOf('admin') !== -1;
+        var isVolunteer = (principal.userRoles || []).indexOf('volunteer') !== -1;
         var html = '';
         if (isAdmin) {
           html += '<a href="/dashboard/" class="nav-link" style="margin-right:0.5rem;">Dashboard</a> ';
+        } else if (isVolunteer) {
+          html += '<a href="/scanner/" class="nav-link" style="margin-right:0.5rem;">Scanner</a> ';
         }
         html += '<a href="/my-tickets/" class="nav-link" style="margin-right:0.5rem;">' + escNav(name) + '</a>';
         html += '<a href="/.auth/logout" class="nav-link">Logout</a>';

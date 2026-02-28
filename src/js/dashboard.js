@@ -58,9 +58,16 @@
           '<div class="card" style="text-align:center;flex:1;"><p style="font-size:2rem;margin:0;">' + data.checkedIn + '</p><p style="margin:0;">Checked In</p></div>';
 
         var actions = '<button onclick="exportCSV(\'' + esc(eventId) + '\')" style="margin-right:0.5rem;">Export CSV</button>';
+        actions += '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" style="display:inline-block;padding:0.75rem 1.5rem;background:var(--color-primary-teal);color:white;border-radius:4px;text-decoration:none;font-weight:600;margin-right:0.5rem;">Open Scanner</a>';
         actions += '<button onclick="closeReg(\'' + esc(eventId) + '\',\'' + esc(chapterSlug) + '\')" style="background:var(--color-accent-orange);margin-right:0.5rem;">Close Registration</button>';
         actions += '<button onclick="completeEvent(\'' + esc(eventId) + '\',\'' + esc(chapterSlug) + '\')" style="background:#e74c3c;">Mark Completed & Issue Badges</button>';
         document.getElementById('detail-actions').innerHTML = actions;
+
+        // Load volunteers
+        loadVolunteers(eventId);
+        // Wire up add volunteer button
+        var addBtn = document.getElementById('vol-add-btn');
+        addBtn.onclick = function() { addVolunteer(eventId); };
 
         if (!data.attendees || data.attendees.length === 0) {
           document.getElementById('detail-attendees').innerHTML = '<p>No registrations yet.</p>';
@@ -154,6 +161,62 @@
     if (s === 'completed') return '#666';
     return '#999';
   }
+
+  function loadVolunteers(eventId) {
+    var el = document.getElementById('volunteer-list');
+    el.innerHTML = '<p>Loading volunteers...</p>';
+    fetch('/api/eventVolunteers?eventId=' + encodeURIComponent(eventId))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.volunteers || data.volunteers.length === 0) {
+          el.innerHTML = '<p style="color:#666;">No volunteers added yet.</p>';
+          return;
+        }
+        var html = '<table style="width:100%;border-collapse:collapse;margin-bottom:1rem;"><thead><tr><th style="text-align:left;padding:0.5rem;">Name</th><th style="text-align:left;padding:0.5rem;">Email</th><th style="padding:0.5rem;"></th></tr></thead><tbody>';
+        data.volunteers.forEach(function(v) {
+          html += '<tr style="border-bottom:1px solid var(--color-border);">';
+          html += '<td style="padding:0.5rem;">' + esc(v.name) + '</td>';
+          html += '<td style="padding:0.5rem;">' + esc(v.email) + '</td>';
+          html += '<td style="padding:0.5rem;"><button onclick="removeVol(\'' + esc(eventId) + '\',\'' + esc(v.id) + '\')" style="background:#e74c3c;padding:0.25rem 0.75rem;font-size:0.8rem;">Remove</button></td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+        el.innerHTML = html;
+      })
+      .catch(function() { el.innerHTML = '<p>Failed to load volunteers.</p>'; });
+  }
+
+  function addVolunteer(eventId) {
+    var nameEl = document.getElementById('vol-name');
+    var emailEl = document.getElementById('vol-email');
+    var email = emailEl.value.trim();
+    var name = nameEl.value.trim();
+    if (!email) { alert('Please enter the volunteer\'s email.'); return; }
+    fetch('/api/eventVolunteers', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ eventId: eventId, email: email, name: name })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        nameEl.value = ''; emailEl.value = '';
+        loadVolunteers(eventId);
+      } else {
+        alert(d.error || 'Failed to add volunteer.');
+      }
+    })
+    .catch(function() { alert('Network error.'); });
+  }
+
+  window.removeVol = function(eventId, volunteerId) {
+    if (!confirm('Remove this volunteer?')) return;
+    fetch('/api/eventVolunteers', {
+      method: 'DELETE', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ eventId: eventId, volunteerId: volunteerId })
+    })
+    .then(function() { loadVolunteers(eventId); });
+  };
+
   function esc(str) {
     if (!str) return '';
     var d = document.createElement('span');

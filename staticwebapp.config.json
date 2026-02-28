@@ -28,7 +28,7 @@
     },
     {
       "route": "/scanner/*",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin", "volunteer"]
     },
     {
       "route": "/register/*",
@@ -44,7 +44,7 @@
     },
     {
       "route": "/api/checkIn",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin", "volunteer"]
     },
     {
       "route": "/api/issueBadges",
@@ -52,6 +52,10 @@
     },
     {
       "route": "/api/eventAttendance",
+      "allowedRoles": ["admin"]
+    },
+    {
+      "route": "/api/eventVolunteers",
       "allowedRoles": ["admin"]
     },
     {
