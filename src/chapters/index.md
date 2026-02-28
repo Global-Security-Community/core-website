@@ -9,12 +9,11 @@ title: Chapters
   <p>Our chapters are the foundation of the Global Security Community. Find your local chapter or start one in your city.</p>
 
   {% if collections.chapter and collections.chapter.length > 0 %}
-  <div class="cards">
-    {% for chapter in collections.chapter %}
-    <a href="{{ chapter.url }}" class="card chapter-card">
-      <h3>{{ chapter.data.city }}, {{ chapter.data.country }}</h3>
-      <p>{{ chapter.data.leads.length }} Chapter Lead{% if chapter.data.leads.length > 1 %}s{% endif %}</p>
-      <span class="btn-link">View Chapter →</span>
+  <div class="chapter-grid">
+    {% for chapter in collections.chapter | sort(false, false, "data.city") %}
+    <a href="{{ chapter.url }}" class="chapter-tile">
+      <h3>{{ chapter.data.city }}</h3>
+      <p>{{ chapter.data.country }}</p>
     </a>
     {% endfor %}
   </div>

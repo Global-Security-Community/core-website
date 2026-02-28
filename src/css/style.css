@@ -190,7 +190,44 @@ a:hover {
   color: var(--color-primary-navy);
 }
 
-/* Chapter cards */
+/* Chapter grid */
+.chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.chapter-tile {
+  display: block;
+  padding: 1.25rem;
+  background-color: var(--color-light-gray);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.chapter-tile:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--color-primary-teal);
+  color: inherit;
+}
+
+.chapter-tile h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.1rem;
+  color: var(--color-primary-navy);
+}
+
+.chapter-tile p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Chapter cards (listing page) */
 .chapter-card {
   text-decoration: none;
   color: inherit;
@@ -392,7 +429,17 @@ button:not(.nav-toggle):hover {
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .chapter-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
+  .chapter-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .nav-toggle {
     display: block;
   }
