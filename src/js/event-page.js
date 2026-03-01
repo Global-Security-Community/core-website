@@ -39,6 +39,21 @@
             btn.style.pointerEvents = 'none';
           }
         }
+        // Render volunteer cards
+        if (data.volunteers && data.volunteers.length > 0) {
+          var volEl = document.getElementById('volunteer-cards');
+          if (volEl) {
+            var html = '';
+            data.volunteers.forEach(function(v) {
+              html += '<div class="volunteer-card">';
+              html += '<div class="volunteer-name">' + esc(v.name) + '</div>';
+              if (v.company) html += '<div class="volunteer-company">' + esc(v.company) + '</div>';
+              html += '</div>';
+            });
+            volEl.innerHTML = html;
+            volEl.style.display = 'flex';
+          }
+        }
       })
       .catch(function() {});
   }

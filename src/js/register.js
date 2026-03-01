@@ -34,6 +34,13 @@
 
       document.getElementById('reg-form-wrap').style.display = 'block';
 
+      // Volunteer interest toggle
+      document.getElementById('reg-volunteer-interest').addEventListener('change', function() {
+        var box = document.getElementById('volunteer-confirm');
+        box.style.display = this.checked ? 'block' : 'none';
+        if (!this.checked) document.getElementById('reg-volunteer-confirm').checked = false;
+      });
+
       fetch('/.auth/me')
         .then(function(r) { return r.json(); })
         .then(function(d) {
@@ -64,6 +71,9 @@
     btn.disabled = true;
     btn.textContent = 'Registering...';
 
+    var volunteerInterest = document.getElementById('reg-volunteer-interest').checked &&
+                            document.getElementById('reg-volunteer-confirm').checked;
+
     var payload = {
       eventSlug: eventSlug,
       fullName: document.getElementById('reg-name').value,
@@ -73,7 +83,8 @@
       industry: document.getElementById('reg-industry').value,
       jobTitle: document.getElementById('reg-jobtitle').value,
       companySize: document.getElementById('reg-company-size').value,
-      experienceLevel: document.getElementById('reg-experience').value
+      experienceLevel: document.getElementById('reg-experience').value,
+      volunteerInterest: volunteerInterest
     };
 
     fetch('/api/registerEvent', {

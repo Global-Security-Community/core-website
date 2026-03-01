@@ -10,6 +10,7 @@ title: Dashboard
   <div class="dash-actions">
     <button id="btn-events">My Events</button>
     <button id="btn-create" class="btn-navy">Create Event</button>
+    <button id="btn-chapter" class="btn-outline">Edit Chapter</button>
   </div>
 
   <!-- Events List -->
@@ -106,16 +107,43 @@ title: Dashboard
     <p id="detail-subtitle" style="margin:-0.5rem 0 1rem 0;color:#666;"></p>
     <div id="detail-panel" class="detail-panel"></div>
     <div id="detail-actions" class="detail-actions"></div>
-    <h3>Volunteers / Committee</h3>
-    <p class="text-muted">Volunteers can access the check-in scanner for this event. They must have a GSC account.</p>
+    <h3>Register Attendee</h3>
+    <p class="text-muted">Manually register someone for this event. Speaker, sponsor, and organiser roles bypass capacity limits.</p>
     <div class="volunteer-add-form">
-      <input type="text" id="vol-name" placeholder="Name">
-      <input type="email" id="vol-email" placeholder="Email">
-      <button id="vol-add-btn" type="button">Add Volunteer</button>
+      <input type="text" id="admin-reg-name" placeholder="Name">
+      <input type="email" id="admin-reg-email" placeholder="Email">
+      <select id="admin-reg-role">
+        <option value="attendee">Attendee</option>
+        <option value="volunteer">Volunteer</option>
+        <option value="speaker">Speaker</option>
+        <option value="sponsor">Sponsor</option>
+        <option value="organiser">Organiser</option>
+      </select>
+      <button id="admin-reg-btn" type="button">Register</button>
     </div>
-    <div id="volunteer-list"></div>
     <h3>Attendees</h3>
+    <div id="role-action-bar" class="role-action-bar" style="display:none;">
+      <span id="role-selected-count">0 selected</span>
+      <select id="role-select">
+        <option value="">Set Role...</option>
+        <option value="attendee">Attendee</option>
+        <option value="volunteer">Volunteer</option>
+        <option value="speaker">Speaker</option>
+        <option value="sponsor">Sponsor</option>
+        <option value="organiser">Organiser</option>
+      </select>
+      <button id="role-apply-btn" type="button">Apply</button>
+    </div>
     <div id="detail-attendees"></div>
+  </div>
+
+  <!-- Edit Chapter -->
+  <div id="section-chapter" style="display:none;">
+    <h2>Edit Chapter</h2>
+    <div id="chapter-edit-message" class="form-message" style="display:none;"></div>
+    <div id="chapter-edit-form" class="reg-form-wrap">
+      <p>Loading chapter data...</p>
+    </div>
   </div>
 </div>
 

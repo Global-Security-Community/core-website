@@ -22,13 +22,11 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Invalid JSON' }) };
     }
 
-    const { eventId, chapterSlug, badgeType, recipients } = body;
-    // badgeType: 'Attendee' | 'Speaker' | 'Organiser'
-    // recipients: optional array of { name, email } for Speaker/Organiser
+    const { eventId, chapterSlug } = body;
 
-    if (!eventId || !chapterSlug || !badgeType) {
+    if (!eventId || !chapterSlug) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ error: 'Missing eventId, chapterSlug, or badgeType' }) };
+               body: JSON.stringify({ error: 'Missing eventId or chapterSlug' }) };
     }
 
     const event = await getEvent(chapterSlug, eventId);
@@ -37,31 +35,34 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Event not found' }) };
     }
 
-    let recipientList = [];
+    // Issue badges to all checked-in registrations, grouped by role
+    const registrations = await getRegistrationsByEvent(eventId);
+    const checkedInRegs = registrations.filter(r => r.checkedIn === true || r.checkedIn === 'true');
 
-    if (badgeType === 'Attendee') {
-      // Issue badges to all checked-in attendees
-      const registrations = await getRegistrationsByEvent(eventId);
-      recipientList = registrations
-        .filter(r => r.checkedIn)
-        .map(r => ({ name: r.fullName, email: r.email, userId: r.userId }));
-    } else if (recipients && Array.isArray(recipients)) {
-      recipientList = recipients.map(r => ({ name: r.name, email: r.email, userId: '' }));
-    }
-
-    if (recipientList.length === 0) {
+    if (checkedInRegs.length === 0) {
       return { status: 200, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ success: true, issued: 0, message: 'No eligible recipients found' }) };
     }
 
+    // Map role to badge type (capitalised)
+    const roleToBadgeType = {
+      attendee: 'Attendee',
+      volunteer: 'Volunteer',
+      speaker: 'Speaker',
+      sponsor: 'Sponsor',
+      organiser: 'Organiser'
+    };
+
     let issued = 0;
     const errors = [];
 
-    for (const recipient of recipientList) {
+    for (const reg of checkedInRegs) {
       try {
+        const role = reg.role || 'attendee';
+        const badgeType = roleToBadgeType[role] || 'Attendee';
         const badgeId = randomUUID();
         const badgeSvg = generateBadge({
-          recipientName: recipient.name,
+          recipientName: reg.fullName,
           eventTitle: event.title,
           eventDate: event.date,
           eventLocation: event.location,
@@ -71,22 +72,22 @@ module.exports = async function (request, context) {
         await storeBadge({
           id: badgeId,
           eventId,
-          recipientEmail: recipient.email,
-          recipientName: recipient.name,
+          recipientEmail: reg.email,
+          recipientName: reg.fullName,
           badgeType,
-          userId: recipient.userId || ''
+          userId: reg.userId || ''
         });
 
         try {
-          await sendBadgeEmail(recipient, badgeSvg, event, badgeType, context);
+          await sendBadgeEmail({ name: reg.fullName, email: reg.email }, badgeSvg, event, badgeType, context);
         } catch (emailErr) {
-          context.log(`Badge email failed for ${recipient.email}: ${emailErr.message}`);
+          context.log(`Badge email failed for ${reg.email}: ${emailErr.message}`);
         }
 
         issued++;
       } catch (err) {
-        errors.push({ email: recipient.email, error: err.message });
-        context.log(`Badge issue failed for ${recipient.email}: ${err.message}`);
+        errors.push({ email: reg.email, error: err.message });
+        context.log(`Badge issue failed for ${reg.email}: ${err.message}`);
       }
     }
 

@@ -11,8 +11,11 @@ const checkInHandler = require('./functions/checkIn');
 const issueBadgesHandler = require('./functions/issueBadges');
 const badgeDownloadHandler = require('./functions/badgeDownload');
 const eventAttendanceHandler = require('./functions/eventAttendance');
-const eventVolunteersHandler = require('./functions/eventVolunteers');
 const cancelRegistrationHandler = require('./functions/cancelRegistration');
+const updateRegistrationRoleHandler = require('./functions/updateRegistrationRole');
+const adminRegisterHandler = require('./functions/adminRegister');
+const updateChapterHandler = require('./functions/updateChapter');
+const getChapterHandler = require('./functions/getChapter');
 
 // ─── Public endpoints ───
 app.post('contactForm', { authLevel: 'anonymous', handler: contactFormHandler });
@@ -34,4 +37,7 @@ app.post('createEvent', { authLevel: 'anonymous', handler: createEventHandler })
 app.post('checkIn', { authLevel: 'anonymous', handler: checkInHandler });
 app.post('issueBadges', { authLevel: 'anonymous', handler: issueBadgesHandler });
 app.http('eventAttendance', { methods: ['GET', 'POST'], authLevel: 'anonymous', handler: eventAttendanceHandler });
-app.http('eventVolunteers', { methods: ['GET', 'POST', 'DELETE'], authLevel: 'anonymous', handler: eventVolunteersHandler });
+app.post('updateRegistrationRole', { authLevel: 'anonymous', handler: updateRegistrationRoleHandler });
+app.post('adminRegister', { authLevel: 'anonymous', handler: adminRegisterHandler });
+app.post('updateChapter', { authLevel: 'anonymous', handler: updateChapterHandler });
+app.get('getChapter', { authLevel: 'anonymous', handler: getChapterHandler });

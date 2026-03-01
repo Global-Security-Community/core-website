@@ -5,7 +5,7 @@
 
   function showSection(s) {
     currentSection = s;
-    ['events','create','detail'].forEach(function(id) {
+    ['events','create','detail','chapter'].forEach(function(id) {
       document.getElementById('section-' + id).style.display = id === s ? 'block' : 'none';
     });
   }
@@ -13,6 +13,7 @@
   // Wire up navigation buttons
   document.getElementById('btn-events').addEventListener('click', function() { showSection('events'); });
   document.getElementById('btn-create').addEventListener('click', function() { showSection('create'); });
+  document.getElementById('btn-chapter').addEventListener('click', function() { showSection('chapter'); loadChapterEdit(); });
   document.getElementById('btn-back-events').addEventListener('click', function() { showSection('events'); });
 
   // Check auth
@@ -35,6 +36,8 @@
         var el = document.getElementById('events-list');
         if (data.chapterCity) {
           document.getElementById('dash-title').textContent = data.chapterCity + ' Chapter Management';
+          // Derive chapter slug from city
+          currentChapterSlug = data.chapterCity.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
         }
         if (!data.events || data.events.length === 0) {
           el.innerHTML = '<p>No events yet. Create your first event!</p>';
@@ -107,27 +110,42 @@
         document.getElementById('btn-close-reg').addEventListener('click', function() { closeReg(eventId, chapterSlug); });
         document.getElementById('btn-complete').addEventListener('click', function() { completeEvent(eventId, chapterSlug); });
 
-        // Load volunteers
-        loadVolunteers(eventId);
-        // Wire up add volunteer button
-        var addBtn = document.getElementById('vol-add-btn');
-        addBtn.addEventListener('click', function() { addVolunteer(eventId); });
+        // Load attendees with role support
+        var adminRegBtn = document.getElementById('admin-reg-btn');
+        adminRegBtn.addEventListener('click', function() { adminRegister(eventId); });
 
         if (!data.attendees || data.attendees.length === 0) {
           document.getElementById('detail-attendees').innerHTML = '<p>No registrations yet.</p>';
           return;
         }
-        var html = '<table><thead><tr><th>Name</th><th>Email</th><th>Ticket</th><th>Checked In</th></tr></thead><tbody>';
+        var html = '<table><thead><tr><th style="width:30px;"><input type="checkbox" id="select-all"></th><th>Name</th><th>Email</th><th>Role</th><th>Ticket</th><th>Checked In</th></tr></thead><tbody>';
         data.attendees.forEach(function(a) {
+          var role = a.role || 'attendee';
+          var volIcon = a.volunteerInterest ? ' <span title="Volunteer interest" class="vol-interest-icon">🙋</span>' : '';
           html += '<tr>';
-          html += '<td>' + esc(a.name) + '</td>';
+          html += '<td><input type="checkbox" class="attendee-check" data-reg-id="' + esc(a.id) + '"></td>';
+          html += '<td>' + esc(a.name) + volIcon + '</td>';
           html += '<td>' + esc(a.email) + '</td>';
+          html += '<td><span class="role-badge role-badge--' + esc(role) + '">' + esc(role) + '</span></td>';
           html += '<td style="font-family:monospace;">' + esc(a.ticketCode) + '</td>';
           html += '<td>' + (a.checkedIn ? '✅ ' + esc(a.checkedInAt) : '—') + '</td>';
           html += '</tr>';
         });
         html += '</tbody></table>';
         document.getElementById('detail-attendees').innerHTML = html;
+
+        // Select all checkbox
+        document.getElementById('select-all').addEventListener('change', function() {
+          var checked = this.checked;
+          document.querySelectorAll('.attendee-check').forEach(function(cb) { cb.checked = checked; });
+          updateRoleActionBar();
+        });
+        document.querySelectorAll('.attendee-check').forEach(function(cb) {
+          cb.addEventListener('change', updateRoleActionBar);
+        });
+
+        // Role apply button
+        document.getElementById('role-apply-btn').addEventListener('click', function() { applyRoleChange(eventId, eventTitle); });
       })
       .catch(function() {
         document.getElementById('detail-title').textContent = 'Error loading event details';
@@ -160,7 +178,7 @@
     }).then(function() {
       return fetch('/api/issueBadges', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug, badgeType: 'Attendee' })
+        body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug })
       });
     }).then(function(r) { return r.json(); })
     .then(function(d) { alert('Event completed. ' + (d.issued || 0) + ' badges issued.'); loadEvents(); })
@@ -305,70 +323,64 @@
     document.getElementById('create-another-btn').style.display = 'none';
   });
 
-  function loadVolunteers(eventId) {
-    var el = document.getElementById('volunteer-list');
-    el.innerHTML = '<p>Loading volunteers...</p>';
-    fetch('/api/eventVolunteers?eventId=' + encodeURIComponent(eventId))
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (!data.volunteers || data.volunteers.length === 0) {
-          el.innerHTML = '<p class="text-muted">No volunteers added yet.</p>';
-          return;
-        }
-        var html = '<table><thead><tr><th>Name</th><th>Email</th><th></th></tr></thead><tbody>';
-        data.volunteers.forEach(function(v) {
-          html += '<tr>';
-          html += '<td>' + esc(v.name) + '</td>';
-          html += '<td>' + esc(v.email) + '</td>';
-          html += '<td><button class="vol-remove-btn btn-danger" data-vol-id="' + esc(v.id) + '" style="padding:0.25rem 0.75rem;font-size:0.8rem;">Remove</button></td>';
-          html += '</tr>';
-        });
-        html += '</tbody></table>';
-        el.innerHTML = html;
-
-        // Attach remove handlers
-        el.querySelectorAll('.vol-remove-btn').forEach(function(btn) {
-          btn.addEventListener('click', function() {
-            removeVol(eventId, btn.dataset.volId);
-          });
-        });
-      })
-      .catch(function() { el.innerHTML = '<p>Failed to load volunteers.</p>'; });
+  function updateRoleActionBar() {
+    var selected = document.querySelectorAll('.attendee-check:checked');
+    var bar = document.getElementById('role-action-bar');
+    if (selected.length > 0) {
+      bar.style.display = 'flex';
+      document.getElementById('role-selected-count').textContent = selected.length + ' selected';
+    } else {
+      bar.style.display = 'none';
+    }
   }
 
-  function addVolunteer(eventId) {
-    var nameEl = document.getElementById('vol-name');
-    var emailEl = document.getElementById('vol-email');
-    var email = emailEl.value.trim();
-    var name = nameEl.value.trim();
-    if (!email) { alert('Please enter the volunteer\'s email.'); return; }
-    fetch('/api/eventVolunteers', {
+  function applyRoleChange(eventId, eventTitle) {
+    var role = document.getElementById('role-select').value;
+    if (!role) { alert('Please select a role.'); return; }
+    var selected = document.querySelectorAll('.attendee-check:checked');
+    var ids = [];
+    selected.forEach(function(cb) { ids.push(cb.dataset.regId); });
+    if (ids.length === 0) return;
+    if (!confirm('Set ' + ids.length + ' attendee(s) to "' + role + '"?')) return;
+    fetch('/api/updateRegistrationRole', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ eventId: eventId, email: email, name: name })
+      body: JSON.stringify({ eventId: eventId, registrationIds: ids, role: role })
     })
     .then(function(r) { return r.json(); })
     .then(function(d) {
       if (d.success) {
-        nameEl.value = ''; emailEl.value = '';
-        loadVolunteers(eventId);
+        alert(d.updated + ' role(s) updated.');
+        viewEvent(eventId, currentChapterSlug, eventTitle);
       } else {
-        alert(d.error || 'Failed to add volunteer.');
+        alert(d.error || 'Failed to update roles.');
       }
     })
     .catch(function() { alert('Network error.'); });
   }
 
-  function removeVol(eventId, volunteerId) {
-    if (!confirm('Remove this volunteer?')) return;
-    fetch('/api/eventVolunteers', {
-      method: 'DELETE', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ eventId: eventId, volunteerId: volunteerId })
+  function adminRegister(eventId) {
+    var nameEl = document.getElementById('admin-reg-name');
+    var emailEl = document.getElementById('admin-reg-email');
+    var roleEl = document.getElementById('admin-reg-role');
+    var name = nameEl.value.trim();
+    var email = emailEl.value.trim();
+    var role = roleEl.value;
+    if (!name || !email) { alert('Please enter name and email.'); return; }
+    fetch('/api/adminRegister', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ eventId: eventId, name: name, email: email, role: role })
     })
-    .then(function(r) {
-      if (!r.ok) throw new Error('Failed');
-      loadVolunteers(eventId);
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        nameEl.value = ''; emailEl.value = ''; roleEl.value = 'attendee';
+        alert('Registered ' + d.registration.fullName + ' as ' + d.registration.role + '.');
+        viewEvent(eventId, currentChapterSlug, document.getElementById('detail-title').textContent);
+      } else {
+        alert(d.error || 'Failed to register.');
+      }
     })
-    .catch(function() { alert('Failed to remove volunteer. Please try again.'); });
+    .catch(function() { alert('Network error.'); });
   }
 
   function esc(str) {
@@ -376,5 +388,150 @@
     var d = document.createElement('span');
     d.textContent = str;
     return d.innerHTML;
+  }
+
+  // ─── Chapter Edit ───
+
+  var chapterEditLoaded = false;
+
+  function loadChapterEdit() {
+    if (!currentChapterSlug) {
+      document.getElementById('chapter-edit-form').innerHTML = '<p>Could not determine chapter slug. Please go back to events first.</p>';
+      return;
+    }
+    document.getElementById('chapter-edit-form').innerHTML = '<p>Loading chapter data...</p>';
+    document.getElementById('chapter-edit-message').style.display = 'none';
+
+    fetch('/api/getChapter?slug=' + encodeURIComponent(currentChapterSlug))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) {
+          document.getElementById('chapter-edit-form').innerHTML = '<p>' + esc(data.error) + '</p>';
+          return;
+        }
+        renderChapterForm(data.leads || [], data.city, data.country);
+        chapterEditLoaded = true;
+      })
+      .catch(function() {
+        document.getElementById('chapter-edit-form').innerHTML = '<p>Failed to load chapter data.</p>';
+      });
+  }
+
+  function renderChapterForm(leads, city, country) {
+    var maxLeads = 4;
+    // Ensure at least 1 lead row
+    if (leads.length === 0) leads = [{ name: '', email: '', github: '', linkedin: '', twitter: '', website: '' }];
+
+    var html = '<p class="text-muted">Edit chapter leads and social links for <strong>' + esc(city) + ', ' + esc(country) + '</strong>. Up to 4 leads.</p>';
+    html += '<div id="leads-container">';
+
+    leads.forEach(function(lead, i) {
+      html += buildLeadRow(i, lead);
+    });
+
+    html += '</div>';
+
+    if (leads.length < maxLeads) {
+      html += '<button id="add-lead-btn" type="button" class="btn-outline" style="margin-bottom:1rem;">+ Add Lead</button>';
+    }
+
+    html += '<button id="save-chapter-btn" type="button">Save Chapter</button>';
+
+    document.getElementById('chapter-edit-form').innerHTML = html;
+
+    // Wire up add lead
+    var addBtn = document.getElementById('add-lead-btn');
+    if (addBtn) {
+      addBtn.addEventListener('click', function() {
+        var container = document.getElementById('leads-container');
+        var count = container.querySelectorAll('.lead-edit-row').length;
+        if (count >= maxLeads) return;
+        var div = document.createElement('div');
+        div.innerHTML = buildLeadRow(count, { name: '', email: '', github: '', linkedin: '', twitter: '', website: '' });
+        container.appendChild(div.firstChild);
+        if (count + 1 >= maxLeads) addBtn.style.display = 'none';
+      });
+    }
+
+    // Wire up save
+    document.getElementById('save-chapter-btn').addEventListener('click', saveChapter);
+  }
+
+  function buildLeadRow(index, lead) {
+    return '<div class="lead-edit-row card" style="padding:1rem;margin-bottom:1rem;">' +
+      '<h4 style="margin:0 0 0.75rem 0;">Lead ' + (index + 1) + '</h4>' +
+      '<div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">' +
+        '<div><label>Name *</label><input type="text" class="lead-name" value="' + esc(lead.name) + '" maxlength="100" placeholder="Full name"></div>' +
+        '<div><label>Email *</label><input type="email" class="lead-email" value="' + esc(lead.email) + '" maxlength="200" placeholder="Email address"></div>' +
+      '</div>' +
+      '<div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">' +
+        '<div><label>GitHub</label><input type="url" class="lead-github" value="' + esc(lead.github) + '" maxlength="200" placeholder="https://github.com/..."></div>' +
+        '<div><label>LinkedIn</label><input type="url" class="lead-linkedin" value="' + esc(lead.linkedin) + '" maxlength="200" placeholder="https://linkedin.com/in/..."></div>' +
+      '</div>' +
+      '<div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">' +
+        '<div><label>X / Twitter</label><input type="url" class="lead-twitter" value="' + esc(lead.twitter) + '" maxlength="200" placeholder="https://x.com/..."></div>' +
+        '<div><label>Website</label><input type="url" class="lead-website" value="' + esc(lead.website) + '" maxlength="200" placeholder="https://..."></div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function saveChapter() {
+    var rows = document.querySelectorAll('.lead-edit-row');
+    var leads = [];
+    var valid = true;
+
+    rows.forEach(function(row) {
+      var name = row.querySelector('.lead-name').value.trim();
+      var email = row.querySelector('.lead-email').value.trim();
+      if (!name && !email) return; // skip empty rows
+      if (!name || !email) {
+        valid = false;
+        return;
+      }
+      leads.push({
+        name: name,
+        email: email,
+        github: row.querySelector('.lead-github').value.trim(),
+        linkedin: row.querySelector('.lead-linkedin').value.trim(),
+        twitter: row.querySelector('.lead-twitter').value.trim(),
+        website: row.querySelector('.lead-website').value.trim()
+      });
+    });
+
+    if (!valid || leads.length === 0) {
+      alert('Each lead must have a name and email.');
+      return;
+    }
+
+    var msg = document.getElementById('chapter-edit-message');
+    var btn = document.getElementById('save-chapter-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    fetch('/api/updateChapter', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chapterSlug: currentChapterSlug, leads: leads })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      btn.disabled = false;
+      btn.textContent = 'Save Chapter';
+      if (d.success) {
+        msg.style.display = 'block';
+        msg.style.backgroundColor = '#d4edda'; msg.style.color = '#155724';
+        msg.textContent = 'Chapter updated.' + (d.pageUpdated ? ' Page will redeploy shortly.' : ' Page could not be updated automatically.');
+      } else {
+        msg.style.display = 'block';
+        msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
+        msg.textContent = d.error || 'Failed to update chapter.';
+      }
+    })
+    .catch(function() {
+      btn.disabled = false;
+      btn.textContent = 'Save Chapter';
+      msg.style.display = 'block';
+      msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
+      msg.textContent = 'Network error. Please try again.';
+    });
   }
 })();
