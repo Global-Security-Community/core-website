@@ -88,5 +88,3 @@ jobs:
           Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
           git pull --rebase origin main
           git push
-          sleep 5
-          git push origin main:live-version-swa

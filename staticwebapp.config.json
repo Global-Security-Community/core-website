@@ -23,6 +23,22 @@
   },
   "routes": [
     {
+      "route": "/css/*",
+      "headers": { "Cache-Control": "public, max-age=86400, must-revalidate" }
+    },
+    {
+      "route": "/js/*",
+      "headers": { "Cache-Control": "public, max-age=86400, must-revalidate" }
+    },
+    {
+      "route": "/assets/*",
+      "headers": { "Cache-Control": "public, max-age=604800, must-revalidate" }
+    },
+    {
+      "route": "/api/*",
+      "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }
+    },
+    {
       "route": "/dashboard/*",
       "allowedRoles": ["admin"]
     },
@@ -108,7 +124,7 @@
     "Permissions-Policy": "camera=(self), microphone=()",
     "Cross-Origin-Opener-Policy": "same-origin",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Cache-Control": "public, max-age=300, must-revalidate",
     "Content-Security-Policy": "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.gravatar.com https://gravatar.com https://*.wp.com https://sessionize.com https://cache.sessionize.com; connect-src 'self' https://sessionize.com; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://globalsecuritycommunity.ciamlogin.com"
   }
 }

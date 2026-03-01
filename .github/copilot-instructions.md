@@ -14,7 +14,7 @@ data, **Azure Communication Services** for transactional emails, and a **Discord
 notifications.
 
 **Live domain:** `globalsecurity.community`
-**Deployment branch:** `live-version-swa` (always push to both `main` and `main:live-version-swa`)
+**Deployment branch:** `live-version-swa` (merge from `main` to release)
 
 ---
 
@@ -163,15 +163,29 @@ Reverse the three steps above:
 
 ---
 
+## Branching Strategy
+
+- **`main`** — Development branch. All day-to-day work, feature branches, and generation workflows target `main`.
+- **`live-version-swa`** — Production branch. Deployed to Azure SWA. Only updated by merging `main` into it when a release is ready.
+- **Feature branches** — For larger features, create a branch off `main`, work on it, then PR back to `main`.
+- **Releasing to production:**
+  ```bash
+  git checkout live-version-swa
+  git merge main
+  git push origin live-version-swa
+  git checkout main
+  ```
+- **Generation workflows** (`generate-event.yml`, `generate-chapter.yml`, `delete-chapter.yml`) push to `main` only. They do NOT push to `live-version-swa`. Changes reach production on the next release merge.
+- **Never push directly to `live-version-swa`** — always merge from `main`.
+
+---
+
 ## Deployment
 
 - **Frontend:** Eleventy builds to `_site/`, deployed by Azure SWA GitHub Action
 - **API:** Azure Functions in `api/` deployed alongside SWA
-- **Branches:** Always push to both `main` and `live-version-swa`:
-  ```bash
-  git push origin main && git push origin main:live-version-swa
-  ```
-- **Generation workflows** (`generate-event.yml`, `generate-chapter.yml`) create pages via GitHub Actions and push to main — they do `git pull --rebase origin main` before push to avoid conflicts
+- **SWA deploy triggers** on push to `live-version-swa` or PRs targeting it
+- **Generation workflows** push to `main` only — changes reach production on next release merge
 
 ---
 
@@ -220,5 +234,5 @@ Reverse the three steps above:
 3. **Stale content after deploy** — service worker or browser cache; hard refresh (Cmd+Shift+R) if needed
 4. **Table Storage booleans** — `false` can come back as `"false"` (truthy in JS); always compare strictly
 5. **Workflow push failures** — generation workflows need `git pull --rebase` before push
-6. **Deploy race condition** — generation workflows must `sleep 5` between pushing to `main` and `live-version-swa`, otherwise GitHub may skip the SWA deploy trigger
+6. **CSP blocking resources** — update CSP in `staticwebapp.config.json` when adding external URLs
 6. **CSP blocking resources** — update CSP in `staticwebapp.config.json` when adding external URLs
