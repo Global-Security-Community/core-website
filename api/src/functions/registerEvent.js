@@ -29,7 +29,7 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Invalid JSON' }) };
     }
 
-    const { eventSlug, fullName, email, company, employmentStatus, industry, jobTitle, companySize, experienceLevel } = body;
+    const { eventSlug, fullName, email, company, employmentStatus, industry, jobTitle, companySize, experienceLevel, volunteerInterest } = body;
 
     if (!eventSlug || !fullName || !email) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
@@ -78,7 +78,8 @@ module.exports = async function (request, context) {
       email: email.trim(),
       company: (safe.company || '').trim(),
       ticketCode,
-      role: 'attendee'
+      role: 'attendee',
+      volunteerInterest: volunteerInterest === true
     };
 
     await storeRegistration(registration);

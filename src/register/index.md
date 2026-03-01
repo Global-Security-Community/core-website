@@ -80,6 +80,22 @@ title: Register for Event
         </select>
       </div>
 
+      <div class="form-group" style="margin-top:1.5rem;">
+        <label class="checkbox-label">
+          <input type="checkbox" id="reg-volunteer-interest">
+          I'd like to volunteer at this event
+        </label>
+      </div>
+
+      <div id="volunteer-confirm" class="volunteer-confirm-box" style="display:none;">
+        <p class="volunteer-thanks">🙏 Thank you for offering to help — our events wouldn't be possible without volunteers like you!</p>
+        <p class="volunteer-note">Please note that volunteer places are limited and not all who apply can be selected. If you're unsure whether volunteering is right for you, please speak to a chapter lead before committing.</p>
+        <label class="checkbox-label">
+          <input type="checkbox" id="reg-volunteer-confirm">
+          I confirm I am available for the full duration of the event and would like to be considered as a volunteer
+        </label>
+      </div>
+
       <button type="submit">Register</button>
     </form>
   </div>

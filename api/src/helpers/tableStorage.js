@@ -153,6 +153,7 @@ async function storeRegistration(registration) {
     company: registration.company || '',
     ticketCode: registration.ticketCode,
     role: registration.role || 'attendee',
+    volunteerInterest: registration.volunteerInterest === true,
     checkedIn: false,
     checkedInAt: '',
     registeredAt: new Date().toISOString()

@@ -121,9 +121,10 @@
         var html = '<table><thead><tr><th style="width:30px;"><input type="checkbox" id="select-all"></th><th>Name</th><th>Email</th><th>Role</th><th>Ticket</th><th>Checked In</th></tr></thead><tbody>';
         data.attendees.forEach(function(a) {
           var role = a.role || 'attendee';
+          var volIcon = a.volunteerInterest ? ' <span title="Volunteer interest" class="vol-interest-icon">🙋</span>' : '';
           html += '<tr>';
           html += '<td><input type="checkbox" class="attendee-check" data-reg-id="' + esc(a.id) + '"></td>';
-          html += '<td>' + esc(a.name) + '</td>';
+          html += '<td>' + esc(a.name) + volIcon + '</td>';
           html += '<td>' + esc(a.email) + '</td>';
           html += '<td><span class="role-badge role-badge--' + esc(role) + '">' + esc(role) + '</span></td>';
           html += '<td style="font-family:monospace;">' + esc(a.ticketCode) + '</td>';
