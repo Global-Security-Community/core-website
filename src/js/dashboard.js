@@ -107,27 +107,41 @@
         document.getElementById('btn-close-reg').addEventListener('click', function() { closeReg(eventId, chapterSlug); });
         document.getElementById('btn-complete').addEventListener('click', function() { completeEvent(eventId, chapterSlug); });
 
-        // Load volunteers
-        loadVolunteers(eventId);
-        // Wire up add volunteer button
-        var addBtn = document.getElementById('vol-add-btn');
-        addBtn.addEventListener('click', function() { addVolunteer(eventId); });
+        // Load attendees with role support
+        var adminRegBtn = document.getElementById('admin-reg-btn');
+        adminRegBtn.addEventListener('click', function() { adminRegister(eventId); });
 
         if (!data.attendees || data.attendees.length === 0) {
           document.getElementById('detail-attendees').innerHTML = '<p>No registrations yet.</p>';
           return;
         }
-        var html = '<table><thead><tr><th>Name</th><th>Email</th><th>Ticket</th><th>Checked In</th></tr></thead><tbody>';
+        var html = '<table><thead><tr><th style="width:30px;"><input type="checkbox" id="select-all"></th><th>Name</th><th>Email</th><th>Role</th><th>Ticket</th><th>Checked In</th></tr></thead><tbody>';
         data.attendees.forEach(function(a) {
+          var role = a.role || 'attendee';
           html += '<tr>';
+          html += '<td><input type="checkbox" class="attendee-check" data-reg-id="' + esc(a.id) + '"></td>';
           html += '<td>' + esc(a.name) + '</td>';
           html += '<td>' + esc(a.email) + '</td>';
+          html += '<td><span class="role-badge role-badge--' + esc(role) + '">' + esc(role) + '</span></td>';
           html += '<td style="font-family:monospace;">' + esc(a.ticketCode) + '</td>';
           html += '<td>' + (a.checkedIn ? '✅ ' + esc(a.checkedInAt) : '—') + '</td>';
           html += '</tr>';
         });
         html += '</tbody></table>';
         document.getElementById('detail-attendees').innerHTML = html;
+
+        // Select all checkbox
+        document.getElementById('select-all').addEventListener('change', function() {
+          var checked = this.checked;
+          document.querySelectorAll('.attendee-check').forEach(function(cb) { cb.checked = checked; });
+          updateRoleActionBar();
+        });
+        document.querySelectorAll('.attendee-check').forEach(function(cb) {
+          cb.addEventListener('change', updateRoleActionBar);
+        });
+
+        // Role apply button
+        document.getElementById('role-apply-btn').addEventListener('click', function() { applyRoleChange(eventId, eventTitle); });
       })
       .catch(function() {
         document.getElementById('detail-title').textContent = 'Error loading event details';
@@ -160,7 +174,7 @@
     }).then(function() {
       return fetch('/api/issueBadges', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug, badgeType: 'Attendee' })
+        body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug })
       });
     }).then(function(r) { return r.json(); })
     .then(function(d) { alert('Event completed. ' + (d.issued || 0) + ' badges issued.'); loadEvents(); })
@@ -305,70 +319,64 @@
     document.getElementById('create-another-btn').style.display = 'none';
   });
 
-  function loadVolunteers(eventId) {
-    var el = document.getElementById('volunteer-list');
-    el.innerHTML = '<p>Loading volunteers...</p>';
-    fetch('/api/eventVolunteers?eventId=' + encodeURIComponent(eventId))
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (!data.volunteers || data.volunteers.length === 0) {
-          el.innerHTML = '<p class="text-muted">No volunteers added yet.</p>';
-          return;
-        }
-        var html = '<table><thead><tr><th>Name</th><th>Email</th><th></th></tr></thead><tbody>';
-        data.volunteers.forEach(function(v) {
-          html += '<tr>';
-          html += '<td>' + esc(v.name) + '</td>';
-          html += '<td>' + esc(v.email) + '</td>';
-          html += '<td><button class="vol-remove-btn btn-danger" data-vol-id="' + esc(v.id) + '" style="padding:0.25rem 0.75rem;font-size:0.8rem;">Remove</button></td>';
-          html += '</tr>';
-        });
-        html += '</tbody></table>';
-        el.innerHTML = html;
-
-        // Attach remove handlers
-        el.querySelectorAll('.vol-remove-btn').forEach(function(btn) {
-          btn.addEventListener('click', function() {
-            removeVol(eventId, btn.dataset.volId);
-          });
-        });
-      })
-      .catch(function() { el.innerHTML = '<p>Failed to load volunteers.</p>'; });
+  function updateRoleActionBar() {
+    var selected = document.querySelectorAll('.attendee-check:checked');
+    var bar = document.getElementById('role-action-bar');
+    if (selected.length > 0) {
+      bar.style.display = 'flex';
+      document.getElementById('role-selected-count').textContent = selected.length + ' selected';
+    } else {
+      bar.style.display = 'none';
+    }
   }
 
-  function addVolunteer(eventId) {
-    var nameEl = document.getElementById('vol-name');
-    var emailEl = document.getElementById('vol-email');
-    var email = emailEl.value.trim();
-    var name = nameEl.value.trim();
-    if (!email) { alert('Please enter the volunteer\'s email.'); return; }
-    fetch('/api/eventVolunteers', {
+  function applyRoleChange(eventId, eventTitle) {
+    var role = document.getElementById('role-select').value;
+    if (!role) { alert('Please select a role.'); return; }
+    var selected = document.querySelectorAll('.attendee-check:checked');
+    var ids = [];
+    selected.forEach(function(cb) { ids.push(cb.dataset.regId); });
+    if (ids.length === 0) return;
+    if (!confirm('Set ' + ids.length + ' attendee(s) to "' + role + '"?')) return;
+    fetch('/api/updateRegistrationRole', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ eventId: eventId, email: email, name: name })
+      body: JSON.stringify({ eventId: eventId, registrationIds: ids, role: role })
     })
     .then(function(r) { return r.json(); })
     .then(function(d) {
       if (d.success) {
-        nameEl.value = ''; emailEl.value = '';
-        loadVolunteers(eventId);
+        alert(d.updated + ' role(s) updated.');
+        viewEvent(eventId, currentChapterSlug, eventTitle);
       } else {
-        alert(d.error || 'Failed to add volunteer.');
+        alert(d.error || 'Failed to update roles.');
       }
     })
     .catch(function() { alert('Network error.'); });
   }
 
-  function removeVol(eventId, volunteerId) {
-    if (!confirm('Remove this volunteer?')) return;
-    fetch('/api/eventVolunteers', {
-      method: 'DELETE', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ eventId: eventId, volunteerId: volunteerId })
+  function adminRegister(eventId) {
+    var nameEl = document.getElementById('admin-reg-name');
+    var emailEl = document.getElementById('admin-reg-email');
+    var roleEl = document.getElementById('admin-reg-role');
+    var name = nameEl.value.trim();
+    var email = emailEl.value.trim();
+    var role = roleEl.value;
+    if (!name || !email) { alert('Please enter name and email.'); return; }
+    fetch('/api/adminRegister', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ eventId: eventId, name: name, email: email, role: role })
     })
-    .then(function(r) {
-      if (!r.ok) throw new Error('Failed');
-      loadVolunteers(eventId);
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        nameEl.value = ''; emailEl.value = ''; roleEl.value = 'attendee';
+        alert('Registered ' + d.registration.fullName + ' as ' + d.registration.role + '.');
+        viewEvent(eventId, currentChapterSlug, document.getElementById('detail-title').textContent);
+      } else {
+        alert(d.error || 'Failed to register.');
+      }
     })
-    .catch(function() { alert('Failed to remove volunteer. Please try again.'); });
+    .catch(function() { alert('Network error.'); });
   }
 
   function esc(str) {

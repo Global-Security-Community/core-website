@@ -71,7 +71,11 @@
       "allowedRoles": ["admin"]
     },
     {
-      "route": "/api/eventVolunteers",
+      "route": "/api/updateRegistrationRole",
+      "allowedRoles": ["admin"]
+    },
+    {
+      "route": "/api/adminRegister",
       "allowedRoles": ["admin"]
     },
     {

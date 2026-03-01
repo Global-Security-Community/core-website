@@ -10,6 +10,7 @@ jest.mock('../src/helpers/tableStorage', () => ({
   updateApplicationStatus: jest.fn().mockResolvedValue({}),
   storeEvent: jest.fn().mockResolvedValue({}),
   getEvent: jest.fn(),
+  getEventById: jest.fn(),
   getEventBySlug: jest.fn(),
   listEvents: jest.fn().mockResolvedValue([]),
   updateEvent: jest.fn().mockResolvedValue({}),
@@ -23,6 +24,10 @@ jest.mock('../src/helpers/tableStorage', () => ({
   storeBadge: jest.fn().mockResolvedValue({}),
   getBadge: jest.fn(),
   getBadgesByEvent: jest.fn().mockResolvedValue([]),
+  getRegistrationsByRole: jest.fn().mockResolvedValue([]),
+  isVolunteerOrOrganiserByRegistration: jest.fn().mockResolvedValue(null),
+  isVolunteerForAnyEvent: jest.fn().mockResolvedValue(null),
+  VALID_ROLES: ['attendee', 'volunteer', 'speaker', 'sponsor', 'organiser'],
   getApprovedApplicationByEmail: jest.fn()
 }));
 
@@ -205,10 +210,146 @@ describe('roles function', () => {
     expect(JSON.parse(res.body).roles).toContain('admin');
   });
 
+  test('returns volunteer role for user with volunteer registration', async () => {
+    storage.getApprovedApplicationByEmail.mockResolvedValueOnce(null);
+    storage.isVolunteerOrOrganiserByRegistration.mockResolvedValueOnce({ role: 'volunteer', email: 'vol@test.com' });
+    const req = makeRequest('POST', { userId: 'u1', userDetails: 'vol@test.com' });
+    const res = await roles(req, context);
+    expect(res.status).toBe(200);
+    expect(JSON.parse(res.body).roles).toContain('volunteer');
+  });
+
+  test('returns volunteer role for user with organiser registration', async () => {
+    storage.getApprovedApplicationByEmail.mockResolvedValueOnce(null);
+    storage.isVolunteerOrOrganiserByRegistration.mockResolvedValueOnce({ role: 'organiser', email: 'org@test.com' });
+    const req = makeRequest('POST', { userId: 'u1', userDetails: 'org@test.com' });
+    const res = await roles(req, context);
+    expect(res.status).toBe(200);
+    expect(JSON.parse(res.body).roles).toContain('volunteer');
+  });
+
   test('handles missing body gracefully', async () => {
     const req = makeRequest('POST', {});
     const res = await roles(req, context);
     expect(res.status).toBe(200);
     expect(JSON.parse(res.body).roles).toEqual([]);
+  });
+});
+
+describe('updateRegistrationRole function', () => {
+  const updateRole = require('../src/functions/updateRegistrationRole');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('rejects unauthenticated requests', async () => {
+    const req = makeRequest('POST', {});
+    const res = await updateRole(req, context);
+    expect(res.status).toBe(401);
+  });
+
+  test('rejects non-admin users', async () => {
+    const req = makeAuthRequest('POST', { eventId: 'ev-1', registrationIds: ['r1'], role: 'volunteer' }, ['authenticated']);
+    const res = await updateRole(req, context);
+    expect(res.status).toBe(403);
+  });
+
+  test('rejects invalid role', async () => {
+    const req = makeAuthRequest('POST', { eventId: 'ev-1', registrationIds: ['r1'], role: 'invalid' }, ['admin']);
+    const res = await updateRole(req, context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/Invalid role/);
+  });
+
+  test('rejects missing fields', async () => {
+    const req = makeAuthRequest('POST', { eventId: 'ev-1' }, ['admin']);
+    const res = await updateRole(req, context);
+    expect(res.status).toBe(400);
+  });
+
+  test('updates roles for valid registrations', async () => {
+    storage.getRegistrationsByEvent.mockResolvedValueOnce([
+      { rowKey: 'r1', fullName: 'Alice', role: 'attendee' },
+      { rowKey: 'r2', fullName: 'Bob', role: 'attendee' }
+    ]);
+    const req = makeAuthRequest('POST', { eventId: 'ev-1', registrationIds: ['r1', 'r2'], role: 'volunteer' }, ['admin']);
+    const res = await updateRole(req, context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.updated).toBe(2);
+    expect(storage.updateRegistration).toHaveBeenCalledTimes(2);
+  });
+
+  test('reports errors for non-existent registrations', async () => {
+    storage.getRegistrationsByEvent.mockResolvedValueOnce([
+      { rowKey: 'r1', fullName: 'Alice' }
+    ]);
+    const req = makeAuthRequest('POST', { eventId: 'ev-1', registrationIds: ['r1', 'r99'], role: 'speaker' }, ['admin']);
+    const res = await updateRole(req, context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.updated).toBe(1);
+    expect(body.errors).toHaveLength(1);
+    expect(body.errors[0].id).toBe('r99');
+  });
+});
+
+describe('adminRegister function', () => {
+  const adminRegister = require('../src/functions/adminRegister');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('rejects unauthenticated requests', async () => {
+    const req = makeRequest('POST', {});
+    const res = await adminRegister(req, context);
+    expect(res.status).toBe(401);
+  });
+
+  test('rejects non-admin users', async () => {
+    const req = makeAuthRequest('POST', { eventId: 'ev-1', name: 'Alice', email: 'alice@test.com' }, ['authenticated']);
+    const res = await adminRegister(req, context);
+    expect(res.status).toBe(403);
+  });
+
+  test('rejects invalid role', async () => {
+    const req = makeAuthRequest('POST', { eventId: 'ev-1', name: 'Alice', email: 'alice@test.com', role: 'invalid' }, ['admin']);
+    const res = await adminRegister(req, context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/Invalid role/);
+  });
+
+  test('blocks attendee registration at capacity', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', title: 'Test', status: 'published', registrationCap: 2 });
+    storage.getRegistrationsByEvent.mockResolvedValueOnce([{ rowKey: 'r1', email: 'a@a.com' }, { rowKey: 'r2', email: 'b@b.com' }]);
+    const req = makeAuthRequest('POST', { eventId: 'ev-1', name: 'Alice', email: 'alice@test.com', role: 'attendee' }, ['admin']);
+    const res = await adminRegister(req, context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/capacity/i);
+  });
+
+  test('allows speaker registration at capacity (cap bypass)', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', title: 'Test', status: 'published', registrationCap: 2 });
+    storage.getRegistrationsByEvent.mockResolvedValueOnce([{ rowKey: 'r1', email: 'x@x.com' }, { rowKey: 'r2', email: 'y@y.com' }]);
+    const req = makeAuthRequest('POST', { eventId: 'ev-1', name: 'Speaker', email: 'speaker@test.com', role: 'speaker' }, ['admin']);
+    const res = await adminRegister(req, context);
+    expect(res.status).toBe(201);
+    expect(JSON.parse(res.body).registration.role).toBe('speaker');
+  });
+
+  test('rejects duplicate email', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', title: 'Test', status: 'published', registrationCap: 0 });
+    storage.getRegistrationsByEvent.mockResolvedValueOnce([{ rowKey: 'r1', email: 'alice@test.com' }]);
+    const req = makeAuthRequest('POST', { eventId: 'ev-1', name: 'Alice', email: 'alice@test.com' }, ['admin']);
+    const res = await adminRegister(req, context);
+    expect(res.status).toBe(409);
+  });
+
+  test('registers with default attendee role', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', title: 'Test', status: 'published', registrationCap: 0 });
+    storage.getRegistrationsByEvent.mockResolvedValueOnce([]);
+    const req = makeAuthRequest('POST', { eventId: 'ev-1', name: 'Bob', email: 'bob@test.com' }, ['admin']);
+    const res = await adminRegister(req, context);
+    expect(res.status).toBe(201);
+    expect(JSON.parse(res.body).registration.role).toBe('attendee');
   });
 });

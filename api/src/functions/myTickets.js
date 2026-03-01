@@ -39,6 +39,7 @@ module.exports = async function (request, context) {
         ticketCode: reg.ticketCode,
         fullName: reg.fullName,
         company: reg.company || '',
+        role: reg.role || 'attendee',
         checkedIn: reg.checkedIn === true || reg.checkedIn === 'true',
         checkedInAt: reg.checkedInAt || '',
         registeredAt: reg.registeredAt,

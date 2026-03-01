@@ -95,9 +95,9 @@ module.exports = async function (request, context) {
 
     const format = url.searchParams.get('format');
     if (format === 'csv') {
-      const header = 'Name,Email,Ticket Code,Checked In,Checked In At,Registered At\n';
+      const header = 'Name,Email,Ticket Code,Role,Checked In,Checked In At,Registered At\n';
       const rows = registrations.map(r =>
-        `"${(r.fullName || '').replace(/"/g, '""')}","${r.email || ''}","${r.ticketCode}","${r.checkedIn ? 'Yes' : 'No'}","${r.checkedInAt || ''}","${r.registeredAt || ''}"`
+        `"${(r.fullName || '').replace(/"/g, '""')}","${r.email || ''}","${r.ticketCode}","${r.role || 'attendee'}","${r.checkedIn ? 'Yes' : 'No'}","${r.checkedInAt || ''}","${r.registeredAt || ''}"`
       ).join('\n');
       return {
         status: 200,
@@ -114,9 +114,11 @@ module.exports = async function (request, context) {
         total,
         checkedIn,
         attendees: registrations.map(r => ({
+          id: r.rowKey,
           name: r.fullName,
           email: r.email,
           ticketCode: r.ticketCode,
+          role: r.role || 'attendee',
           checkedIn: r.checkedIn || false,
           checkedInAt: r.checkedInAt || '',
           registeredAt: r.registeredAt

@@ -653,6 +653,67 @@ td {
 .status-badge--completed { background-color: #666; }
 .status-badge--default { background-color: #999; }
 
+/* Role badges */
+.role-badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  text-transform: capitalize;
+}
+.role-badge--attendee { background-color: var(--color-primary-teal); }
+.role-badge--volunteer { background-color: var(--color-accent-orange); }
+.role-badge--speaker { background-color: #7c3aed; }
+.role-badge--sponsor { background-color: #d97706; }
+.role-badge--organiser { background-color: var(--color-primary-navy); }
+
+/* Role action bar */
+.role-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f0f4f8;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+.role-action-bar select {
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+.role-action-bar button {
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+}
+
+/* Volunteer cards on event page */
+.volunteer-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.volunteer-card {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  text-align: center;
+  min-width: 140px;
+}
+.volunteer-name {
+  font-weight: 600;
+  color: var(--color-primary-navy);
+  margin-bottom: 0.25rem;
+}
+.volunteer-company {
+  font-size: 0.85rem;
+  color: #666;
+}
+
 /* Skip to content (accessibility) */
 .skip-link {
   position: absolute;

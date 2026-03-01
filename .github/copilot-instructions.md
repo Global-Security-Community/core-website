@@ -148,9 +148,26 @@ Reverse the three steps above:
 
 - All table operations go through `api/src/helpers/tableStorage.js`
 - Add new operations as exported functions in that file
-- Tables: `Chapters`, `Events`, `EventRegistrations`, `EventDemographics`, `ContactSubmissions`, `ChapterApplications`
+- Tables: `Chapters`, `Events`, `EventRegistrations`, `EventDemographics`, `EventBadges`, `ContactSubmissions`, `ChapterApplications`
 - PartitionKey/RowKey patterns vary per table — check existing helpers
 - Boolean values from Table Storage can arrive as strings (`"true"`/`"false"`) — always use strict comparison: `=== true || === 'true'`
+
+### Registration Roles
+
+Every registration in `EventRegistrations` has a `role` field. Valid roles:
+- `attendee` (default) — standard event attendee
+- `volunteer` — event volunteer; shown on event page, grants scanner access
+- `speaker` — event speaker; bypasses registration cap
+- `sponsor` — event sponsor; bypasses registration cap
+- `organiser` — event organiser; bypasses registration cap, grants scanner access
+
+Existing records without a `role` field default to `attendee` in code. The `VALID_ROLES` array is exported from `tableStorage.js`.
+
+**Scanner access** is granted to users whose email matches any registration with role `volunteer` or `organiser` (checked via `isVolunteerOrOrganiserByRegistration()`). There is also a legacy fallback to the `EventVolunteers` table.
+
+**Admin role management:**
+- `POST /api/updateRegistrationRole` — bulk update roles for selected registrations
+- `POST /api/adminRegister` — register someone with a specific role (bypasses cap for speaker/sponsor/organiser)
 
 ---
 
@@ -234,5 +251,4 @@ Reverse the three steps above:
 3. **Stale content after deploy** — service worker or browser cache; hard refresh (Cmd+Shift+R) if needed
 4. **Table Storage booleans** — `false` can come back as `"false"` (truthy in JS); always compare strictly
 5. **Workflow push failures** — generation workflows need `git pull --rebase` before push
-6. **CSP blocking resources** — update CSP in `staticwebapp.config.json` when adding external URLs
 6. **CSP blocking resources** — update CSP in `staticwebapp.config.json` when adding external URLs

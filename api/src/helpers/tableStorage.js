@@ -139,6 +139,7 @@ async function storeRegistration(registration) {
     email: registration.email,
     company: registration.company || '',
     ticketCode: registration.ticketCode,
+    role: registration.role || 'attendee',
     checkedIn: false,
     checkedInAt: '',
     registeredAt: new Date().toISOString()
@@ -306,6 +307,28 @@ async function isVolunteerForAnyEvent(email) {
   return null;
 }
 
+// ─── Registration Role Helpers ───
+
+const VALID_ROLES = ['attendee', 'volunteer', 'speaker', 'sponsor', 'organiser'];
+
+async function getRegistrationsByRole(eventId, role) {
+  const regs = await getRegistrationsByEvent(eventId);
+  return regs.filter(r => (r.role || 'attendee') === role);
+}
+
+async function isVolunteerOrOrganiserByRegistration(email) {
+  const client = getTableClient('EventRegistrations');
+  const normalised = email.trim().toLowerCase();
+  const entities = client.listEntities({
+    queryOptions: { filter: `email eq '${normalised.replace(/'/g, "''")}'` }
+  });
+  for await (const entity of entities) {
+    const role = entity.role || 'attendee';
+    if (role === 'volunteer' || role === 'organiser') return entity;
+  }
+  return null;
+}
+
 // ─── Chapter Leads (for role assignment) ───
 
 async function getApprovedApplicationByEmail(email) {
@@ -330,5 +353,6 @@ module.exports = {
   storeDemographics,
   storeBadge, getBadge, getBadgesByEvent,
   storeVolunteer, getVolunteersByEvent, removeVolunteer, isVolunteerForAnyEvent,
+  getRegistrationsByRole, isVolunteerOrOrganiserByRegistration, VALID_ROLES,
   getApprovedApplicationByEmail
 };

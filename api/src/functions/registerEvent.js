@@ -77,7 +77,8 @@ module.exports = async function (request, context) {
       fullName: safe.fullName.trim(),
       email: email.trim(),
       company: (safe.company || '').trim(),
-      ticketCode
+      ticketCode,
+      role: 'attendee'
     };
 
     await storeRegistration(registration);

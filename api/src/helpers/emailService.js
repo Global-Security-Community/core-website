@@ -126,10 +126,17 @@ async function sendBadgeEmail(recipient, badgeSvg, event, badgeType, context) {
   const client = getEmailClient();
   const badgeBuffer = Buffer.from(badgeSvg, 'utf-8');
 
-  const roleText = badgeType === 'Speaker' ? 'speaking at' : badgeType === 'Organiser' ? 'organising' : 'attending';
+  const roleMessages = {
+    'Speaker': { roleText: 'speaking at', gratitude: 'Your knowledge sharing inspires the community.' },
+    'Organiser': { roleText: 'organising', gratitude: 'Your leadership drives the community forward.' },
+    'Volunteer': { roleText: 'volunteering at', gratitude: 'Your contribution made this event possible.' },
+    'Sponsor': { roleText: 'sponsoring', gratitude: 'Your support helps us build the security community.' },
+    'Attendee': { roleText: 'attending', gratitude: '' }
+  };
+  const msg = roleMessages[badgeType] || roleMessages['Attendee'];
   const bodyHtml = `
-    <h2 style="color:#001f3f;margin:0 0 8px 0;">Thank you for ${roleText} ${escapeHtml(event.title)}! 🏅</h2>
-    <p style="color:#555;margin:0 0 20px 0;">Your digital <strong>${escapeHtml(badgeType)}</strong> badge is attached to this email.</p>
+    <h2 style="color:#001f3f;margin:0 0 8px 0;">Thank you for ${msg.roleText} ${escapeHtml(event.title)}! 🏅</h2>
+    <p style="color:#555;margin:0 0 20px 0;">Your digital <strong>${escapeHtml(badgeType)}</strong> badge is attached to this email.${msg.gratitude ? ' ' + msg.gratitude : ''}</p>
     ${eventDetailsBlock(event)}
     <p style="text-align:center;margin-top:24px;">
       <a href="${SITE_URL}/my-tickets/" style="display:inline-block;padding:10px 24px;background:#20b2aa;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">View My Account</a>
