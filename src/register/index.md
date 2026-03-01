@@ -90,6 +90,7 @@ title: Register for Event
     <p id="success-details"></p>
     <div id="success-qr" class="success-qr"></div>
     <p>A confirmation email with your ticket has been sent.</p>
+    <p style="font-size:0.85em;color:#666;">📧 Can't find it? Please check your junk or spam folder.</p>
     <p><a href="/my-tickets/">View My Tickets</a></p>
   </div>
 </div>
