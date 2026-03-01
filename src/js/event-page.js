@@ -54,7 +54,7 @@
     if (metaEl) sessionizeId = metaEl.getAttribute('data-sessionize-id');
 
     if (sessionizeId) {
-      // Fetch agenda (GridSmart view)
+      // Fetch agenda (GridSmart view) — use timeSlots for grid layout
       if (agendaEl) {
         fetch('https://sessionize.com/api/v2/' + sessionizeId + '/view/GridSmart')
           .then(function(r) { return r.json(); })
@@ -63,23 +63,77 @@
               agendaEl.innerHTML = '<p>Agenda coming soon.</p>';
               return;
             }
+
             var html = '';
             data.forEach(function(day) {
-              (day.rooms || []).forEach(function(room) {
-                html += '<h3>' + esc(room.name || 'Main') + '</h3>';
-                html += '<div class="cards" style="grid-template-columns: 1fr;">';
-                (room.sessions || []).forEach(function(session) {
-                  var time = session.startsAt ? new Date(session.startsAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-                  html += '<div class="card"><p style="color:var(--color-primary-teal);font-weight:600;margin:0 0 0.25rem 0;">' + esc(time) + '</p>';
-                  html += '<h4 style="margin:0 0 0.5rem 0;">' + esc(session.title) + '</h4>';
-                  if (session.speakers && session.speakers.length) {
-                    html += '<p style="color:#666;margin:0;">' + session.speakers.map(function(s) { return esc(s.name); }).join(', ') + '</p>';
+              var slots = day.timeSlots || [];
+              if (!slots.length) return;
+
+              // Collect unique room names in order
+              var roomNames = [];
+              var roomIdSet = {};
+              slots.forEach(function(slot) {
+                (slot.rooms || []).forEach(function(r) {
+                  if (!roomIdSet[r.id]) {
+                    roomIdSet[r.id] = true;
+                    roomNames.push({ id: r.id, name: r.name });
                   }
-                  html += '</div>';
                 });
-                html += '</div>';
               });
+
+              var multiRoom = roomNames.length > 1;
+
+              // Table header with room columns
+              html += '<div class="agenda-table-wrap">';
+              html += '<table class="agenda-table">';
+              if (multiRoom) {
+                html += '<thead><tr><th class="agenda-time-col">Time</th>';
+                roomNames.forEach(function(room) {
+                  html += '<th>' + esc(room.name) + '</th>';
+                });
+                html += '</tr></thead>';
+              }
+              html += '<tbody>';
+
+              slots.forEach(function(slot) {
+                var time = formatTime(slot.slotStart, day.date);
+                var roomMap = {};
+                (slot.rooms || []).forEach(function(r) {
+                  roomMap[r.id] = r.session;
+                });
+
+                // Check if this is a plenum (same session in all rooms)
+                var firstSession = (slot.rooms && slot.rooms.length) ? slot.rooms[0].session : null;
+                var isPlenum = firstSession && firstSession.isPlenumSession;
+
+                html += '<tr class="' + (firstSession && firstSession.isServiceSession ? 'agenda-row-service' : 'agenda-row-session') + '">';
+                html += '<td class="agenda-time-col">' + esc(time) + '</td>';
+
+                if (isPlenum || !multiRoom) {
+                  // Span all room columns
+                  var s = firstSession;
+                  var colspan = multiRoom ? ' colspan="' + roomNames.length + '"' : '';
+                  html += '<td' + colspan + '>';
+                  html += renderSession(s);
+                  html += '</td>';
+                } else {
+                  // One cell per room
+                  roomNames.forEach(function(room) {
+                    var s = roomMap[room.id];
+                    html += '<td>';
+                    if (s) {
+                      html += renderSession(s);
+                    }
+                    html += '</td>';
+                  });
+                }
+
+                html += '</tr>';
+              });
+
+              html += '</tbody></table></div>';
             });
+
             agendaEl.innerHTML = html;
           })
           .catch(function() { agendaEl.innerHTML = '<p>Could not load agenda.</p>'; });
@@ -109,6 +163,27 @@
           .catch(function() { speakersEl.innerHTML = '<p>Could not load speakers.</p>'; });
       }
     }
+  }
+
+  function renderSession(s) {
+    if (!s) return '';
+    var h = '<div class="agenda-session">';
+    h += '<div class="agenda-session-title">' + esc(s.title) + '</div>';
+    if (s.speakers && s.speakers.length) {
+      h += '<div class="agenda-session-speakers">' + s.speakers.map(function(sp) { return esc(sp.name); }).join(', ') + '</div>';
+    }
+    h += '</div>';
+    return h;
+  }
+
+  function formatTime(slotStart, dayDate) {
+    // slotStart is "HH:MM:SS", dayDate is "YYYY-MM-DDT00:00:00"
+    var parts = slotStart.split(':');
+    var h = parseInt(parts[0], 10);
+    var m = parts[1];
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12 || 12;
+    return h12 + ':' + m + ' ' + ampm;
   }
 
   function esc(str) {

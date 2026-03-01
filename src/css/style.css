@@ -886,6 +886,107 @@ thead tr:hover {
   background-color: transparent;
 }
 
+/* Agenda Table */
+.agenda-table-wrap {
+  overflow-x: auto;
+  margin: 1rem 0 2rem;
+}
+
+.agenda-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.agenda-table thead th {
+  background: var(--color-primary-navy);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: none;
+}
+
+.agenda-table thead th:first-child {
+  width: 90px;
+}
+
+.agenda-time-col {
+  font-weight: 600;
+  color: var(--color-primary-teal);
+  white-space: nowrap;
+  vertical-align: top;
+  width: 90px;
+  font-size: 0.9rem;
+}
+
+.agenda-table td {
+  padding: 0.75rem 1rem;
+  vertical-align: top;
+  border-bottom: 1px solid #eee;
+}
+
+.agenda-row-service td {
+  background: var(--color-light-gray);
+}
+
+.agenda-row-service .agenda-session-title {
+  color: #888;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.agenda-row-session td {
+  background: #fff;
+}
+
+.agenda-session-title {
+  font-weight: 600;
+  color: var(--color-primary-navy);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  margin-bottom: 0.2rem;
+}
+
+.agenda-session-speakers {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+@media (max-width: 600px) {
+  .agenda-table thead {
+    display: none;
+  }
+  .agenda-table, .agenda-table tbody, .agenda-table tr, .agenda-table td {
+    display: block;
+  }
+  .agenda-table tr {
+    margin-bottom: 0.75rem;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .agenda-time-col {
+    background: var(--color-primary-navy);
+    color: var(--color-primary-teal);
+    padding: 0.5rem 1rem;
+    width: 100%;
+    font-size: 0.85rem;
+  }
+  .agenda-table td {
+    border-bottom: none;
+    padding: 0.5rem 1rem;
+  }
+  .agenda-row-service .agenda-time-col,
+  .agenda-row-session .agenda-time-col {
+    background: var(--color-primary-navy);
+  }
+}
+
 /* Event Cards */
 .events-grid {
   display: grid;
