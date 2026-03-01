@@ -1099,6 +1099,7 @@ thead tr:hover {
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
+  text-align: left;
 }
 
 .ticket-header-logo {
