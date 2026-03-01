@@ -40,6 +40,19 @@ async function getApplication(applicationId) {
   return await client.getEntity('applications', applicationId);
 }
 
+async function getApprovedApplicationBySlug(slug) {
+  const client = getTableClient('ChapterApplications');
+  const normalised = slug.trim().toLowerCase();
+  const entities = client.listEntities({
+    queryOptions: { filter: `status eq 'approved'` }
+  });
+  for await (const entity of entities) {
+    const citySlug = (entity.city || '').toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
+    if (citySlug === normalised) return entity;
+  }
+  return null;
+}
+
 async function updateApplicationStatus(applicationId, status) {
   const client = getTableClient('ChapterApplications');
   const entity = await client.getEntity('applications', applicationId);
@@ -345,7 +358,7 @@ async function getApprovedApplicationByEmail(email) {
 }
 
 module.exports = {
-  storeApplication, getApplication, updateApplicationStatus,
+  storeApplication, getApplication, updateApplicationStatus, getApprovedApplicationBySlug,
   storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent,
   storeRegistration, getRegistrationByTicketCode, getRegistrationsByUser,
   getRegistrationsByEvent, countRegistrations, updateRegistration,

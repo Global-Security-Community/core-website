@@ -10,6 +10,7 @@ title: Dashboard
   <div class="dash-actions">
     <button id="btn-events">My Events</button>
     <button id="btn-create" class="btn-navy">Create Event</button>
+    <button id="btn-chapter" class="btn-outline">Edit Chapter</button>
   </div>
 
   <!-- Events List -->
@@ -134,6 +135,15 @@ title: Dashboard
       <button id="role-apply-btn" type="button">Apply</button>
     </div>
     <div id="detail-attendees"></div>
+  </div>
+
+  <!-- Edit Chapter -->
+  <div id="section-chapter" style="display:none;">
+    <h2>Edit Chapter</h2>
+    <div id="chapter-edit-message" class="form-message" style="display:none;"></div>
+    <div id="chapter-edit-form" class="reg-form-wrap">
+      <p>Loading chapter data...</p>
+    </div>
   </div>
 </div>
 

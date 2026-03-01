@@ -79,6 +79,14 @@
       "allowedRoles": ["admin"]
     },
     {
+      "route": "/api/updateChapter",
+      "allowedRoles": ["admin"]
+    },
+    {
+      "route": "/api/getChapter",
+      "allowedRoles": ["admin"]
+    },
+    {
       "route": "/api/registerEvent",
       "allowedRoles": ["authenticated"]
     },

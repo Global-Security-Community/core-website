@@ -28,12 +28,34 @@ jest.mock('../src/helpers/tableStorage', () => ({
   isVolunteerOrOrganiserByRegistration: jest.fn().mockResolvedValue(null),
   isVolunteerForAnyEvent: jest.fn().mockResolvedValue(null),
   VALID_ROLES: ['attendee', 'volunteer', 'speaker', 'sponsor', 'organiser'],
-  getApprovedApplicationByEmail: jest.fn()
+  getApprovedApplicationByEmail: jest.fn(),
+  getApprovedApplicationBySlug: jest.fn()
 }));
 
 jest.mock('../src/helpers/discordBot', () => ({
   sendMessage: jest.fn().mockResolvedValue(true),
   createChapterChannel: jest.fn().mockResolvedValue({ channelId: '123', channelName: 'test' })
+}));
+
+jest.mock('@azure/data-tables', () => ({
+  TableClient: {
+    fromConnectionString: jest.fn().mockReturnValue({
+      updateEntity: jest.fn().mockResolvedValue({})
+    })
+  }
+}));
+
+jest.mock('@octokit/rest', () => ({
+  Octokit: jest.fn().mockImplementation(() => ({
+    repos: {
+      getContent: jest.fn().mockResolvedValue({ data: { sha: 'abc123' } }),
+      createOrUpdateFileContents: jest.fn().mockResolvedValue({})
+    }
+  }))
+}));
+
+jest.mock('@octokit/auth-app', () => ({
+  createAppAuth: jest.fn()
 }));
 
 jest.mock('../src/helpers/emailService', () => ({
@@ -351,5 +373,110 @@ describe('adminRegister function', () => {
     const res = await adminRegister(req, context);
     expect(res.status).toBe(201);
     expect(JSON.parse(res.body).registration.role).toBe('attendee');
+  });
+});
+
+describe('getChapter function', () => {
+  const getChapter = require('../src/functions/getChapter');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('rejects unauthenticated requests', async () => {
+    const req = { ...makeRequest('GET'), url: 'https://example.com/api/getChapter?slug=perth' };
+    const res = await getChapter(req, context);
+    expect(res.status).toBe(401);
+  });
+
+  test('rejects non-admin users', async () => {
+    const req = { ...makeAuthRequest('GET', null, ['authenticated']), url: 'https://example.com/api/getChapter?slug=perth' };
+    const res = await getChapter(req, context);
+    expect(res.status).toBe(403);
+  });
+
+  test('returns 400 for missing slug', async () => {
+    const req = { ...makeAuthRequest('GET', null, ['admin']), url: 'https://example.com/api/getChapter' };
+    const res = await getChapter(req, context);
+    expect(res.status).toBe(400);
+  });
+
+  test('returns leads from original application fields when no leadsJson', async () => {
+    storage.getApprovedApplicationBySlug.mockResolvedValueOnce({
+      city: 'Perth', country: 'Australia',
+      fullName: 'George', email: 'george@test.com',
+      github: 'https://github.com/george', linkedIn: 'https://linkedin.com/in/george',
+      secondLeadName: 'Anthony', secondLeadEmail: 'anthony@test.com',
+      secondLeadGitHub: '', secondLeadLinkedIn: 'https://linkedin.com/in/anthony'
+    });
+    const req = { ...makeAuthRequest('GET', null, ['admin']), url: 'https://example.com/api/getChapter?slug=perth' };
+    const res = await getChapter(req, context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.leads).toHaveLength(2);
+    expect(body.leads[0].name).toBe('George');
+    expect(body.leads[1].name).toBe('Anthony');
+  });
+
+  test('returns leads from leadsJson when available', async () => {
+    storage.getApprovedApplicationBySlug.mockResolvedValueOnce({
+      city: 'Perth', country: 'Australia',
+      fullName: 'George', email: 'george@test.com',
+      leadsJson: JSON.stringify([
+        { name: 'George', email: 'george@test.com', twitter: 'https://x.com/george' },
+        { name: 'New Lead', email: 'new@test.com' }
+      ])
+    });
+    const req = { ...makeAuthRequest('GET', null, ['admin']), url: 'https://example.com/api/getChapter?slug=perth' };
+    const res = await getChapter(req, context);
+    const body = JSON.parse(res.body);
+    expect(body.leads).toHaveLength(2);
+    expect(body.leads[0].twitter).toBe('https://x.com/george');
+    expect(body.leads[1].name).toBe('New Lead');
+  });
+});
+
+describe('updateChapter function', () => {
+  const updateChapter = require('../src/functions/updateChapter');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('rejects unauthenticated requests', async () => {
+    const req = makeRequest('POST', {});
+    const res = await updateChapter(req, context);
+    expect(res.status).toBe(401);
+  });
+
+  test('rejects non-admin users', async () => {
+    const req = makeAuthRequest('POST', { chapterSlug: 'perth', leads: [{ name: 'A', email: 'a@a.com' }] }, ['authenticated']);
+    const res = await updateChapter(req, context);
+    expect(res.status).toBe(403);
+  });
+
+  test('rejects missing leads', async () => {
+    const req = makeAuthRequest('POST', { chapterSlug: 'perth' }, ['admin']);
+    const res = await updateChapter(req, context);
+    expect(res.status).toBe(400);
+  });
+
+  test('rejects more than 4 leads', async () => {
+    const leads = [1,2,3,4,5].map(i => ({ name: 'Lead ' + i, email: i + '@test.com' }));
+    const req = makeAuthRequest('POST', { chapterSlug: 'perth', leads }, ['admin']);
+    const res = await updateChapter(req, context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/Maximum 4/);
+  });
+
+  test('rejects lead without name', async () => {
+    const req = makeAuthRequest('POST', { chapterSlug: 'perth', leads: [{ name: '', email: 'a@a.com' }] }, ['admin']);
+    const res = await updateChapter(req, context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/name and email/);
+  });
+
+  test('returns error when chapter not found', async () => {
+    storage.getApprovedApplicationBySlug.mockResolvedValueOnce(null);
+    const req = makeAuthRequest('POST', { chapterSlug: 'nonexistent', leads: [{ name: 'A', email: 'a@a.com' }] }, ['admin']);
+    const res = await updateChapter(req, context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/No approved chapter/);
   });
 });

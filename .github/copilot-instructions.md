@@ -169,6 +169,14 @@ Existing records without a `role` field default to `attendee` in code. The `VALI
 - `POST /api/updateRegistrationRole` — bulk update roles for selected registrations
 - `POST /api/adminRegister` — register someone with a specific role (bypasses cap for speaker/sponsor/organiser)
 
+### Chapter Data
+
+Chapter data is stored on the `ChapterApplications` table. After approval, the chapter slug is derived from the city name. Leads can be edited via the dashboard:
+- `GET /api/getChapter?slug={slug}` — returns chapter leads (from `leadsJson` field or original application fields)
+- `POST /api/updateChapter` — updates leads (up to 4) and regenerates the chapter markdown page via GitHub Contents API
+- Lead social links: GitHub, LinkedIn, Twitter/X, Website
+- The `leadsJson` field stores the edited leads as a JSON string; original application fields are kept as fallback
+
 ---
 
 ## Email (Azure Communication Services)

@@ -5,7 +5,7 @@
 
   function showSection(s) {
     currentSection = s;
-    ['events','create','detail'].forEach(function(id) {
+    ['events','create','detail','chapter'].forEach(function(id) {
       document.getElementById('section-' + id).style.display = id === s ? 'block' : 'none';
     });
   }
@@ -13,6 +13,7 @@
   // Wire up navigation buttons
   document.getElementById('btn-events').addEventListener('click', function() { showSection('events'); });
   document.getElementById('btn-create').addEventListener('click', function() { showSection('create'); });
+  document.getElementById('btn-chapter').addEventListener('click', function() { showSection('chapter'); loadChapterEdit(); });
   document.getElementById('btn-back-events').addEventListener('click', function() { showSection('events'); });
 
   // Check auth
@@ -35,6 +36,8 @@
         var el = document.getElementById('events-list');
         if (data.chapterCity) {
           document.getElementById('dash-title').textContent = data.chapterCity + ' Chapter Management';
+          // Derive chapter slug from city
+          currentChapterSlug = data.chapterCity.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
         }
         if (!data.events || data.events.length === 0) {
           el.innerHTML = '<p>No events yet. Create your first event!</p>';
@@ -384,5 +387,150 @@
     var d = document.createElement('span');
     d.textContent = str;
     return d.innerHTML;
+  }
+
+  // ─── Chapter Edit ───
+
+  var chapterEditLoaded = false;
+
+  function loadChapterEdit() {
+    if (!currentChapterSlug) {
+      document.getElementById('chapter-edit-form').innerHTML = '<p>Could not determine chapter slug. Please go back to events first.</p>';
+      return;
+    }
+    document.getElementById('chapter-edit-form').innerHTML = '<p>Loading chapter data...</p>';
+    document.getElementById('chapter-edit-message').style.display = 'none';
+
+    fetch('/api/getChapter?slug=' + encodeURIComponent(currentChapterSlug))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) {
+          document.getElementById('chapter-edit-form').innerHTML = '<p>' + esc(data.error) + '</p>';
+          return;
+        }
+        renderChapterForm(data.leads || [], data.city, data.country);
+        chapterEditLoaded = true;
+      })
+      .catch(function() {
+        document.getElementById('chapter-edit-form').innerHTML = '<p>Failed to load chapter data.</p>';
+      });
+  }
+
+  function renderChapterForm(leads, city, country) {
+    var maxLeads = 4;
+    // Ensure at least 1 lead row
+    if (leads.length === 0) leads = [{ name: '', email: '', github: '', linkedin: '', twitter: '', website: '' }];
+
+    var html = '<p class="text-muted">Edit chapter leads and social links for <strong>' + esc(city) + ', ' + esc(country) + '</strong>. Up to 4 leads.</p>';
+    html += '<div id="leads-container">';
+
+    leads.forEach(function(lead, i) {
+      html += buildLeadRow(i, lead);
+    });
+
+    html += '</div>';
+
+    if (leads.length < maxLeads) {
+      html += '<button id="add-lead-btn" type="button" class="btn-outline" style="margin-bottom:1rem;">+ Add Lead</button>';
+    }
+
+    html += '<button id="save-chapter-btn" type="button">Save Chapter</button>';
+
+    document.getElementById('chapter-edit-form').innerHTML = html;
+
+    // Wire up add lead
+    var addBtn = document.getElementById('add-lead-btn');
+    if (addBtn) {
+      addBtn.addEventListener('click', function() {
+        var container = document.getElementById('leads-container');
+        var count = container.querySelectorAll('.lead-edit-row').length;
+        if (count >= maxLeads) return;
+        var div = document.createElement('div');
+        div.innerHTML = buildLeadRow(count, { name: '', email: '', github: '', linkedin: '', twitter: '', website: '' });
+        container.appendChild(div.firstChild);
+        if (count + 1 >= maxLeads) addBtn.style.display = 'none';
+      });
+    }
+
+    // Wire up save
+    document.getElementById('save-chapter-btn').addEventListener('click', saveChapter);
+  }
+
+  function buildLeadRow(index, lead) {
+    return '<div class="lead-edit-row card" style="padding:1rem;margin-bottom:1rem;">' +
+      '<h4 style="margin:0 0 0.75rem 0;">Lead ' + (index + 1) + '</h4>' +
+      '<div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">' +
+        '<div><label>Name *</label><input type="text" class="lead-name" value="' + esc(lead.name) + '" maxlength="100" placeholder="Full name"></div>' +
+        '<div><label>Email *</label><input type="email" class="lead-email" value="' + esc(lead.email) + '" maxlength="200" placeholder="Email address"></div>' +
+      '</div>' +
+      '<div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">' +
+        '<div><label>GitHub</label><input type="url" class="lead-github" value="' + esc(lead.github) + '" maxlength="200" placeholder="https://github.com/..."></div>' +
+        '<div><label>LinkedIn</label><input type="url" class="lead-linkedin" value="' + esc(lead.linkedin) + '" maxlength="200" placeholder="https://linkedin.com/in/..."></div>' +
+      '</div>' +
+      '<div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">' +
+        '<div><label>X / Twitter</label><input type="url" class="lead-twitter" value="' + esc(lead.twitter) + '" maxlength="200" placeholder="https://x.com/..."></div>' +
+        '<div><label>Website</label><input type="url" class="lead-website" value="' + esc(lead.website) + '" maxlength="200" placeholder="https://..."></div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function saveChapter() {
+    var rows = document.querySelectorAll('.lead-edit-row');
+    var leads = [];
+    var valid = true;
+
+    rows.forEach(function(row) {
+      var name = row.querySelector('.lead-name').value.trim();
+      var email = row.querySelector('.lead-email').value.trim();
+      if (!name && !email) return; // skip empty rows
+      if (!name || !email) {
+        valid = false;
+        return;
+      }
+      leads.push({
+        name: name,
+        email: email,
+        github: row.querySelector('.lead-github').value.trim(),
+        linkedin: row.querySelector('.lead-linkedin').value.trim(),
+        twitter: row.querySelector('.lead-twitter').value.trim(),
+        website: row.querySelector('.lead-website').value.trim()
+      });
+    });
+
+    if (!valid || leads.length === 0) {
+      alert('Each lead must have a name and email.');
+      return;
+    }
+
+    var msg = document.getElementById('chapter-edit-message');
+    var btn = document.getElementById('save-chapter-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    fetch('/api/updateChapter', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chapterSlug: currentChapterSlug, leads: leads })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      btn.disabled = false;
+      btn.textContent = 'Save Chapter';
+      if (d.success) {
+        msg.style.display = 'block';
+        msg.style.backgroundColor = '#d4edda'; msg.style.color = '#155724';
+        msg.textContent = 'Chapter updated.' + (d.pageUpdated ? ' Page will redeploy shortly.' : ' Page could not be updated automatically.');
+      } else {
+        msg.style.display = 'block';
+        msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
+        msg.textContent = d.error || 'Failed to update chapter.';
+      }
+    })
+    .catch(function() {
+      btn.disabled = false;
+      btn.textContent = 'Save Chapter';
+      msg.style.display = 'block';
+      msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
+      msg.textContent = 'Network error. Please try again.';
+    });
   }
 })();
