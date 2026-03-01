@@ -62,4 +62,5 @@ jobs:
           # Pull latest changes before pushing to avoid rejection
           git pull --rebase origin main
           git push
+          sleep 5
           git push origin main:live-version-swa
