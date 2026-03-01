@@ -220,4 +220,5 @@ Reverse the three steps above:
 3. **Stale content after deploy** — service worker or browser cache; hard refresh (Cmd+Shift+R) if needed
 4. **Table Storage booleans** — `false` can come back as `"false"` (truthy in JS); always compare strictly
 5. **Workflow push failures** — generation workflows need `git pull --rebase` before push
+6. **Deploy race condition** — generation workflows must `sleep 5` between pushing to `main` and `live-version-swa`, otherwise GitHub may skip the SWA deploy trigger
 6. **CSP blocking resources** — update CSP in `staticwebapp.config.json` when adding external URLs
