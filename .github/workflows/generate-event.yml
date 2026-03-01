@@ -34,13 +34,15 @@ jobs:
           FRONTMATTER
 
           # Use printf to safely write fields that may contain special characters
+          # Replace newlines with ", " and escape double quotes for valid YAML
+          safe_yaml() { echo "$1" | tr '\n' ',' | sed 's/,/, /g; s/, $//; s/"/\\"/g'; }
           {
-            echo "title: \"$(echo "${TITLE}" | sed 's/"/\\"/g')\""
+            echo "title: \"$(safe_yaml "${TITLE}")\""
             echo "slug: \"${SLUG}\""
             echo "date: \"${DATE}\""
             echo "endDate: \"${END_DATE}\""
-            echo "location: \"$(echo "${LOCATION}" | sed 's/"/\\"/g')\""
-            echo "description: \"$(echo "${DESCRIPTION}" | sed 's/"/\\"/g')\""
+            echo "location: \"$(safe_yaml "${LOCATION}")\""
+            echo "description: \"$(safe_yaml "${DESCRIPTION}")\""
             echo "sessionizeApiId: \"${SESSIONIZE_ID}\""
             echo "registrationCap: ${REG_CAP:-0}"
             echo "chapterSlug: \"${CHAPTER_SLUG}\""
