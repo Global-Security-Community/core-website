@@ -97,7 +97,7 @@
           '</div>' +
           '<div class="action-card card">' +
             '<button id="btn-close-reg" class="btn-warning" style="width:100%">Close Registration</button>' +
-            '<button id="btn-complete" class="btn-danger" style="width:100%">Mark Completed & Issue Badges</button>' +
+            '<button id="btn-complete" class="btn-danger" style="width:100%">Mark Complete</button>' +
           '</div>';
 
         var actionsEl = document.getElementById('detail-actions');
@@ -153,7 +153,7 @@
   }
 
   function completeEvent(eventId, chapterSlug) {
-    if (!confirm('Mark event as completed and issue attendee badges?')) return;
+    if (!confirm('Are you sure you want to mark this event as complete?\n\nBadges will be automatically issued to all checked-in attendees.')) return;
     fetch('/api/eventAttendance', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug, status: 'completed' })
