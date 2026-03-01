@@ -28,21 +28,24 @@ jobs:
 
           mkdir -p "src/events/${SLUG}"
 
-          cat > "src/events/${SLUG}/index.md" << EOF
+          cat > "src/events/${SLUG}/index.md" << 'FRONTMATTER'
           ---
           layout: event.njk
-          title: "${TITLE}"
-          slug: "${SLUG}"
-          date: "${DATE}"
-          endDate: "${END_DATE}"
-          location: "${LOCATION}"
-          description: >
-            ${DESCRIPTION}
-          sessionizeApiId: "${SESSIONIZE_ID}"
-          registrationCap: ${REG_CAP:-0}
-          chapterSlug: "${CHAPTER_SLUG}"
-          ---
-          EOF
+          FRONTMATTER
+
+          # Use printf to safely write fields that may contain special characters
+          {
+            echo "title: \"$(echo "${TITLE}" | sed 's/"/\\"/g')\""
+            echo "slug: \"${SLUG}\""
+            echo "date: \"${DATE}\""
+            echo "endDate: \"${END_DATE}\""
+            echo "location: \"$(echo "${LOCATION}" | sed 's/"/\\"/g')\""
+            echo "description: \"$(echo "${DESCRIPTION}" | sed 's/"/\\"/g')\""
+            echo "sessionizeApiId: \"${SESSIONIZE_ID}\""
+            echo "registrationCap: ${REG_CAP:-0}"
+            echo "chapterSlug: \"${CHAPTER_SLUG}\""
+            echo "---"
+          } >> "src/events/${SLUG}/index.md"
 
           echo "Generated event page at src/events/${SLUG}/index.md"
 
