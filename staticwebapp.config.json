@@ -35,10 +35,6 @@
       "headers": { "Cache-Control": "public, max-age=604800, must-revalidate" }
     },
     {
-      "route": "/api/*",
-      "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }
-    },
-    {
       "route": "/dashboard/*",
       "allowedRoles": ["admin"]
     },
@@ -104,7 +100,8 @@
     },
     {
       "route": "/api/*",
-      "allowedRoles": ["anonymous"]
+      "allowedRoles": ["anonymous"],
+      "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }
     }
   ],
   "navigationFallback": {
