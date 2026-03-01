@@ -103,7 +103,8 @@ title: Dashboard
       <button id="btn-back-events" class="btn-outline">&larr; Back to Events</button>
     </div>
     <h2 id="detail-title">Event Details</h2>
-    <div id="detail-stats" class="stat-cards"></div>
+    <p id="detail-subtitle" style="margin:-0.5rem 0 1rem 0;color:#666;"></p>
+    <div id="detail-panel" class="detail-panel"></div>
     <div id="detail-actions" class="detail-actions"></div>
     <h3>Volunteers / Committee</h3>
     <p class="text-muted">Volunteers can access the check-in scanner for this event. They must have a GSC account.</p>

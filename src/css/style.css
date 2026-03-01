@@ -793,6 +793,31 @@ button:focus-visible {
   min-width: 120px;
 }
 
+/* Dashboard detail panel — 4-column grid */
+.detail-panel {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.detail-panel .stat-card {
+  text-align: center;
+  min-width: 0;
+}
+
+.detail-panel .action-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 1rem;
+}
+
+@media (max-width: 768px) {
+  .detail-panel { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* Stat cards (scanner + dashboard) */
 .stat-cards {
   display: flex;

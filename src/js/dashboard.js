@@ -74,25 +74,36 @@
     fetch('/api/eventAttendance?eventId=' + encodeURIComponent(eventId))
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        document.getElementById('detail-title').innerHTML = 'Event Code: <code style="cursor:pointer;background:#e9ecef;padding:2px 8px;border-radius:4px;font-size:0.85em;" title="Click to copy">' + esc(data.eventId) + '</code>';
-        document.getElementById('detail-title').querySelector('code').addEventListener('click', function() {
+        // Event title
+        document.getElementById('detail-title').textContent = data.title || 'Event Details';
+
+        // Event code with copy
+        var subtitleEl = document.getElementById('detail-subtitle');
+        subtitleEl.innerHTML = 'Event Code: <code style="cursor:pointer;background:#e9ecef;padding:2px 8px;border-radius:4px;font-size:0.85em;" title="Click to copy">' + esc(data.eventId) + '</code>';
+        subtitleEl.querySelector('code').addEventListener('click', function() {
           navigator.clipboard.writeText(data.eventId).then(function() {
-            var el = document.getElementById('detail-title').querySelector('code');
+            var el = document.getElementById('detail-subtitle').querySelector('code');
             var orig = el.textContent;
             el.textContent = 'Copied!';
             setTimeout(function() { el.textContent = orig; }, 1500);
           });
         });
-        document.getElementById('detail-stats').innerHTML =
+
+        // 4-column grid: 2 stat cards + 2 action cards
+        document.getElementById('detail-panel').innerHTML =
           '<div class="card stat-card"><p class="stat-number">' + data.total + '</p><p class="stat-label">Registered</p></div>' +
-          '<div class="card stat-card"><p class="stat-number">' + data.checkedIn + '</p><p class="stat-label">Checked In</p></div>';
+          '<div class="card stat-card"><p class="stat-number">' + data.checkedIn + '</p><p class="stat-label">Checked In</p></div>' +
+          '<div class="card action-card">' +
+            '<button id="btn-export" style="width:100%">Export CSV</button>' +
+            '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" class="btn-link" style="width:100%;text-align:center;display:block;">Open Scanner</a>' +
+          '</div>' +
+          '<div class="card action-card">' +
+            '<button id="btn-close-reg" class="btn-warning" style="width:100%">Close Registration</button>' +
+            '<button id="btn-complete" class="btn-danger" style="width:100%">Mark Completed & Issue Badges</button>' +
+          '</div>';
 
         var actionsEl = document.getElementById('detail-actions');
-        actionsEl.innerHTML =
-          '<button id="btn-export">Export CSV</button>' +
-          '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" class="btn-link">Open Scanner</a>' +
-          '<button id="btn-close-reg" class="btn-warning">Close Registration</button>' +
-          '<button id="btn-complete" class="btn-danger">Mark Completed & Issue Badges</button>';
+        actionsEl.innerHTML = '';
 
         document.getElementById('btn-export').addEventListener('click', function() { exportCSV(eventId); });
         document.getElementById('btn-close-reg').addEventListener('click', function() { closeReg(eventId, chapterSlug); });
