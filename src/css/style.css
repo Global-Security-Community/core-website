@@ -807,6 +807,10 @@ button:focus-visible {
   min-width: 0;
 }
 
+.detail-panel .card:hover {
+  box-shadow: none;
+}
+
 .detail-panel .action-card {
   display: flex;
   flex-direction: column;

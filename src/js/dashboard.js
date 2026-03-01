@@ -91,11 +91,11 @@
         document.getElementById('detail-panel').innerHTML =
           '<div class="card stat-card"><p class="stat-number">' + data.total + '</p><p class="stat-label">Registered</p></div>' +
           '<div class="card stat-card"><p class="stat-number">' + data.checkedIn + '</p><p class="stat-label">Checked In</p></div>' +
-          '<div class="action-card">' +
+          '<div class="action-card card">' +
             '<button id="btn-export" style="width:100%">Export CSV</button>' +
             '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" class="btn-link" style="width:100%;text-align:center;display:block;box-sizing:border-box;">Open Scanner</a>' +
           '</div>' +
-          '<div class="action-card">' +
+          '<div class="action-card card">' +
             '<button id="btn-close-reg" class="btn-warning" style="width:100%">Close Registration</button>' +
             '<button id="btn-complete" class="btn-danger" style="width:100%">Mark Completed & Issue Badges</button>' +
           '</div>';
