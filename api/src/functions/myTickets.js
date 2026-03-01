@@ -24,6 +24,9 @@ module.exports = async function (request, context) {
       }
       const event = eventCache[eventId];
 
+      // Skip orphaned registrations where event was deleted
+      if (!event) continue;
+
       let qrDataUrl = '';
       try {
         const QRCode = require('qrcode');
