@@ -168,7 +168,7 @@ The platform runs on Azure's free and low-cost tiers:
 
 | Resource | Tier | Notes |
 |----------|------|-------|
-| Static Web Apps | Free | Includes Functions, custom domain, SSL |
+| Static Web Apps | Standard | Custom domain, SSL, SWA-managed Functions, SLA |
 | Table Storage | Pay-per-use | Fractions of a cent at current scale |
 | Communication Services | Pay-per-email | ~$0.00025/email |
 | Key Vault | Standard | Minimal cost for secret storage |
