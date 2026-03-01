@@ -42,7 +42,7 @@
         }
         var html = '<div class="cards">';
         data.events.forEach(function(ev) {
-          html += '<div class="card event-card" data-event-id="' + esc(ev.id) + '" data-chapter-slug="' + esc(ev.chapterSlug) + '">';
+          html += '<div class="card event-card" data-event-id="' + esc(ev.id) + '" data-chapter-slug="' + esc(ev.chapterSlug) + '" data-event-title="' + esc(ev.title) + '">';
           html += '<h3>' + esc(ev.title) + '</h3>';
           html += '<p>📅 ' + esc(ev.date) + ' &nbsp; 📍 ' + esc(ev.location) + '</p>';
           html += '<p>🎟️ ' + ev.registrationCount + (ev.registrationCap > 0 ? ' / ' + ev.registrationCap : '') + ' registered</p>';
@@ -55,7 +55,7 @@
         // Attach click handlers to event cards
         el.querySelectorAll('.event-card').forEach(function(card) {
           card.addEventListener('click', function() {
-            viewEvent(card.dataset.eventId, card.dataset.chapterSlug);
+            viewEvent(card.dataset.eventId, card.dataset.chapterSlug, card.dataset.eventTitle);
           });
         });
       })
@@ -64,19 +64,17 @@
       });
   }
 
-  function viewEvent(eventId, chapterSlug) {
+  function viewEvent(eventId, chapterSlug, eventTitle) {
     currentEventId = eventId;
     currentChapterSlug = chapterSlug;
     showSection('detail');
-    document.getElementById('detail-title').textContent = 'Loading...';
+    document.getElementById('detail-title').textContent = eventTitle || 'Loading...';
+    document.getElementById('detail-subtitle').textContent = '';
     document.getElementById('detail-attendees').innerHTML = '<p>Loading...</p>';
 
     fetch('/api/eventAttendance?eventId=' + encodeURIComponent(eventId))
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        // Event title
-        document.getElementById('detail-title').textContent = data.title || 'Event Details';
-
         // Event code with copy
         var subtitleEl = document.getElementById('detail-subtitle');
         subtitleEl.innerHTML = 'Event Code: <code style="cursor:pointer;background:#e9ecef;padding:2px 8px;border-radius:4px;font-size:0.85em;" title="Click to copy">' + esc(data.eventId) + '</code>';
@@ -89,15 +87,15 @@
           });
         });
 
-        // 4-column grid: 2 stat cards + 2 action cards
+        // 4-column grid: 2 stat cards + 2 action groups
         document.getElementById('detail-panel').innerHTML =
           '<div class="card stat-card"><p class="stat-number">' + data.total + '</p><p class="stat-label">Registered</p></div>' +
           '<div class="card stat-card"><p class="stat-number">' + data.checkedIn + '</p><p class="stat-label">Checked In</p></div>' +
-          '<div class="card action-card">' +
+          '<div class="action-card">' +
             '<button id="btn-export" style="width:100%">Export CSV</button>' +
-            '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" class="btn-link" style="width:100%;text-align:center;display:block;">Open Scanner</a>' +
+            '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" class="btn-link" style="width:100%;text-align:center;display:block;box-sizing:border-box;">Open Scanner</a>' +
           '</div>' +
-          '<div class="card action-card">' +
+          '<div class="action-card">' +
             '<button id="btn-close-reg" class="btn-warning" style="width:100%">Close Registration</button>' +
             '<button id="btn-complete" class="btn-danger" style="width:100%">Mark Completed & Issue Badges</button>' +
           '</div>';

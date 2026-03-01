@@ -732,6 +732,7 @@ button:focus-visible {
   border-radius: 4px;
   text-decoration: none;
   font-weight: 600;
+  font-size: inherit;
 }
 
 .btn-link:hover {
@@ -811,7 +812,6 @@ button:focus-visible {
   flex-direction: column;
   gap: 0.5rem;
   justify-content: center;
-  padding: 1rem;
 }
 
 @media (max-width: 768px) {
