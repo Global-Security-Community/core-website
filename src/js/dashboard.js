@@ -74,7 +74,15 @@
     fetch('/api/eventAttendance?eventId=' + encodeURIComponent(eventId))
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        document.getElementById('detail-title').textContent = 'Attendance: ' + data.eventId;
+        document.getElementById('detail-title').innerHTML = 'Event Code: <code style="cursor:pointer;background:#e9ecef;padding:2px 8px;border-radius:4px;font-size:0.85em;" title="Click to copy">' + esc(data.eventId) + '</code>';
+        document.getElementById('detail-title').querySelector('code').addEventListener('click', function() {
+          navigator.clipboard.writeText(data.eventId).then(function() {
+            var el = document.getElementById('detail-title').querySelector('code');
+            var orig = el.textContent;
+            el.textContent = 'Copied!';
+            setTimeout(function() { el.textContent = orig; }, 1500);
+          });
+        });
         document.getElementById('detail-stats').innerHTML =
           '<div class="card stat-card"><p class="stat-number">' + data.total + '</p><p class="stat-label">Registered</p></div>' +
           '<div class="card stat-card"><p class="stat-number">' + data.checkedIn + '</p><p class="stat-label">Checked In</p></div>';
