@@ -214,6 +214,64 @@ Chapter data is stored on the `ChapterApplications` table. After approval, the c
 
 ---
 
+## Local Development
+
+### Prerequisites
+
+- **Node.js 22** (Azure Functions Core Tools v4 requires ≤22)
+- **nvm** for switching Node versions: `nvm install 22`
+- Dev dependencies installed: `npm install` (includes SWA CLI and Azure Functions Core Tools)
+
+### Starting the Local Environment
+
+```bash
+# Switch to Node 22 (required — Node 25+ is incompatible with Azure Functions)
+nvm use 22
+
+# Build the static site
+npx @11ty/eleventy
+
+# Start the full SWA emulator (frontend + API + mock auth)
+npx swa start _site --api-location api
+```
+
+The emulator starts at **http://localhost:4280** with:
+- Static site served from `_site/`
+- API functions on port 7071, proxied through 4280
+- Mock authentication (no real CIAM/OTP needed)
+
+### Mock Authentication
+
+Navigate to `http://localhost:4280/.auth/login/ciam` to see a mock login form.
+Fill in:
+- **Username:** any email (e.g. `test@example.com`)
+- **Roles:** comma-separated, e.g. `authenticated,admin` for full dashboard access
+
+Available roles: `anonymous`, `authenticated`, `admin`, `volunteer`
+
+### Local Settings
+
+API secrets are stored in `api/local.settings.json` (gitignored). Required values:
+
+| Setting | Description |
+|---------|-------------|
+| `AZURE_STORAGE_CONNECTION_STRING` | Azure Table Storage connection string |
+| `CIAM_CLIENT_ID` | Azure AD B2C app client ID |
+| `CIAM_CLIENT_SECRET` | Azure AD B2C app client secret |
+| `AZURE_COMMUNICATION_CONNECTION_STRING` | ACS connection (optional — emails fail gracefully) |
+| `DISCORD_BOT_TOKEN` | Discord bot token (optional — notifications fail gracefully) |
+| `GITHUB_APP_ID` / `GITHUB_APP_PRIVATE_KEY` | GitHub App credentials (optional — chapter edit won't push to repo) |
+
+To get these values: Azure Portal → `gsc-corewebsite-swa` → Configuration → Application settings
+
+### Known Issues
+
+- **`/admin*` routes reserved locally** — Azure Functions Core Tools reserves paths starting with `/admin`. The `adminRegister` function uses route `/api/manualRegister` to avoid this. Do not create new API routes starting with `admin`.
+- **Node version mismatch** — If you see "incompatible with your current Node.js", run `nvm use 22`
+- **First run downloads Core Tools** — SWA CLI downloads ~200MB of Azure Functions Core Tools on first run. This is cached for subsequent runs.
+
+---
+
 ## Authentication & Authorisation
 
 - **Provider:** Azure AD B2C (CIAM) via SWA custom OpenID Connect
@@ -260,3 +318,6 @@ Chapter data is stored on the `ChapterApplications` table. After approval, the c
 4. **Table Storage booleans** — `false` can come back as `"false"` (truthy in JS); always compare strictly
 5. **Workflow push failures** — generation workflows need `git pull --rebase` before push
 6. **CSP blocking resources** — update CSP in `staticwebapp.config.json` when adding external URLs
+7. **`/admin*` routes fail locally** — Azure Functions reserves these paths; use alternative route names (e.g. `manualRegister` not `adminRegister`)
+8. **Wrong Node version** — Local SWA CLI requires Node ≤22; run `nvm use 22` before starting
+9. **SWA route wildcard ordering** — `/api/*` catch-all must be the LAST route entry; placing it before specific routes causes build failures
