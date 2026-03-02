@@ -8,5 +8,9 @@
   },
   "dependencies": {
     "@11ty/eleventy": "^3.1.2"
+  },
+  "devDependencies": {
+    "@azure/static-web-apps-cli": "^2.0.8",
+    "azure-functions-core-tools": "^4.7.0"
   }
 }

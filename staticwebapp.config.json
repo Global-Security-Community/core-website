@@ -71,7 +71,7 @@
       "allowedRoles": ["admin"]
     },
     {
-      "route": "/api/adminRegister",
+      "route": "/api/manualRegister",
       "allowedRoles": ["admin"]
     },
     {

@@ -366,7 +366,7 @@
     var email = emailEl.value.trim();
     var role = roleEl.value;
     if (!name || !email) { alert('Please enter name and email.'); return; }
-    fetch('/api/adminRegister', {
+    fetch('/api/manualRegister', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ eventId: eventId, name: name, email: email, role: role })
     })

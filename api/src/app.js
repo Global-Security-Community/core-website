@@ -38,6 +38,6 @@ app.post('checkIn', { authLevel: 'anonymous', handler: checkInHandler });
 app.post('issueBadges', { authLevel: 'anonymous', handler: issueBadgesHandler });
 app.http('eventAttendance', { methods: ['GET', 'POST'], authLevel: 'anonymous', handler: eventAttendanceHandler });
 app.post('updateRegistrationRole', { authLevel: 'anonymous', handler: updateRegistrationRoleHandler });
-app.post('adminRegister', { authLevel: 'anonymous', handler: adminRegisterHandler });
+app.post('registerAdmin', { authLevel: 'anonymous', route: 'manualRegister', handler: adminRegisterHandler });
 app.post('updateChapter', { authLevel: 'anonymous', handler: updateChapterHandler });
 app.get('getChapter', { authLevel: 'anonymous', handler: getChapterHandler });
