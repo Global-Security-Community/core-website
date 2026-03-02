@@ -36,6 +36,11 @@ core-website/
 │   ├── src/app.js                # ⚠️ CENTRAL FUNCTION REGISTRY — all functions registered here
 │   ├── src/functions/            # One file per API function
 │   └── src/helpers/              # Shared utilities (auth, storage, email, etc.)
+├── e2e/                          # Playwright E2E tests
+│   ├── helpers.js                # mockLogin (cookie-based) and docScreenshot utilities
+│   ├── public-pages.spec.js      # Public page tests (14 tests)
+│   ├── authenticated-flows.spec.js # Auth flow tests (7 tests)
+│   └── admin-dashboard.spec.js   # Admin dashboard tests (4 tests)
 ├── staticwebapp.config.json      # SWA routing, auth, CSP, headers
 ├── infra/                        # Bicep IaC templates
 ├── .github/workflows/            # CI/CD and generation workflows
@@ -185,6 +190,8 @@ Chapter data is stored on the `ChapterApplications` table. After approval, the c
 - Sender: `DoNotReply@globalsecurity.community`
 - ACS resource: `gsc-core-acs`, Email service: `gsc-core-ces`
 - Send emails as non-blocking fire-and-forget (don't fail the parent operation if email fails)
+- Ticket confirmation email includes: event details, QR code, "View Event" button (links to event page), "My Tickets" button, and Discord invite section with chapter name
+- All emails use `emailLayout()` wrapper for consistent GSC branding (dark header, teal accent gradient)
 
 ---
 
@@ -298,7 +305,10 @@ To get these values: Azure Portal → `gsc-corewebsite-swa` → Configuration �
 
 - **API tests:** Jest — run with `cd api && npm test`
 - **Test files:** Co-located or in `api/__tests__/`
-- No frontend test suite currently
+- **E2E tests:** Playwright — run with `npm run test:e2e` (or `npm run test:e2e:headed` for visible browser)
+- **E2E test files:** `e2e/` directory — `public-pages.spec.js`, `authenticated-flows.spec.js`, `admin-dashboard.spec.js`
+- **E2E prerequisites:** SWA emulator must be running at `localhost:4280` before running tests (not auto-started)
+- **Mock auth in E2E:** Tests use cookie-based auth bypass — `mockLogin()` in `e2e/helpers.js` sets `StaticWebAppsAuthCookie` directly (Playwright's `fill()` doesn't trigger jQuery event handlers in SWA CLI's mock auth form)
 
 ---
 
