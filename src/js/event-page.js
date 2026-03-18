@@ -54,26 +54,121 @@
             volEl.style.display = 'flex';
           }
         }
+        // Load community partners
+        if (data.id) { loadPartners(data.id); }
       })
       .catch(function() {});
   }
 
-  // Sessionize integration
+  function loadPartners(eventId) {
+    fetch('/api/getCommunityPartners?eventId=' + encodeURIComponent(eventId))
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        if (!data || !data.partners) return;
+        var tiers = data.partners;
+        var tierNames = Object.keys(tiers);
+        if (tierNames.length === 0) return;
+
+        var section = document.getElementById('community-partners');
+        var content = document.getElementById('partners-content');
+        if (!section || !content) return;
+        var html = '';
+        tierNames.forEach(function(tierName) {
+          html += '<div class="partners-tier">';
+          html += '<h3>' + esc(tierName) + '</h3>';
+          html += '<div class="partners-grid">';
+          tiers[tierName].forEach(function(p) {
+            var tag = p.website ? 'a' : 'div';
+            var href = p.website ? ' href="' + esc(p.website) + '" target="_blank" rel="noopener noreferrer"' : '';
+            html += '<' + tag + ' class="partner-logo"' + href + '>';
+            if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" alt="' + esc(p.name) + '">';
+            html += '<span class="partner-name">' + esc(p.name) + '</span>';
+            html += '</' + tag + '>';
+          });
+          html += '</div></div>';
+        });
+        content.innerHTML = html;
+        section.style.display = 'block';
+      })
+      .catch(function() {});
+  }
+
+  // Sessionize integration — try cached data first, fall back to live API
   var agendaEl = document.getElementById('sessionize-agenda');
   var speakersEl = document.getElementById('sessionize-speakers');
 
   if (agendaEl || speakersEl) {
-    // Find sessionize API ID from the page (we embed it as a data attribute)
     var sessionizeId = '';
     var metaEl = document.querySelector('[data-sessionize-id]');
     if (metaEl) sessionizeId = metaEl.getAttribute('data-sessionize-id');
 
     if (sessionizeId) {
-      // Fetch agenda (GridSmart view) — use timeSlots for grid layout
+      // Agenda: try cache then live
       if (agendaEl) {
-        fetch('https://sessionize.com/api/v2/' + sessionizeId + '/view/GridSmart')
-          .then(function(r) { return r.json(); })
-          .then(function(data) {
+        fetch('/api/getSessionizeData?sessionizeId=' + encodeURIComponent(sessionizeId) + '&type=agenda')
+          .then(function(r) { return r.ok ? r.json() : Promise.reject('no cache'); })
+          .then(function(res) { renderAgenda(res.data); })
+          .catch(function() {
+            fetch('https://sessionize.com/api/v2/' + sessionizeId + '/view/GridSmart')
+              .then(function(r) { return r.json(); })
+              .then(function(data) { renderAgenda(data); })
+              .catch(function() { agendaEl.innerHTML = '<p>Could not load agenda.</p>'; });
+          });
+      }
+
+      // Speakers: try cache then live
+      if (speakersEl) {
+        fetch('/api/getSessionizeData?sessionizeId=' + encodeURIComponent(sessionizeId) + '&type=speakers')
+          .then(function(r) { return r.ok ? r.json() : Promise.reject('no cache'); })
+          .then(function(res) { renderSpeakers(res.data); })
+          .catch(function() {
+            fetch('https://sessionize.com/api/v2/' + sessionizeId + '/view/Speakers')
+              .then(function(r) { return r.json(); })
+              .then(function(speakers) { renderSpeakers(speakers); })
+              .catch(function() { speakersEl.innerHTML = '<p>Could not load speakers.</p>'; });
+          });
+      }
+    }
+  }
+
+  function renderSpeakers(speakers) {
+    if (!speakers || speakers.length === 0) {
+      speakersEl.innerHTML = '<p>Speakers to be announced.</p>';
+      return;
+    }
+    var html = '';
+    speakers.forEach(function(s) {
+      var sessionName = (s.sessions && s.sessions.length) ? s.sessions[0].name : '';
+      html += '<div class="speaker-card-wrap">';
+      html += '<div class="speaker-card">';
+      // Front
+      html += '<div class="speaker-card-front">';
+      if (s.profilePicture && s.profilePicture.indexOf('https://') === 0) {
+        html += '<img src="' + esc(s.profilePicture) + '" alt="' + esc(s.fullName) + '" class="speaker-photo">';
+      }
+      html += '<h4>' + esc(s.fullName) + '</h4>';
+      if (s.tagLine) html += '<p class="speaker-tagline">' + esc(s.tagLine) + '</p>';
+      if (sessionName) html += '<p class="speaker-session">' + esc(sessionName) + '</p>';
+      html += '</div>';
+      // Back
+      html += '<div class="speaker-card-back">';
+      html += '<h4>' + esc(s.fullName) + '</h4>';
+      html += '<p class="speaker-bio">' + esc(s.bio || 'No bio available.') + '</p>';
+      html += '<p class="speaker-flip-hint">Tap to flip back</p>';
+      html += '</div>';
+      html += '</div></div>';
+    });
+    speakersEl.className = 'speakers-grid';
+    speakersEl.innerHTML = html;
+
+    // Add click handlers for flip (CSP blocks inline onclick)
+    var cards = speakersEl.querySelectorAll('.speaker-card');
+    for (var i = 0; i < cards.length; i++) {
+      cards[i].addEventListener('click', function() { this.classList.toggle('flipped'); });
+    }
+  }
+
+  function renderAgenda(data) {
             if (!data || data.length === 0) {
               agendaEl.innerHTML = '<p>Agenda coming soon.</p>';
               return;
@@ -84,7 +179,6 @@
               var slots = day.timeSlots || [];
               if (!slots.length) return;
 
-              // Collect unique room names in order
               var roomNames = [];
               var roomIdSet = {};
               slots.forEach(function(slot) {
@@ -98,7 +192,6 @@
 
               var multiRoom = roomNames.length > 1;
 
-              // Table header with room columns
               html += '<div class="agenda-table-wrap">';
               html += '<table class="agenda-table">';
               if (multiRoom) {
@@ -117,7 +210,6 @@
                   roomMap[r.id] = r.session;
                 });
 
-                // Check if this is a plenum (same session in all rooms)
                 var firstSession = (slot.rooms && slot.rooms.length) ? slot.rooms[0].session : null;
                 var isPlenum = firstSession && firstSession.isPlenumSession;
 
@@ -125,20 +217,16 @@
                 html += '<td class="agenda-time-col">' + esc(time) + '</td>';
 
                 if (isPlenum || !multiRoom) {
-                  // Span all room columns
                   var s = firstSession;
                   var colspan = multiRoom ? ' colspan="' + roomNames.length + '"' : '';
                   html += '<td' + colspan + '>';
                   html += renderSession(s);
                   html += '</td>';
                 } else {
-                  // One cell per room
                   roomNames.forEach(function(room) {
                     var s = roomMap[room.id];
                     html += '<td>';
-                    if (s) {
-                      html += renderSession(s);
-                    }
+                    if (s) { html += renderSession(s); }
                     html += '</td>';
                   });
                 }
@@ -150,34 +238,6 @@
             });
 
             agendaEl.innerHTML = html;
-          })
-          .catch(function() { agendaEl.innerHTML = '<p>Could not load agenda.</p>'; });
-      }
-
-      // Fetch speakers
-      if (speakersEl) {
-        fetch('https://sessionize.com/api/v2/' + sessionizeId + '/view/Speakers')
-          .then(function(r) { return r.json(); })
-          .then(function(speakers) {
-            if (!speakers || speakers.length === 0) {
-              speakersEl.innerHTML = '<p>Speakers to be announced.</p>';
-              return;
-            }
-            var html = '';
-            speakers.forEach(function(s) {
-              html += '<div class="card" style="text-align:center;">';
-              if (s.profilePicture && (s.profilePicture.indexOf('https://') === 0)) {
-                html += '<img src="' + esc(s.profilePicture) + '" alt="' + esc(s.fullName) + '" style="width:80px;height:80px;border-radius:50%;margin-bottom:0.5rem;">';
-              }
-              html += '<h4 style="margin:0 0 0.25rem 0;">' + esc(s.fullName) + '</h4>';
-              if (s.tagLine) html += '<p style="color:#666;margin:0;font-size:0.9rem;">' + esc(s.tagLine) + '</p>';
-              html += '</div>';
-            });
-            speakersEl.innerHTML = html;
-          })
-          .catch(function() { speakersEl.innerHTML = '<p>Could not load speakers.</p>'; });
-      }
-    }
   }
 
   function renderSession(s) {

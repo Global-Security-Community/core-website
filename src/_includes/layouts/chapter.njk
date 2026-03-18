@@ -3,6 +3,9 @@ layout: base.njk
 ---
 
 <div class="container">
+  <div id="chapter-banner" data-chapter-slug="{{ city | lower | replace(" ", "-") }}" style="display:none;margin-bottom:1.5rem;border-radius:12px;overflow:hidden;">
+    <img id="chapter-banner-img" alt="{{ city }} Chapter Banner" style="width:100%;height:auto;display:block;">
+  </div>
   <h1>Global Security Community {{ city }}</h1>
   <p class="chapter-subtitle">{{ city }}, {{ country }}</p>
 
@@ -47,8 +50,17 @@ layout: base.njk
   </div>
 
   <script src="/js/chapter-events.js"></script>
+  <script src="/js/chapter-subscribe.js"></script>
 
   <h2>Get Involved</h2>
+  <div class="card" style="margin-bottom:1rem;" id="subscribe-card" data-chapter-slug="{{ city | lower | replace(" ", "-") }}">
+    <h3>📬 Chapter Event Notifications</h3>
+    <p id="subscribe-msg" style="margin:0 0 0.75rem 0;">Get an email when new events are announced for this chapter.</p>
+    <button id="btn-subscribe" style="display:none;">Subscribe</button>
+    <p id="subscribe-login-hint" style="color:#666;font-size:0.9rem;margin:0;">
+      <a href="/.auth/login/ciam?post_login_redirect_uri={{ page.url }}">Log in</a> to subscribe to event notifications.
+    </p>
+  </div>
   {% if discord_channel_id and discord_guild_id %}
   <div class="card discord-card">
     <span class="discord-icon">💬</span>
@@ -60,4 +72,11 @@ layout: base.njk
   </div>
   {% endif %}
   <p>Interested in joining the {{ city }} chapter? Stay tuned for upcoming events and opportunities to connect with the local security community.</p>
+
+  <div id="chapter-partners" class="partners-section" style="display:none;">
+    <h2>Community Partners</h2>
+    <div id="chapter-partners-content"></div>
+  </div>
 </div>
+
+<script src="/js/chapter-partners.js"></script>

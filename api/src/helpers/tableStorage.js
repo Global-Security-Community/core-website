@@ -358,6 +358,169 @@ async function getApprovedApplicationByEmail(email) {
   return null;
 }
 
+// ─── Sessionize Cache ───
+
+let sessionizeCacheTableReady = false;
+
+async function ensureSessionizeCacheTable() {
+  if (sessionizeCacheTableReady) return;
+  try {
+    const client = getTableClient('SessionizeCache');
+    await client.createTable();
+  } catch (e) {
+    // Table already exists — ignore
+  }
+  sessionizeCacheTableReady = true;
+}
+
+async function storeSessionizeCache(sessionizeId, type, data) {
+  await ensureSessionizeCacheTable();
+  const client = getTableClient('SessionizeCache');
+  await client.upsertEntity({
+    partitionKey: sessionizeId,
+    rowKey: type,
+    data: JSON.stringify(data),
+    lastRefreshed: new Date().toISOString()
+  });
+}
+
+async function getSessionizeCache(sessionizeId, type) {
+  await ensureSessionizeCacheTable();
+  const client = getTableClient('SessionizeCache');
+  try {
+    const entity = await client.getEntity(sessionizeId, type);
+    return {
+      data: JSON.parse(entity.data),
+      lastRefreshed: entity.lastRefreshed
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ─── Chapter Subscriptions ───
+
+let subscriptionTableReady = false;
+
+async function ensureSubscriptionTable() {
+  if (subscriptionTableReady) return;
+  try {
+    const client = getTableClient('ChapterSubscriptions');
+    await client.createTable();
+  } catch (e) { /* table may already exist */ }
+  subscriptionTableReady = true;
+}
+
+async function storeSubscription(chapterSlug, email) {
+  await ensureSubscriptionTable();
+  const client = getTableClient('ChapterSubscriptions');
+  await client.upsertEntity({
+    partitionKey: chapterSlug.toLowerCase(),
+    rowKey: email.toLowerCase(),
+    subscribedAt: new Date().toISOString()
+  });
+}
+
+async function removeSubscription(chapterSlug, email) {
+  await ensureSubscriptionTable();
+  const client = getTableClient('ChapterSubscriptions');
+  try {
+    await client.deleteEntity(chapterSlug.toLowerCase(), email.toLowerCase());
+  } catch { /* may not exist */ }
+}
+
+async function getSubscriptionsByChapter(chapterSlug) {
+  await ensureSubscriptionTable();
+  const client = getTableClient('ChapterSubscriptions');
+  const subs = [];
+  const iter = client.listEntities({ queryOptions: { filter: `PartitionKey eq '${chapterSlug.toLowerCase()}'` } });
+  for await (const entity of iter) {
+    subs.push({ email: entity.rowKey, subscribedAt: entity.subscribedAt });
+  }
+  return subs;
+}
+
+async function isSubscribed(chapterSlug, email) {
+  await ensureSubscriptionTable();
+  const client = getTableClient('ChapterSubscriptions');
+  try {
+    await client.getEntity(chapterSlug.toLowerCase(), email.toLowerCase());
+    return true;
+  } catch { return false; }
+}
+
+// ─── Community Partners ───
+
+let partnerTableReady = false;
+
+async function ensurePartnerTable() {
+  if (partnerTableReady) return;
+  try {
+    const client = getTableClient('CommunityPartners');
+    await client.createTable();
+  } catch (e) { /* table may already exist */ }
+  partnerTableReady = true;
+}
+
+async function storePartner(partner) {
+  await ensurePartnerTable();
+  const client = getTableClient('CommunityPartners');
+  await client.upsertEntity({
+    partitionKey: partner.eventId,
+    rowKey: partner.id,
+    name: partner.name,
+    tier: partner.tier || '',
+    logoBase64: partner.logoBase64 || '',
+    logoContentType: partner.logoContentType || 'image/png',
+    website: partner.website || '',
+    displayOrder: partner.displayOrder || 0,
+    createdAt: partner.createdAt || new Date().toISOString()
+  });
+}
+
+async function deletePartner(eventId, partnerId) {
+  await ensurePartnerTable();
+  const client = getTableClient('CommunityPartners');
+  try {
+    await client.deleteEntity(eventId, partnerId);
+  } catch { /* may not exist */ }
+}
+
+async function getPartnersByEvent(eventId) {
+  await ensurePartnerTable();
+  const client = getTableClient('CommunityPartners');
+  const partners = [];
+  const iter = client.listEntities({ queryOptions: { filter: `PartitionKey eq '${eventId}'` } });
+  for await (const entity of iter) {
+    partners.push({
+      id: entity.rowKey,
+      eventId: entity.partitionKey,
+      name: entity.name,
+      tier: entity.tier || '',
+      logoBase64: entity.logoBase64 || '',
+      logoContentType: entity.logoContentType || 'image/png',
+      website: entity.website || '',
+      displayOrder: entity.displayOrder || 0
+    });
+  }
+  return partners.sort((a, b) => a.displayOrder - b.displayOrder);
+}
+
+async function getPartnersByChapter(chapterSlug) {
+  await ensurePartnerTable();
+  const events = await listEvents(chapterSlug);
+  const allPartners = [];
+  for (const ev of events) {
+    const partners = await getPartnersByEvent(ev.rowKey);
+    partners.forEach(p => {
+      p.eventTitle = ev.title;
+      p.eventSlug = ev.slug;
+    });
+    allPartners.push(...partners);
+  }
+  return allPartners;
+}
+
 module.exports = {
   storeApplication, getApplication, updateApplicationStatus, getApprovedApplicationBySlug,
   storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent,
@@ -368,5 +531,8 @@ module.exports = {
   storeBadge, getBadge, getBadgesByEvent,
   storeVolunteer, getVolunteersByEvent, removeVolunteer, isVolunteerForAnyEvent,
   getRegistrationsByRole, isVolunteerOrOrganiserByRegistration, VALID_ROLES,
-  getApprovedApplicationByEmail
+  getApprovedApplicationByEmail,
+  storeSessionizeCache, getSessionizeCache,
+  storeSubscription, removeSubscription, getSubscriptionsByChapter, isSubscribed,
+  storePartner, deletePartner, getPartnersByEvent, getPartnersByChapter
 };

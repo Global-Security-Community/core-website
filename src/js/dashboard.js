@@ -45,7 +45,7 @@
         }
         var html = '<div class="cards">';
         data.events.forEach(function(ev) {
-          html += '<div class="card event-card" data-event-id="' + esc(ev.id) + '" data-chapter-slug="' + esc(ev.chapterSlug) + '" data-event-title="' + esc(ev.title) + '">';
+          html += '<div class="card event-card" data-event-id="' + esc(ev.id) + '" data-chapter-slug="' + esc(ev.chapterSlug) + '" data-event-title="' + esc(ev.title) + '" data-sessionize-id="' + esc(ev.sessionizeApiId || '') + '">';
           html += '<h3>' + esc(ev.title) + '</h3>';
           html += '<p>📅 ' + esc(ev.date) + ' &nbsp; 📍 ' + esc(ev.location) + '</p>';
           html += '<p>🎟️ ' + ev.registrationCount + (ev.registrationCap > 0 ? ' / ' + ev.registrationCap : '') + ' registered</p>';
@@ -58,7 +58,7 @@
         // Attach click handlers to event cards
         el.querySelectorAll('.event-card').forEach(function(card) {
           card.addEventListener('click', function() {
-            viewEvent(card.dataset.eventId, card.dataset.chapterSlug, card.dataset.eventTitle);
+            viewEvent(card.dataset.eventId, card.dataset.chapterSlug, card.dataset.eventTitle, card.dataset.sessionizeId);
           });
         });
       })
@@ -67,7 +67,7 @@
       });
   }
 
-  function viewEvent(eventId, chapterSlug, eventTitle) {
+  function viewEvent(eventId, chapterSlug, eventTitle, sessionizeApiId) {
     currentEventId = eventId;
     currentChapterSlug = chapterSlug;
     showSection('detail');
@@ -109,6 +109,196 @@
         document.getElementById('btn-export').addEventListener('click', function() { exportCSV(eventId); });
         document.getElementById('btn-close-reg').addEventListener('click', function() { closeReg(eventId, chapterSlug); });
         document.getElementById('btn-complete').addEventListener('click', function() { completeEvent(eventId, chapterSlug); });
+
+        // Sessionize refresh button
+        if (sessionizeApiId) {
+          var actionsEl = document.getElementById('detail-actions');
+          var refreshCard = document.createElement('div');
+          refreshCard.className = 'card';
+          refreshCard.style.cssText = 'margin-top:1rem;padding:1rem;';
+          refreshCard.innerHTML =
+            '<h4 style="margin:0 0 0.5rem 0;">🎤 Sessionize Speakers</h4>' +
+            '<p id="sessionize-status" style="font-size:0.85rem;color:#666;margin:0 0 0.5rem 0;">Click refresh to cache speaker data from Sessionize.</p>' +
+            '<button id="btn-refresh-speakers" style="width:100%">Refresh Speakers</button>' +
+            '<div id="sessionize-speakers-list" style="margin-top:0.75rem;"></div>';
+          actionsEl.parentNode.insertBefore(refreshCard, actionsEl.nextSibling);
+
+          document.getElementById('btn-refresh-speakers').addEventListener('click', function() {
+            var btn = this;
+            btn.disabled = true;
+            btn.textContent = 'Refreshing...';
+            document.getElementById('sessionize-status').textContent = 'Fetching from Sessionize...';
+            fetch('/api/refreshSessionize', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug, sessionizeApiId: sessionizeApiId })
+            })
+              .then(function(r) { return r.json(); })
+              .then(function(result) {
+                btn.disabled = false;
+                btn.textContent = 'Refresh Speakers';
+                if (result.success) {
+                  var ts = result.lastRefreshed ? new Date(result.lastRefreshed).toLocaleString() : 'just now';
+                  document.getElementById('sessionize-status').innerHTML =
+                    '✅ Cached <strong>' + result.speakers + '</strong> speakers, <strong>' + result.agenda + '</strong> agenda items. Last refreshed: ' + esc(ts);
+                  if (result.speakerNames && result.speakerNames.length > 0) {
+                    var listHtml = '<p style="font-size:0.8rem;color:#888;margin:0 0 0.25rem 0;">Speakers:</p>';
+                    listHtml += '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;">';
+                    result.speakerNames.forEach(function(name) {
+                      listHtml += '<span style="background:#e9ecef;padding:2px 8px;border-radius:12px;font-size:0.8rem;">' + esc(name) + '</span>';
+                    });
+                    listHtml += '</div>';
+                    document.getElementById('sessionize-speakers-list').innerHTML = listHtml;
+                  }
+                } else {
+                  document.getElementById('sessionize-status').textContent = '⚠️ ' + (result.message || result.error || 'Failed to refresh');
+                }
+              })
+              .catch(function() {
+                btn.disabled = false;
+                btn.textContent = 'Refresh Speakers';
+                document.getElementById('sessionize-status').textContent = '❌ Failed to refresh. Please try again.';
+              });
+          });
+        }
+
+        // Regenerate image button
+        var regenCard = document.createElement('div');
+        regenCard.className = 'card';
+        regenCard.style.cssText = 'margin-top:1rem;padding:1rem;';
+        regenCard.innerHTML =
+          '<h4 style="margin:0 0 0.5rem 0;">🎨 Event Badge Image</h4>' +
+          '<p id="regen-status" style="font-size:0.85rem;color:#666;margin:0 0 0.5rem 0;">AI-generated badge background for this event.</p>' +
+          '<button id="btn-regen-badge" style="width:100%;">Regenerate Badge Image</button>';
+        var actionsParent2 = document.getElementById('detail-actions').parentNode;
+        actionsParent2.insertBefore(regenCard, document.getElementById('detail-attendees'));
+
+        document.getElementById('btn-regen-badge').addEventListener('click', function() {
+          var btn = this;
+          var slug = '';
+          // Try to get event slug from the event list data
+          var cards = document.querySelectorAll('.event-card');
+          cards.forEach(function(c) { if (c.dataset.eventId === eventId) slug = c.dataset.eventTitle; });
+          btn.disabled = true; btn.textContent = 'Generating... (this may take a minute)';
+          document.getElementById('regen-status').textContent = 'Calling AI image generation...';
+          fetch('/api/regenerateImage', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ type: 'event', slug: eventId })
+          }).then(function(r) { return r.json(); }).then(function(d) {
+            btn.disabled = false; btn.textContent = 'Regenerate Badge Image';
+            if (d.success) {
+              document.getElementById('regen-status').innerHTML = '✅ Badge image generated! <a href="' + d.imageUrl + '" target="_blank">View</a>';
+            } else {
+              document.getElementById('regen-status').textContent = '❌ ' + (d.error || 'Failed');
+            }
+          }).catch(function() {
+            btn.disabled = false; btn.textContent = 'Regenerate Badge Image';
+            document.getElementById('regen-status').textContent = '❌ Generation failed. Try again.';
+          });
+        });
+
+        // Community Partners management section
+        var partnerSection = document.createElement('div');
+        partnerSection.className = 'card';
+        partnerSection.style.cssText = 'margin-top:1rem;padding:1rem;';
+        partnerSection.innerHTML =
+          '<h4 style="margin:0 0 0.75rem 0;">🤝 Community Partners</h4>' +
+          '<div id="partner-list" style="margin-bottom:0.75rem;"></div>' +
+          '<details><summary style="cursor:pointer;color:var(--color-primary-teal);font-weight:600;">Add Partner</summary>' +
+          '<div style="margin-top:0.75rem;">' +
+            '<input type="text" id="cp-name" placeholder="Partner name" maxlength="100" style="width:100%;margin-bottom:0.5rem;">' +
+            '<input type="text" id="cp-tier" placeholder="Tier (e.g. Gold, Community)" maxlength="50" style="width:100%;margin-bottom:0.5rem;">' +
+            '<input type="url" id="cp-website" placeholder="Website URL (optional)" maxlength="300" style="width:100%;margin-bottom:0.5rem;">' +
+            '<label style="display:block;margin-bottom:0.25rem;font-size:0.85rem;">Logo (PNG/JPG, recommended 400×200px — auto-resized):</label>' +
+            '<input type="file" id="cp-logo" accept="image/png,image/jpeg,image/svg+xml" style="margin-bottom:0.5rem;">' +
+            '<div id="cp-preview" style="margin-bottom:0.5rem;"></div>' +
+            '<button id="cp-add-btn" style="width:100%;">Add Community Partner</button>' +
+            '<p id="cp-msg" style="display:none;font-size:0.85rem;margin:0.5rem 0 0 0;"></p>' +
+          '</div></details>';
+        var actionsParent = document.getElementById('detail-actions').parentNode;
+        actionsParent.insertBefore(partnerSection, document.getElementById('detail-attendees'));
+
+        // Load existing partners
+        loadEventPartners(eventId);
+
+        // Logo preview with auto-resize
+        document.getElementById('cp-logo').addEventListener('change', function(e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          var preview = document.getElementById('cp-preview');
+          if (file.type === 'image/svg+xml') {
+            var reader = new FileReader();
+            reader.onload = function(ev) {
+              preview.innerHTML = '<img src="' + ev.target.result + '" style="max-width:200px;max-height:100px;">';
+            };
+            reader.readAsDataURL(file);
+            return;
+          }
+          var img = new Image();
+          img.onload = function() {
+            var maxW = 400;
+            var w = img.width, h = img.height;
+            if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+            var canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            var resized = canvas.toDataURL(file.type, 0.85);
+            preview.innerHTML = '<img src="' + resized + '" style="max-width:200px;max-height:100px;">' +
+              '<p style="font-size:0.75rem;color:#666;margin:0.25rem 0 0 0;">Resized to ' + w + '×' + h + 'px</p>';
+            preview.dataset.logoData = resized;
+          };
+          img.src = URL.createObjectURL(file);
+        });
+
+        // Add partner button
+        document.getElementById('cp-add-btn').addEventListener('click', function() {
+          var name = document.getElementById('cp-name').value.trim();
+          var tier = document.getElementById('cp-tier').value.trim();
+          var website = document.getElementById('cp-website').value.trim();
+          var msg = document.getElementById('cp-msg');
+          var preview = document.getElementById('cp-preview');
+          var fileInput = document.getElementById('cp-logo');
+          var btn = this;
+
+          if (!name) { msg.textContent = 'Please enter a partner name.'; msg.style.display = 'block'; msg.style.color = '#721c24'; return; }
+
+          var logoData = preview.dataset.logoData || '';
+          var file = fileInput.files[0];
+
+          function sendPartner(base64, contentType) {
+            var raw = base64.replace(/^data:[^;]+;base64,/, '');
+            btn.disabled = true; btn.textContent = 'Adding...';
+            fetch('/api/communityPartner', {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ eventId: eventId, name: name, tier: tier, logoBase64: raw, logoContentType: contentType, website: website })
+            }).then(function(r) { return r.json(); }).then(function(d) {
+              btn.disabled = false; btn.textContent = 'Add Community Partner';
+              if (d.success) {
+                msg.textContent = '✅ ' + name + ' added!'; msg.style.color = '#155724'; msg.style.display = 'block';
+                document.getElementById('cp-name').value = '';
+                document.getElementById('cp-tier').value = '';
+                document.getElementById('cp-website').value = '';
+                fileInput.value = ''; preview.innerHTML = ''; delete preview.dataset.logoData;
+                loadEventPartners(eventId);
+              } else {
+                msg.textContent = '❌ ' + (d.error || 'Failed'); msg.style.color = '#721c24'; msg.style.display = 'block';
+              }
+            }).catch(function() {
+              btn.disabled = false; btn.textContent = 'Add Community Partner';
+              msg.textContent = '❌ Network error'; msg.style.color = '#721c24'; msg.style.display = 'block';
+            });
+          }
+
+          if (logoData) {
+            sendPartner(logoData, file && file.type === 'image/svg+xml' ? 'image/svg+xml' : 'image/png');
+          } else if (file && file.type === 'image/svg+xml') {
+            var reader = new FileReader();
+            reader.onload = function(ev) { sendPartner(ev.target.result, 'image/svg+xml'); };
+            reader.readAsDataURL(file);
+          } else {
+            msg.textContent = 'Please select a logo image.'; msg.style.display = 'block'; msg.style.color = '#721c24';
+          }
+        });
 
         // Load attendees with role support
         var adminRegBtn = document.getElementById('admin-reg-btn');
@@ -157,6 +347,45 @@
     window.open('/api/eventAttendance?eventId=' + encodeURIComponent(eventId) + '&format=csv', '_blank');
   };
 
+  function loadEventPartners(eventId) {
+    var listEl = document.getElementById('partner-list');
+    if (!listEl) return;
+    fetch('/api/getCommunityPartners?eventId=' + encodeURIComponent(eventId))
+      .then(function(r) { return r.ok ? r.json() : { partners: {} }; })
+      .then(function(data) {
+        var tiers = data.partners || {};
+        var allPartners = [];
+        Object.keys(tiers).forEach(function(t) {
+          tiers[t].forEach(function(p) { p.tierName = t; allPartners.push(p); });
+        });
+        if (allPartners.length === 0) {
+          listEl.innerHTML = '<p style="font-size:0.85rem;color:#666;">No community partners yet.</p>';
+          return;
+        }
+        var html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">';
+        allPartners.forEach(function(p) {
+          html += '<div style="display:flex;align-items:center;gap:0.5rem;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;padding:0.4rem 0.6rem;">';
+          if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" style="max-width:40px;max-height:20px;object-fit:contain;">';
+          html += '<span style="font-size:0.85rem;">' + esc(p.name) + '</span>';
+          if (p.tierName) html += '<span style="font-size:0.7rem;color:#888;">(' + esc(p.tierName) + ')</span>';
+          html += '<button class="cp-delete" data-id="' + esc(p.id) + '" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:0.9rem;padding:0 0.25rem;" title="Remove">✕</button>';
+          html += '</div>';
+        });
+        html += '</div>';
+        listEl.innerHTML = html;
+        listEl.querySelectorAll('.cp-delete').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            if (!confirm('Remove this community partner?')) return;
+            fetch('/api/communityPartner', {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ eventId: eventId, partnerId: btn.dataset.id, action: 'delete' })
+            }).then(function() { loadEventPartners(eventId); });
+          });
+        });
+      })
+      .catch(function() {});
+  }
+
   function closeReg(eventId, chapterSlug) {
     if (!confirm('Close registration for this event?')) return;
     fetch('/api/eventAttendance', {
@@ -189,25 +418,55 @@
   var createSubmitting = false;
   document.getElementById('create-btn').addEventListener('click', function() {
     if (createSubmitting) return;
-    createSubmitting = true;
     var btn = this;
     var msg = document.getElementById('create-message');
+
+    var title = document.getElementById('ev-title').value.trim();
+    var date = document.getElementById('ev-date').value;
+    var description = document.getElementById('ev-description').value.trim();
+    var address1 = document.getElementById('ev-address1').value.trim();
+    var chapterSlug = document.getElementById('ev-chapter').value.trim();
+
+    function showErr(text) {
+      msg.style.display = 'block';
+      msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
+      msg.textContent = text;
+    }
+
+    if (!title || !date || !description || !chapterSlug) {
+      showErr('Please fill in title, date, description, and chapter slug.');
+      return;
+    }
+    if (!address1) {
+      showErr('Please enter an address for the event.');
+      return;
+    }
+    if (title.length > 200) { showErr('Title must be 200 characters or less.'); return; }
+    if (description.length > 5000) { showErr('Description must be 5000 characters or less.'); return; }
+    var endDate = document.getElementById('ev-enddate').value;
+    if (endDate && endDate < date) {
+      showErr('End date must be after the start date.');
+      return;
+    }
+
+    createSubmitting = true;
     btn.disabled = true;
     btn.textContent = 'Creating...';
+    msg.style.display = 'none';
 
     var payload = {
-      title: document.getElementById('ev-title').value,
-      date: document.getElementById('ev-date').value,
-      endDate: document.getElementById('ev-enddate').value,
+      title: title,
+      date: date,
+      endDate: endDate,
       locationBuilding: document.getElementById('ev-building').value,
-      locationAddress1: document.getElementById('ev-address1').value,
+      locationAddress1: address1,
       locationAddress2: document.getElementById('ev-address2').value,
       locationCity: document.getElementById('ev-city').value,
       locationState: document.getElementById('ev-state').value,
-      description: document.getElementById('ev-description').value,
+      description: description,
       sessionizeApiId: document.getElementById('ev-sessionize').value,
       registrationCap: document.getElementById('ev-cap').value,
-      chapterSlug: document.getElementById('ev-chapter').value
+      chapterSlug: chapterSlug
     };
 
     fetch('/api/createEvent', {

@@ -4,6 +4,16 @@
   var chapterSlug = container.getAttribute('data-chapter-slug');
   if (!chapterSlug) return;
 
+  // Try to load AI-generated chapter banner
+  var banner = document.getElementById('chapter-banner');
+  if (banner) {
+    var bannerUrl = 'https://gsccoresa.blob.core.windows.net/generated-images/chapters/' + encodeURIComponent(chapterSlug) + '.png';
+    var img = document.getElementById('chapter-banner-img');
+    img.onload = function() { banner.style.display = 'block'; };
+    img.onerror = function() { banner.style.display = 'none'; };
+    img.src = bannerUrl;
+  }
+
   (async function() {
     try {
       var res = await fetch('/api/getEvent?action=list&chapter=' + encodeURIComponent(chapterSlug));

@@ -42,8 +42,13 @@ layout: base.njk
   <div id="sessionize-agenda"><p>Loading agenda...</p></div>
 
   <h2>Speakers</h2>
-  <div id="sessionize-speakers" class="cards"><p>Loading speakers...</p></div>
+  <div id="sessionize-speakers"><p>Loading speakers...</p></div>
   {% endif %}
+
+  <div id="community-partners" class="partners-section" style="display:none;">
+    <h2>Community Partners</h2>
+    <div id="partners-content"></div>
+  </div>
 
   <h2>Location</h2>
   <p>📍 {{ location }}</p>

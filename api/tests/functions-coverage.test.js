@@ -40,7 +40,17 @@ jest.mock('../src/helpers/tableStorage', () => ({
   isVolunteerForAnyEvent: jest.fn().mockResolvedValue(null),
   VALID_ROLES: ['attendee', 'volunteer', 'speaker', 'sponsor', 'organiser'],
   getApprovedApplicationByEmail: jest.fn(),
-  getApprovedApplicationBySlug: jest.fn()
+  getApprovedApplicationBySlug: jest.fn(),
+  storeSessionizeCache: jest.fn().mockResolvedValue({}),
+  getSessionizeCache: jest.fn(),
+  storeSubscription: jest.fn().mockResolvedValue({}),
+  removeSubscription: jest.fn().mockResolvedValue({}),
+  getSubscriptionsByChapter: jest.fn().mockResolvedValue([]),
+  isSubscribed: jest.fn().mockResolvedValue(false),
+  storePartner: jest.fn().mockResolvedValue({}),
+  deletePartner: jest.fn().mockResolvedValue({}),
+  getPartnersByEvent: jest.fn().mockResolvedValue([]),
+  getPartnersByChapter: jest.fn().mockResolvedValue([])
 }));
 
 jest.mock('../src/helpers/discordBot', () => ({
@@ -51,7 +61,8 @@ jest.mock('../src/helpers/discordBot', () => ({
 jest.mock('../src/helpers/emailService', () => ({
   sendTicketEmail: jest.fn().mockResolvedValue({}),
   sendBadgeEmail: jest.fn().mockResolvedValue({}),
-  sendCancellationEmail: jest.fn().mockResolvedValue({})
+  sendCancellationEmail: jest.fn().mockResolvedValue({}),
+  sendEventNotificationEmail: jest.fn().mockResolvedValue({})
 }));
 
 jest.mock('../src/helpers/rateLimiter', () => ({
@@ -65,11 +76,32 @@ jest.mock('../src/helpers/tokenHelper', () => ({
 }));
 
 jest.mock('../src/helpers/badgeGenerator', () => ({
-  generateBadge: jest.fn().mockReturnValue('<svg>mock</svg>')
+  generateBadge: jest.fn().mockReturnValue('<svg>mock</svg>'),
+  generateBadgePng: jest.fn().mockResolvedValue(Buffer.from('mock-png')),
+  generateTextOverlay: jest.fn().mockReturnValue('<svg>overlay</svg>')
+}));
+
+jest.mock('../src/helpers/imageGenerator', () => ({
+  generateChapterBanner: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/chapters/test.png'),
+  generateEventBadgeBackground: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/events/test.png'),
+  callFluxApi: jest.fn().mockResolvedValue(Buffer.from('mock')),
+  uploadToBlob: jest.fn().mockResolvedValue('https://mock.blob.url/test.png')
 }));
 
 jest.mock('@azure/data-tables', () => ({
   TableClient: { fromConnectionString: jest.fn().mockReturnValue({ updateEntity: jest.fn().mockResolvedValue({}) }) }
+}));
+
+jest.mock('@azure/storage-blob', () => ({
+  BlobServiceClient: { fromConnectionString: jest.fn().mockReturnValue({
+    getContainerClient: jest.fn().mockReturnValue({
+      createIfNotExists: jest.fn().mockResolvedValue({}),
+      getBlockBlobClient: jest.fn().mockReturnValue({
+        uploadData: jest.fn().mockResolvedValue({}),
+        url: 'https://mock.blob.url/test.png'
+      })
+    })
+  })}
 }));
 
 jest.mock('@octokit/rest', () => ({
@@ -652,8 +684,8 @@ describe('issueBadges function', () => {
     expect(body.total).toBe(2);
     expect(storage.storeBadge).toHaveBeenCalledTimes(2);
     expect(emailService.sendBadgeEmail).toHaveBeenCalledTimes(2);
-    // Verify speaker gets Speaker badge type
-    expect(badgeGen.generateBadge).toHaveBeenCalledWith(expect.objectContaining({ badgeType: 'Speaker' }));
+    // Verify speaker gets Speaker badge type (now uses generateBadgePng)
+    expect(badgeGen.generateBadgePng).toHaveBeenCalledWith(expect.objectContaining({ badgeType: 'Speaker' }), null);
   });
 });
 
@@ -814,5 +846,308 @@ describe('badgeDownload function', () => {
     const res = await badgeDownload(req, context);
     expect(res.status).toBe(200);
     expect(res.headers['Content-Disposition']).toContain('speaker');
+  });
+});
+
+// ─── getSessionizeData ──────────────────────────────────────────────
+
+describe('getSessionizeData function', () => {
+  const getSessionizeData = require('../src/functions/getSessionizeData');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('returns 400 for missing sessionizeId', async () => {
+    const req = makeRequest('GET');
+    req.url = 'https://example.com/api/getSessionizeData?type=speakers';
+    const res = await getSessionizeData(req, context);
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 400 for invalid type', async () => {
+    const req = makeRequest('GET');
+    req.url = 'https://example.com/api/getSessionizeData?sessionizeId=abc&type=invalid';
+    const res = await getSessionizeData(req, context);
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 404 when no cached data', async () => {
+    storage.getSessionizeCache.mockResolvedValueOnce(null);
+    const req = makeRequest('GET');
+    req.url = 'https://example.com/api/getSessionizeData?sessionizeId=abc&type=speakers';
+    const res = await getSessionizeData(req, context);
+    expect(res.status).toBe(404);
+  });
+
+  test('returns cached speaker data', async () => {
+    storage.getSessionizeCache.mockResolvedValueOnce({
+      data: [{ fullName: 'Alice', bio: 'Expert' }],
+      lastRefreshed: '2026-03-18T10:00:00Z'
+    });
+    const req = makeRequest('GET');
+    req.url = 'https://example.com/api/getSessionizeData?sessionizeId=abc&type=speakers';
+    const res = await getSessionizeData(req, context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.data).toHaveLength(1);
+    expect(body.data[0].fullName).toBe('Alice');
+    expect(body.lastRefreshed).toBeTruthy();
+  });
+});
+
+// ─── refreshSessionize ─────────────────────────────────────────────
+
+describe('refreshSessionize function', () => {
+  const refreshSessionize = require('../src/functions/refreshSessionize');
+
+  const originalFetch = global.fetch;
+  beforeEach(() => {
+    jest.clearAllMocks();
+    global.fetch = jest.fn();
+  });
+  afterAll(() => { global.fetch = originalFetch; });
+
+  test('rejects unauthenticated requests', async () => {
+    const res = await refreshSessionize(makeRequest('POST', { sessionizeApiId: 'abc' }), context);
+    expect(res.status).toBe(401);
+  });
+
+  test('rejects non-admin users', async () => {
+    const res = await refreshSessionize(makeAuthRequest('POST', { sessionizeApiId: 'abc' }, ['authenticated']), context);
+    expect(res.status).toBe(403);
+  });
+
+  test('returns 400 for missing sessionizeApiId', async () => {
+    const res = await refreshSessionize(makeAuthRequest('POST', {}, ['admin']), context);
+    expect(res.status).toBe(400);
+  });
+
+  test('caches speakers and agenda on success', async () => {
+    const mockSpeakers = [{ fullName: 'Alice' }, { fullName: 'Bob' }];
+    const mockAgenda = [{ timeSlots: [] }];
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockSpeakers) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockAgenda) });
+
+    const res = await refreshSessionize(makeAuthRequest('POST', {
+      eventId: 'ev-1', chapterSlug: 'perth', sessionizeApiId: 'abc123'
+    }, ['admin']), context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.speakers).toBe(2);
+    expect(body.agenda).toBe(1);
+    expect(body.speakerNames).toEqual(['Alice', 'Bob']);
+    expect(storage.storeSessionizeCache).toHaveBeenCalledTimes(2);
+  });
+
+  test('handles Sessionize API failure gracefully', async () => {
+    global.fetch
+      .mockResolvedValueOnce({ ok: false, status: 500 })
+      .mockResolvedValueOnce({ ok: false, status: 500 });
+
+    const res = await refreshSessionize(makeAuthRequest('POST', {
+      eventId: 'ev-1', chapterSlug: 'perth', sessionizeApiId: 'bad-id'
+    }, ['admin']), context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.speakers).toBe(0);
+    expect(body.agenda).toBe(0);
+    expect(body.message).toMatch(/No data/);
+  });
+});
+
+// ─── chapterSubscribe ───────────────────────────────────────────────
+
+describe('chapterSubscribe function', () => {
+  const chapterSubscribe = require('../src/functions/chapterSubscribe');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('rejects unauthenticated requests', async () => {
+    const res = await chapterSubscribe(makeRequest('POST', { chapterSlug: 'perth', action: 'subscribe' }), context);
+    expect(res.status).toBe(401);
+  });
+
+  test('returns 400 for missing fields', async () => {
+    const res = await chapterSubscribe(makeAuthRequest('POST', { chapterSlug: 'perth' }), context);
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 400 for invalid action', async () => {
+    const res = await chapterSubscribe(makeAuthRequest('POST', { chapterSlug: 'perth', action: 'delete' }), context);
+    expect(res.status).toBe(400);
+  });
+
+  test('subscribes user successfully', async () => {
+    const res = await chapterSubscribe(makeAuthRequest('POST', { chapterSlug: 'perth', action: 'subscribe' }), context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.subscribed).toBe(true);
+    expect(storage.storeSubscription).toHaveBeenCalledWith('perth', 'test@example.com');
+  });
+
+  test('unsubscribes user successfully', async () => {
+    const res = await chapterSubscribe(makeAuthRequest('POST', { chapterSlug: 'perth', action: 'unsubscribe' }), context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.subscribed).toBe(false);
+    expect(storage.removeSubscription).toHaveBeenCalledWith('perth', 'test@example.com');
+  });
+
+  test('returns subscription status', async () => {
+    storage.isSubscribed.mockResolvedValueOnce(true);
+    const res = await chapterSubscribe(makeAuthRequest('POST', { chapterSlug: 'perth', action: 'status' }), context);
+    expect(res.status).toBe(200);
+    expect(JSON.parse(res.body).subscribed).toBe(true);
+  });
+});
+
+// ─── communityPartner ───────────────────────────────────────────────
+
+describe('communityPartner function', () => {
+  const communityPartner = require('../src/functions/communityPartner');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('rejects unauthenticated requests', async () => {
+    const res = await communityPartner(makeRequest('POST', { eventId: 'ev-1' }), context);
+    expect(res.status).toBe(401);
+  });
+
+  test('rejects non-admin users', async () => {
+    const res = await communityPartner(makeAuthRequest('POST', { eventId: 'ev-1' }, ['authenticated']), context);
+    expect(res.status).toBe(403);
+  });
+
+  test('returns 400 for missing eventId', async () => {
+    const res = await communityPartner(makeAuthRequest('POST', {}, ['admin']), context);
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 400 for missing name', async () => {
+    const res = await communityPartner(makeAuthRequest('POST', { eventId: 'ev-1', logoBase64: 'abc' }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/name/);
+  });
+
+  test('returns 400 for missing logo', async () => {
+    const res = await communityPartner(makeAuthRequest('POST', { eventId: 'ev-1', name: 'Acme' }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/logo/i);
+  });
+
+  test('returns 400 for oversized logo', async () => {
+    const res = await communityPartner(makeAuthRequest('POST', {
+      eventId: 'ev-1', name: 'Acme', logoBase64: 'x'.repeat(210000)
+    }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/too large/i);
+  });
+
+  test('adds partner successfully', async () => {
+    const res = await communityPartner(makeAuthRequest('POST', {
+      eventId: 'ev-1', name: 'Acme Corp', tier: 'Gold', logoBase64: 'abc123', logoContentType: 'image/png', website: 'https://acme.com'
+    }, ['admin']), context);
+    expect(res.status).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.partner.name).toBe('Acme Corp');
+    expect(storage.storePartner).toHaveBeenCalledTimes(1);
+  });
+
+  test('deletes partner successfully', async () => {
+    const res = await communityPartner(makeAuthRequest('POST', {
+      eventId: 'ev-1', partnerId: 'p-1', action: 'delete'
+    }, ['admin']), context);
+    expect(res.status).toBe(200);
+    expect(storage.deletePartner).toHaveBeenCalledWith('ev-1', 'p-1');
+  });
+});
+
+// ─── getCommunityPartners ───────────────────────────────────────────
+
+describe('getCommunityPartners function', () => {
+  const getCommunityPartners = require('../src/functions/getCommunityPartners');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('returns 400 for missing parameters', async () => {
+    const req = makeRequest('GET');
+    req.url = 'https://example.com/api/getCommunityPartners';
+    const res = await getCommunityPartners(req, context);
+    expect(res.status).toBe(400);
+  });
+
+  test('returns partners grouped by tier', async () => {
+    storage.getPartnersByEvent.mockResolvedValueOnce([
+      { id: 'p1', name: 'Acme', tier: 'Gold', logoBase64: 'abc', logoContentType: 'image/png', website: 'https://acme.com' },
+      { id: 'p2', name: 'Beta', tier: 'Gold', logoBase64: 'def', logoContentType: 'image/png', website: '' },
+      { id: 'p3', name: 'Gamma', tier: 'Silver', logoBase64: 'ghi', logoContentType: 'image/png', website: '' }
+    ]);
+    const req = makeRequest('GET');
+    req.url = 'https://example.com/api/getCommunityPartners?eventId=ev-1';
+    const res = await getCommunityPartners(req, context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.partners['Gold']).toHaveLength(2);
+    expect(body.partners['Silver']).toHaveLength(1);
+    expect(body.partners['Gold'][0].logoDataUrl).toContain('data:image/png;base64,abc');
+  });
+
+  test('returns empty when no partners', async () => {
+    storage.getPartnersByEvent.mockResolvedValueOnce([]);
+    const req = makeRequest('GET');
+    req.url = 'https://example.com/api/getCommunityPartners?eventId=ev-1';
+    const res = await getCommunityPartners(req, context);
+    expect(res.status).toBe(200);
+    expect(JSON.parse(res.body).partners).toEqual({});
+  });
+});
+
+// ─── regenerateImage ────────────────────────────────────────────────
+
+describe('regenerateImage function', () => {
+  const regenerateImage = require('../src/functions/regenerateImage');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('rejects unauthenticated requests', async () => {
+    const res = await regenerateImage(makeRequest('POST', { type: 'event', slug: 'test' }), context);
+    expect(res.status).toBe(401);
+  });
+
+  test('rejects non-admin users', async () => {
+    const res = await regenerateImage(makeAuthRequest('POST', { type: 'event', slug: 'test' }, ['authenticated']), context);
+    expect(res.status).toBe(403);
+  });
+
+  test('returns 400 for missing type or slug', async () => {
+    const res = await regenerateImage(makeAuthRequest('POST', { type: 'event' }, ['admin']), context);
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 400 for invalid type', async () => {
+    const res = await regenerateImage(makeAuthRequest('POST', { type: 'invalid', slug: 'test' }, ['admin']), context);
+    expect(res.status).toBe(400);
+  });
+
+  test('regenerates event badge image', async () => {
+    storage.getEventBySlug.mockResolvedValueOnce({
+      rowKey: 'ev-1', title: 'Test Event', chapterSlug: 'perth', locationCity: 'Perth'
+    });
+    const res = await regenerateImage(makeAuthRequest('POST', { type: 'event', slug: 'test-event' }, ['admin']), context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.imageUrl).toBeTruthy();
+  });
+
+  test('regenerates chapter banner', async () => {
+    storage.getApprovedApplicationBySlug.mockResolvedValueOnce({
+      city: 'Perth', country: 'Australia', partitionKey: 'chapter', rowKey: 'app-1'
+    });
+    const res = await regenerateImage(makeAuthRequest('POST', { type: 'chapter', slug: 'perth' }, ['admin']), context);
+    expect(res.status).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
   });
 });

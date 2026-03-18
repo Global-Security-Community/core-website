@@ -29,7 +29,17 @@ jest.mock('../src/helpers/tableStorage', () => ({
   isVolunteerForAnyEvent: jest.fn().mockResolvedValue(null),
   VALID_ROLES: ['attendee', 'volunteer', 'speaker', 'sponsor', 'organiser'],
   getApprovedApplicationByEmail: jest.fn(),
-  getApprovedApplicationBySlug: jest.fn()
+  getApprovedApplicationBySlug: jest.fn(),
+  storeSessionizeCache: jest.fn().mockResolvedValue({}),
+  getSessionizeCache: jest.fn(),
+  storeSubscription: jest.fn().mockResolvedValue({}),
+  removeSubscription: jest.fn().mockResolvedValue({}),
+  getSubscriptionsByChapter: jest.fn().mockResolvedValue([]),
+  isSubscribed: jest.fn().mockResolvedValue(false),
+  storePartner: jest.fn().mockResolvedValue({}),
+  deletePartner: jest.fn().mockResolvedValue({}),
+  getPartnersByEvent: jest.fn().mockResolvedValue([]),
+  getPartnersByChapter: jest.fn().mockResolvedValue([])
 }));
 
 jest.mock('../src/helpers/discordBot', () => ({
