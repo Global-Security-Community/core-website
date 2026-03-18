@@ -99,6 +99,10 @@
       "allowedRoles": ["authenticated"]
     },
     {
+      "route": "/api/chapterSubscribe",
+      "allowedRoles": ["authenticated"]
+    },
+    {
       "route": "/api/refreshSessionize",
       "allowedRoles": ["admin"]
     },

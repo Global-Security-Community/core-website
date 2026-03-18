@@ -31,7 +31,11 @@ jest.mock('../src/helpers/tableStorage', () => ({
   getApprovedApplicationByEmail: jest.fn(),
   getApprovedApplicationBySlug: jest.fn(),
   storeSessionizeCache: jest.fn().mockResolvedValue({}),
-  getSessionizeCache: jest.fn()
+  getSessionizeCache: jest.fn(),
+  storeSubscription: jest.fn().mockResolvedValue({}),
+  removeSubscription: jest.fn().mockResolvedValue({}),
+  getSubscriptionsByChapter: jest.fn().mockResolvedValue([]),
+  isSubscribed: jest.fn().mockResolvedValue(false)
 }));
 
 jest.mock('../src/helpers/discordBot', () => ({

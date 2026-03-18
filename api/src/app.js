@@ -18,6 +18,7 @@ const updateChapterHandler = require('./functions/updateChapter');
 const getChapterHandler = require('./functions/getChapter');
 const refreshSessionizeHandler = require('./functions/refreshSessionize');
 const getSessionizeDataHandler = require('./functions/getSessionizeData');
+const chapterSubscribeHandler = require('./functions/chapterSubscribe');
 
 // ─── Public endpoints ───
 app.post('contactForm', { authLevel: 'anonymous', handler: contactFormHandler });
@@ -34,6 +35,7 @@ app.post('registerEvent', { authLevel: 'anonymous', handler: registerEventHandle
 app.post('cancelRegistration', { authLevel: 'anonymous', handler: cancelRegistrationHandler });
 app.get('myTickets', { authLevel: 'anonymous', handler: myTicketsHandler });
 app.get('badge', { authLevel: 'anonymous', handler: badgeDownloadHandler });
+app.post('chapterSubscribe', { authLevel: 'anonymous', handler: chapterSubscribeHandler });
 
 // ─── Admin endpoints ───
 app.post('createEvent', { authLevel: 'anonymous', handler: createEventHandler });

@@ -47,8 +47,17 @@ layout: base.njk
   </div>
 
   <script src="/js/chapter-events.js"></script>
+  <script src="/js/chapter-subscribe.js"></script>
 
   <h2>Get Involved</h2>
+  <div class="card" style="margin-bottom:1rem;" id="subscribe-card" data-chapter-slug="{{ city | lower | replace(" ", "-") }}">
+    <h3>📬 Chapter Event Notifications</h3>
+    <p id="subscribe-msg" style="margin:0 0 0.75rem 0;">Get an email when new events are announced for this chapter.</p>
+    <button id="btn-subscribe" style="display:none;">Subscribe</button>
+    <p id="subscribe-login-hint" style="color:#666;font-size:0.9rem;margin:0;">
+      <a href="/.auth/login/ciam?post_login_redirect_uri={{ page.url }}">Log in</a> to subscribe to event notifications.
+    </p>
+  </div>
   {% if discord_channel_id and discord_guild_id %}
   <div class="card discord-card">
     <span class="discord-icon">💬</span>

@@ -4,24 +4,41 @@ document.getElementById('contact-form').addEventListener('submit', async functio
   var formMessage = document.getElementById('form-message');
   var button = this.querySelector('button');
   var originalText = button.textContent;
-  
+
+  // Client-side validation
+  var name = document.getElementById('name').value.trim();
+  var email = document.getElementById('email').value.trim();
+  var subject = document.getElementById('subject').value.trim();
+  var message = document.getElementById('message').value.trim();
+
+  function showError(msg) {
+    formMessage.style.backgroundColor = '#f8d7da';
+    formMessage.style.color = '#721c24';
+    formMessage.style.borderLeft = '4px solid #f5c6cb';
+    formMessage.textContent = msg;
+    formMessage.style.display = 'block';
+  }
+
+  if (!name || !email || !subject || !message) {
+    showError('Please fill in all required fields.');
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showError('Please enter a valid email address.');
+    return;
+  }
+  if (name.length > 100) { showError('Name must be 100 characters or less.'); return; }
+  if (subject.length > 200) { showError('Subject must be 200 characters or less.'); return; }
+  if (message.length > 5000) { showError('Message must be 5000 characters or less.'); return; }
+
   try {
     button.disabled = true;
     button.textContent = 'Sending...';
     
-    var formData = {
-      name: document.getElementById('name').value,
-      email: document.getElementById('email').value,
-      subject: document.getElementById('subject').value,
-      message: document.getElementById('message').value
-    };
-    
     var response = await fetch('/api/contactForm', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(formData)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, email: email, subject: subject, message: message })
     });
     
     var data = await response.json();
@@ -33,19 +50,12 @@ document.getElementById('contact-form').addEventListener('submit', async functio
       formMessage.textContent = data.message || 'Message sent successfully!';
       document.getElementById('contact-form').reset();
     } else {
-      formMessage.style.backgroundColor = '#f8d7da';
-      formMessage.style.color = '#721c24';
-      formMessage.style.borderLeft = '4px solid #f5c6cb';
-      formMessage.textContent = data.error || 'Error sending message. Please try again.';
+      showError(data.error || 'Error sending message. Please try again.');
     }
     
     formMessage.style.display = 'block';
   } catch (error) {
-    formMessage.style.backgroundColor = '#f8d7da';
-    formMessage.style.color = '#721c24';
-    formMessage.style.borderLeft = '4px solid #f5c6cb';
-    formMessage.textContent = 'Error sending message. Please try again later.';
-    formMessage.style.display = 'block';
+    showError('Error sending message. Please try again later.');
   } finally {
     button.disabled = false;
     button.textContent = originalText;

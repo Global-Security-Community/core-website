@@ -225,4 +225,52 @@ async function sendCancellationEmail(registration, event, context) {
   }
 }
 
-module.exports = { sendTicketEmail, sendBadgeEmail, sendCancellationEmail };
+/**
+ * Sends a new event notification email to chapter subscribers.
+ */
+async function sendEventNotificationEmail(subscriberEmail, event, context) {
+  const client = getEmailClient();
+  const chapterName = event.chapterSlug
+    ? event.chapterSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    : 'your chapter';
+
+  const eventPageUrl = event.slug ? `${SITE_URL}/events/${escapeHtml(event.slug)}/` : SITE_URL;
+  const registerUrl = event.slug ? `${SITE_URL}/register/?event=${escapeHtml(event.slug)}` : SITE_URL;
+
+  const bodyHtml = `
+    <h2 style="color:#001f3f;margin:0 0 8px 0;">New Event: ${escapeHtml(event.title)} 🎉</h2>
+    <p style="color:#555;margin:0 0 20px 0;">A new event has been announced for the <strong>${escapeHtml(chapterName)}</strong> chapter!</p>
+    ${eventDetailsBlock(event)}
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${registerUrl}" style="display:inline-block;padding:12px 28px;background:#20b2aa;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;font-size:1.1em;">Register Now</a>
+    </div>
+    <p style="text-align:center;margin-top:16px;">
+      <a href="${eventPageUrl}" style="color:#20b2aa;text-decoration:none;font-size:0.9em;">View event details →</a>
+    </p>
+    <p style="color:#999;font-size:0.8em;text-align:center;margin-top:24px;">
+      You received this because you subscribed to ${escapeHtml(chapterName)} chapter updates.
+      <a href="${SITE_URL}/chapters/${escapeHtml(event.chapterSlug)}/" style="color:#20b2aa;">Manage preferences</a>
+    </p>`;
+
+  const message = {
+    senderAddress: SENDER_ADDRESS,
+    content: {
+      subject: `New Event: ${event.title}`,
+      html: emailLayout(bodyHtml)
+    },
+    recipients: {
+      to: [{ address: subscriberEmail }]
+    }
+  };
+
+  try {
+    const poller = await client.beginSend(message);
+    const result = await poller.pollUntilDone();
+    if (context) context.log(`Event notification sent to ${subscriberEmail}, status: ${result.status}`);
+    return result;
+  } catch (err) {
+    if (context) context.log(`Event notification email failed for ${subscriberEmail}: ${err.message}`);
+  }
+}
+
+module.exports = { sendTicketEmail, sendBadgeEmail, sendCancellationEmail, sendEventNotificationEmail };

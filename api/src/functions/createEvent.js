@@ -1,8 +1,9 @@
 const { randomUUID } = require('crypto');
 const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
-const { storeEvent, listEvents } = require('../helpers/tableStorage');
+const { storeEvent, listEvents, getSubscriptionsByChapter } = require('../helpers/tableStorage');
 const { sanitiseFields } = require('../helpers/sanitise');
 const { sendMessage } = require('../helpers/discordBot');
+const { sendEventNotificationEmail } = require('../helpers/emailService');
 const { Octokit } = require('@octokit/rest');
 const { createAppAuth } = require('@octokit/auth-app');
 
@@ -150,6 +151,23 @@ module.exports = async function (request, context) {
       } catch (discErr) {
         context.log(`Discord notification failed: ${discErr.message}`);
       }
+    }
+
+    // Notify chapter subscribers (non-blocking)
+    try {
+      const subscribers = await getSubscriptionsByChapter(chapterSlug.toLowerCase().trim());
+      if (subscribers.length > 0) {
+        context.log(`Sending event notifications to ${subscribers.length} chapter subscribers`);
+        for (const sub of subscribers) {
+          try {
+            await sendEventNotificationEmail(sub.email, event, context);
+          } catch (emailErr) {
+            context.log(`Notification to ${sub.email} failed: ${emailErr.message}`);
+          }
+        }
+      }
+    } catch (notifErr) {
+      context.log(`Chapter notification failed (non-critical): ${notifErr.message}`);
     }
 
     return {

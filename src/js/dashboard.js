@@ -241,25 +241,55 @@
   var createSubmitting = false;
   document.getElementById('create-btn').addEventListener('click', function() {
     if (createSubmitting) return;
-    createSubmitting = true;
     var btn = this;
     var msg = document.getElementById('create-message');
+
+    var title = document.getElementById('ev-title').value.trim();
+    var date = document.getElementById('ev-date').value;
+    var description = document.getElementById('ev-description').value.trim();
+    var address1 = document.getElementById('ev-address1').value.trim();
+    var chapterSlug = document.getElementById('ev-chapter').value.trim();
+
+    function showErr(text) {
+      msg.style.display = 'block';
+      msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
+      msg.textContent = text;
+    }
+
+    if (!title || !date || !description || !chapterSlug) {
+      showErr('Please fill in title, date, description, and chapter slug.');
+      return;
+    }
+    if (!address1) {
+      showErr('Please enter an address for the event.');
+      return;
+    }
+    if (title.length > 200) { showErr('Title must be 200 characters or less.'); return; }
+    if (description.length > 5000) { showErr('Description must be 5000 characters or less.'); return; }
+    var endDate = document.getElementById('ev-enddate').value;
+    if (endDate && endDate < date) {
+      showErr('End date must be after the start date.');
+      return;
+    }
+
+    createSubmitting = true;
     btn.disabled = true;
     btn.textContent = 'Creating...';
+    msg.style.display = 'none';
 
     var payload = {
-      title: document.getElementById('ev-title').value,
-      date: document.getElementById('ev-date').value,
-      endDate: document.getElementById('ev-enddate').value,
+      title: title,
+      date: date,
+      endDate: endDate,
       locationBuilding: document.getElementById('ev-building').value,
-      locationAddress1: document.getElementById('ev-address1').value,
+      locationAddress1: address1,
       locationAddress2: document.getElementById('ev-address2').value,
       locationCity: document.getElementById('ev-city').value,
       locationState: document.getElementById('ev-state').value,
-      description: document.getElementById('ev-description').value,
+      description: description,
       sessionizeApiId: document.getElementById('ev-sessionize').value,
       registrationCap: document.getElementById('ev-cap').value,
-      chapterSlug: document.getElementById('ev-chapter').value
+      chapterSlug: chapterSlug
     };
 
     fetch('/api/createEvent', {

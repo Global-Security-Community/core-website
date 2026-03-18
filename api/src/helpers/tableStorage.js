@@ -398,6 +398,57 @@ async function getSessionizeCache(sessionizeId, type) {
   }
 }
 
+// ─── Chapter Subscriptions ───
+
+let subscriptionTableReady = false;
+
+async function ensureSubscriptionTable() {
+  if (subscriptionTableReady) return;
+  try {
+    const client = getTableClient('ChapterSubscriptions');
+    await client.createTable();
+  } catch (e) { /* table may already exist */ }
+  subscriptionTableReady = true;
+}
+
+async function storeSubscription(chapterSlug, email) {
+  await ensureSubscriptionTable();
+  const client = getTableClient('ChapterSubscriptions');
+  await client.upsertEntity({
+    partitionKey: chapterSlug.toLowerCase(),
+    rowKey: email.toLowerCase(),
+    subscribedAt: new Date().toISOString()
+  });
+}
+
+async function removeSubscription(chapterSlug, email) {
+  await ensureSubscriptionTable();
+  const client = getTableClient('ChapterSubscriptions');
+  try {
+    await client.deleteEntity(chapterSlug.toLowerCase(), email.toLowerCase());
+  } catch { /* may not exist */ }
+}
+
+async function getSubscriptionsByChapter(chapterSlug) {
+  await ensureSubscriptionTable();
+  const client = getTableClient('ChapterSubscriptions');
+  const subs = [];
+  const iter = client.listEntities({ queryOptions: { filter: `PartitionKey eq '${chapterSlug.toLowerCase()}'` } });
+  for await (const entity of iter) {
+    subs.push({ email: entity.rowKey, subscribedAt: entity.subscribedAt });
+  }
+  return subs;
+}
+
+async function isSubscribed(chapterSlug, email) {
+  await ensureSubscriptionTable();
+  const client = getTableClient('ChapterSubscriptions');
+  try {
+    await client.getEntity(chapterSlug.toLowerCase(), email.toLowerCase());
+    return true;
+  } catch { return false; }
+}
+
 module.exports = {
   storeApplication, getApplication, updateApplicationStatus, getApprovedApplicationBySlug,
   storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent,
@@ -409,5 +460,6 @@ module.exports = {
   storeVolunteer, getVolunteersByEvent, removeVolunteer, isVolunteerForAnyEvent,
   getRegistrationsByRole, isVolunteerOrOrganiserByRegistration, VALID_ROLES,
   getApprovedApplicationByEmail,
-  storeSessionizeCache, getSessionizeCache
+  storeSessionizeCache, getSessionizeCache,
+  storeSubscription, removeSubscription, getSubscriptionsByChapter, isSubscribed
 };

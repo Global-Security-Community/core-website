@@ -42,7 +42,11 @@ jest.mock('../src/helpers/tableStorage', () => ({
   getApprovedApplicationByEmail: jest.fn(),
   getApprovedApplicationBySlug: jest.fn(),
   storeSessionizeCache: jest.fn().mockResolvedValue({}),
-  getSessionizeCache: jest.fn()
+  getSessionizeCache: jest.fn(),
+  storeSubscription: jest.fn().mockResolvedValue({}),
+  removeSubscription: jest.fn().mockResolvedValue({}),
+  getSubscriptionsByChapter: jest.fn().mockResolvedValue([]),
+  isSubscribed: jest.fn().mockResolvedValue(false)
 }));
 
 jest.mock('../src/helpers/discordBot', () => ({
@@ -53,7 +57,8 @@ jest.mock('../src/helpers/discordBot', () => ({
 jest.mock('../src/helpers/emailService', () => ({
   sendTicketEmail: jest.fn().mockResolvedValue({}),
   sendBadgeEmail: jest.fn().mockResolvedValue({}),
-  sendCancellationEmail: jest.fn().mockResolvedValue({})
+  sendCancellationEmail: jest.fn().mockResolvedValue({}),
+  sendEventNotificationEmail: jest.fn().mockResolvedValue({})
 }));
 
 jest.mock('../src/helpers/rateLimiter', () => ({
@@ -923,5 +928,51 @@ describe('refreshSessionize function', () => {
     expect(body.speakers).toBe(0);
     expect(body.agenda).toBe(0);
     expect(body.message).toMatch(/No data/);
+  });
+});
+
+// ─── chapterSubscribe ───────────────────────────────────────────────
+
+describe('chapterSubscribe function', () => {
+  const chapterSubscribe = require('../src/functions/chapterSubscribe');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('rejects unauthenticated requests', async () => {
+    const res = await chapterSubscribe(makeRequest('POST', { chapterSlug: 'perth', action: 'subscribe' }), context);
+    expect(res.status).toBe(401);
+  });
+
+  test('returns 400 for missing fields', async () => {
+    const res = await chapterSubscribe(makeAuthRequest('POST', { chapterSlug: 'perth' }), context);
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 400 for invalid action', async () => {
+    const res = await chapterSubscribe(makeAuthRequest('POST', { chapterSlug: 'perth', action: 'delete' }), context);
+    expect(res.status).toBe(400);
+  });
+
+  test('subscribes user successfully', async () => {
+    const res = await chapterSubscribe(makeAuthRequest('POST', { chapterSlug: 'perth', action: 'subscribe' }), context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.subscribed).toBe(true);
+    expect(storage.storeSubscription).toHaveBeenCalledWith('perth', 'test@example.com');
+  });
+
+  test('unsubscribes user successfully', async () => {
+    const res = await chapterSubscribe(makeAuthRequest('POST', { chapterSlug: 'perth', action: 'unsubscribe' }), context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.subscribed).toBe(false);
+    expect(storage.removeSubscription).toHaveBeenCalledWith('perth', 'test@example.com');
+  });
+
+  test('returns subscription status', async () => {
+    storage.isSubscribed.mockResolvedValueOnce(true);
+    const res = await chapterSubscribe(makeAuthRequest('POST', { chapterSlug: 'perth', action: 'status' }), context);
+    expect(res.status).toBe(200);
+    expect(JSON.parse(res.body).subscribed).toBe(true);
   });
 });
