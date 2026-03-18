@@ -162,6 +162,41 @@
           });
         }
 
+        // Regenerate image button
+        var regenCard = document.createElement('div');
+        regenCard.className = 'card';
+        regenCard.style.cssText = 'margin-top:1rem;padding:1rem;';
+        regenCard.innerHTML =
+          '<h4 style="margin:0 0 0.5rem 0;">🎨 Event Badge Image</h4>' +
+          '<p id="regen-status" style="font-size:0.85rem;color:#666;margin:0 0 0.5rem 0;">AI-generated badge background for this event.</p>' +
+          '<button id="btn-regen-badge" style="width:100%;">Regenerate Badge Image</button>';
+        var actionsParent2 = document.getElementById('detail-actions').parentNode;
+        actionsParent2.insertBefore(regenCard, document.getElementById('detail-attendees'));
+
+        document.getElementById('btn-regen-badge').addEventListener('click', function() {
+          var btn = this;
+          var slug = '';
+          // Try to get event slug from the event list data
+          var cards = document.querySelectorAll('.event-card');
+          cards.forEach(function(c) { if (c.dataset.eventId === eventId) slug = c.dataset.eventTitle; });
+          btn.disabled = true; btn.textContent = 'Generating... (this may take a minute)';
+          document.getElementById('regen-status').textContent = 'Calling AI image generation...';
+          fetch('/api/regenerateImage', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ type: 'event', slug: eventId })
+          }).then(function(r) { return r.json(); }).then(function(d) {
+            btn.disabled = false; btn.textContent = 'Regenerate Badge Image';
+            if (d.success) {
+              document.getElementById('regen-status').innerHTML = '✅ Badge image generated! <a href="' + d.imageUrl + '" target="_blank">View</a>';
+            } else {
+              document.getElementById('regen-status').textContent = '❌ ' + (d.error || 'Failed');
+            }
+          }).catch(function() {
+            btn.disabled = false; btn.textContent = 'Regenerate Badge Image';
+            document.getElementById('regen-status').textContent = '❌ Generation failed. Try again.';
+          });
+        });
+
         // Community Partners management section
         var partnerSection = document.createElement('div');
         partnerSection.className = 'card';

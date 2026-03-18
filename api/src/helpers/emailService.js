@@ -134,9 +134,12 @@ async function sendTicketEmail(registration, event, qrDataUrl, context, partners
 /**
  * Sends a digital badge email with SVG attachment.
  */
-async function sendBadgeEmail(recipient, badgeSvg, event, badgeType, context) {
+async function sendBadgeEmail(recipient, badgeContent, event, badgeType, context, contentType, fileName) {
   const client = getEmailClient();
-  const badgeBuffer = Buffer.from(badgeSvg, 'utf-8');
+  const isPng = contentType === 'image/png';
+  const badgeBase64 = isPng ? badgeContent : Buffer.from(badgeContent, 'utf-8').toString('base64');
+  const attachmentName = fileName || `gsc-badge-${badgeType.toLowerCase()}.svg`;
+  const attachmentType = contentType || 'image/svg+xml';
 
   const roleMessages = {
     'Speaker': { roleText: 'speaking at', gratitude: 'Your knowledge sharing inspires the community.' },
@@ -165,9 +168,9 @@ async function sendBadgeEmail(recipient, badgeSvg, event, badgeType, context) {
     },
     attachments: [
       {
-        name: `gsc-badge-${badgeType.toLowerCase()}.svg`,
-        contentType: 'image/svg+xml',
-        contentInBase64: badgeBuffer.toString('base64')
+        name: attachmentName,
+        contentType: attachmentType,
+        contentInBase64: badgeBase64
       }
     ]
   };

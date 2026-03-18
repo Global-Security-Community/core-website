@@ -1,6 +1,7 @@
 const { verifyApprovalToken } = require('../helpers/tokenHelper');
 const { getApplication, updateApplicationStatus } = require('../helpers/tableStorage');
 const { createChapterChannel } = require('../helpers/discordBot');
+const { generateChapterBanner } = require('../helpers/imageGenerator');
 const { Octokit } = require('@octokit/rest');
 const { createAppAuth } = require('@octokit/auth-app');
 
@@ -122,7 +123,22 @@ module.exports = async function (request, context) {
       context.log(`GitHub dispatch failed (non-critical): ${err.message}`);
     }
 
-    // 3. Update status to approved (this is the critical step)
+    // 3. Generate chapter banner image (non-critical)
+    var bannerGenerated = false;
+    try {
+      const bannerUrl = await generateChapterBanner(application.city, application.country, context);
+      if (bannerUrl) {
+        const { TableClient } = require('@azure/data-tables');
+        const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
+        const client = TableClient.fromConnectionString(connStr, 'ChapterApplications');
+        await client.updateEntity({ partitionKey: application.partitionKey || 'chapter', rowKey: application.rowKey || applicationId, bannerImageUrl: bannerUrl }, 'Merge');
+        bannerGenerated = true;
+      }
+    } catch (imgErr) {
+      context.log(`Banner generation failed (non-critical): ${imgErr.message}`);
+    }
+
+    // 4. Update status to approved (this is the critical step)
     await updateApplicationStatus(applicationId, 'approved');
 
     // Build success message with details about what happened
@@ -136,6 +152,11 @@ module.exports = async function (request, context) {
       details.push('✅ Chapter page generation triggered');
     } else {
       details.push('⚠️ Chapter page could not be auto-generated — create manually');
+    }
+    if (bannerGenerated) {
+      details.push('✅ AI chapter banner generated');
+    } else {
+      details.push('⚠️ Banner could not be generated — use dashboard to regenerate');
     }
 
     return htmlResponse(200, '✅ Chapter Approved',

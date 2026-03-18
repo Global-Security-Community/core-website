@@ -1,7 +1,7 @@
 const { randomUUID } = require('crypto');
 const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
 const { getRegistrationsByEvent, getEvent, storeBadge, getBadgesByEvent } = require('../helpers/tableStorage');
-const { generateBadge } = require('../helpers/badgeGenerator');
+const { generateBadge, generateBadgePng } = require('../helpers/badgeGenerator');
 const { sendBadgeEmail } = require('../helpers/emailService');
 
 /**
@@ -56,18 +56,41 @@ module.exports = async function (request, context) {
     let issued = 0;
     const errors = [];
 
+    // Try to download AI-generated background for PNG badges
+    let backgroundBuffer = null;
+    if (event.badgeImageUrl) {
+      try {
+        const bgRes = await fetch(event.badgeImageUrl);
+        if (bgRes.ok) backgroundBuffer = Buffer.from(await bgRes.arrayBuffer());
+      } catch (e) { context.log(`Could not fetch badge background: ${e.message}`); }
+    }
+
     for (const reg of checkedInRegs) {
       try {
         const role = reg.role || 'attendee';
         const badgeType = roleToBadgeType[role] || 'Attendee';
         const badgeId = randomUUID();
-        const badgeSvg = generateBadge({
+        const badgeOpts = {
           recipientName: reg.fullName,
           eventTitle: event.title,
           eventDate: event.date,
           eventLocation: event.location,
           badgeType
-        });
+        };
+
+        // Generate PNG badge (with AI background) or fall back to SVG
+        let badgeContent, badgeContentType, badgeFileName;
+        try {
+          const pngBuffer = await generateBadgePng(badgeOpts, backgroundBuffer);
+          badgeContent = pngBuffer.toString('base64');
+          badgeContentType = 'image/png';
+          badgeFileName = `gsc-badge-${badgeType.toLowerCase()}.png`;
+        } catch (pngErr) {
+          context.log(`PNG badge failed, falling back to SVG: ${pngErr.message}`);
+          badgeContent = generateBadge(badgeOpts);
+          badgeContentType = 'image/svg+xml';
+          badgeFileName = `gsc-badge-${badgeType.toLowerCase()}.svg`;
+        }
 
         await storeBadge({
           id: badgeId,
@@ -79,7 +102,7 @@ module.exports = async function (request, context) {
         });
 
         try {
-          await sendBadgeEmail({ name: reg.fullName, email: reg.email }, badgeSvg, event, badgeType, context);
+          await sendBadgeEmail({ name: reg.fullName, email: reg.email }, badgeContent, event, badgeType, context, badgeContentType, badgeFileName);
         } catch (emailErr) {
           context.log(`Badge email failed for ${reg.email}: ${emailErr.message}`);
         }

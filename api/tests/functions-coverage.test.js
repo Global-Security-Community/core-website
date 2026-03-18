@@ -76,11 +76,32 @@ jest.mock('../src/helpers/tokenHelper', () => ({
 }));
 
 jest.mock('../src/helpers/badgeGenerator', () => ({
-  generateBadge: jest.fn().mockReturnValue('<svg>mock</svg>')
+  generateBadge: jest.fn().mockReturnValue('<svg>mock</svg>'),
+  generateBadgePng: jest.fn().mockResolvedValue(Buffer.from('mock-png')),
+  generateTextOverlay: jest.fn().mockReturnValue('<svg>overlay</svg>')
+}));
+
+jest.mock('../src/helpers/imageGenerator', () => ({
+  generateChapterBanner: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/chapters/test.png'),
+  generateEventBadgeBackground: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/events/test.png'),
+  callFluxApi: jest.fn().mockResolvedValue(Buffer.from('mock')),
+  uploadToBlob: jest.fn().mockResolvedValue('https://mock.blob.url/test.png')
 }));
 
 jest.mock('@azure/data-tables', () => ({
   TableClient: { fromConnectionString: jest.fn().mockReturnValue({ updateEntity: jest.fn().mockResolvedValue({}) }) }
+}));
+
+jest.mock('@azure/storage-blob', () => ({
+  BlobServiceClient: { fromConnectionString: jest.fn().mockReturnValue({
+    getContainerClient: jest.fn().mockReturnValue({
+      createIfNotExists: jest.fn().mockResolvedValue({}),
+      getBlockBlobClient: jest.fn().mockReturnValue({
+        uploadData: jest.fn().mockResolvedValue({}),
+        url: 'https://mock.blob.url/test.png'
+      })
+    })
+  })}
 }));
 
 jest.mock('@octokit/rest', () => ({
@@ -663,8 +684,8 @@ describe('issueBadges function', () => {
     expect(body.total).toBe(2);
     expect(storage.storeBadge).toHaveBeenCalledTimes(2);
     expect(emailService.sendBadgeEmail).toHaveBeenCalledTimes(2);
-    // Verify speaker gets Speaker badge type
-    expect(badgeGen.generateBadge).toHaveBeenCalledWith(expect.objectContaining({ badgeType: 'Speaker' }));
+    // Verify speaker gets Speaker badge type (now uses generateBadgePng)
+    expect(badgeGen.generateBadgePng).toHaveBeenCalledWith(expect.objectContaining({ badgeType: 'Speaker' }), null);
   });
 });
 
@@ -1080,5 +1101,53 @@ describe('getCommunityPartners function', () => {
     const res = await getCommunityPartners(req, context);
     expect(res.status).toBe(200);
     expect(JSON.parse(res.body).partners).toEqual({});
+  });
+});
+
+// ─── regenerateImage ────────────────────────────────────────────────
+
+describe('regenerateImage function', () => {
+  const regenerateImage = require('../src/functions/regenerateImage');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('rejects unauthenticated requests', async () => {
+    const res = await regenerateImage(makeRequest('POST', { type: 'event', slug: 'test' }), context);
+    expect(res.status).toBe(401);
+  });
+
+  test('rejects non-admin users', async () => {
+    const res = await regenerateImage(makeAuthRequest('POST', { type: 'event', slug: 'test' }, ['authenticated']), context);
+    expect(res.status).toBe(403);
+  });
+
+  test('returns 400 for missing type or slug', async () => {
+    const res = await regenerateImage(makeAuthRequest('POST', { type: 'event' }, ['admin']), context);
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 400 for invalid type', async () => {
+    const res = await regenerateImage(makeAuthRequest('POST', { type: 'invalid', slug: 'test' }, ['admin']), context);
+    expect(res.status).toBe(400);
+  });
+
+  test('regenerates event badge image', async () => {
+    storage.getEventBySlug.mockResolvedValueOnce({
+      rowKey: 'ev-1', title: 'Test Event', chapterSlug: 'perth', locationCity: 'Perth'
+    });
+    const res = await regenerateImage(makeAuthRequest('POST', { type: 'event', slug: 'test-event' }, ['admin']), context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.imageUrl).toBeTruthy();
+  });
+
+  test('regenerates chapter banner', async () => {
+    storage.getApprovedApplicationBySlug.mockResolvedValueOnce({
+      city: 'Perth', country: 'Australia', partitionKey: 'chapter', rowKey: 'app-1'
+    });
+    const res = await regenerateImage(makeAuthRequest('POST', { type: 'chapter', slug: 'perth' }, ['admin']), context);
+    expect(res.status).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
   });
 });
