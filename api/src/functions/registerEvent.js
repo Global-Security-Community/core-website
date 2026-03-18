@@ -1,6 +1,6 @@
 const { randomUUID, randomBytes } = require('crypto');
 const { getAuthUser, unauthorised } = require('../helpers/auth');
-const { getEventBySlug, storeRegistration, storeDemographics, countRegistrations, getRegistrationsByEvent } = require('../helpers/tableStorage');
+const { getEventBySlug, storeRegistration, storeDemographics, countRegistrations, getRegistrationsByEvent, getPartnersByEvent } = require('../helpers/tableStorage');
 const { sanitiseFields } = require('../helpers/sanitise');
 const { sendTicketEmail } = require('../helpers/emailService');
 const { checkRateLimit, getClientIP } = require('../helpers/rateLimiter');
@@ -106,7 +106,9 @@ module.exports = async function (request, context) {
 
     // Send ticket email (non-blocking — don't fail registration if email fails)
     try {
-      await sendTicketEmail(registration, event, qrDataUrl, context);
+      let partners = [];
+      try { partners = await getPartnersByEvent(eventId); } catch (e) { /* non-critical */ }
+      await sendTicketEmail(registration, event, qrDataUrl, context, partners);
     } catch (emailErr) {
       context.log(`Ticket email send failed (non-fatal): ${emailErr.message}`);
     }

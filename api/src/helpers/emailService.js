@@ -65,7 +65,7 @@ function eventDetailsBlock(event) {
 /**
  * Sends a ticket confirmation email with QR code as inline attachment.
  */
-async function sendTicketEmail(registration, event, qrDataUrl, context) {
+async function sendTicketEmail(registration, event, qrDataUrl, context, partners) {
   const client = getEmailClient();
 
   const qrBase64 = qrDataUrl ? qrDataUrl.replace(/^data:image\/png;base64,/, '') : '';
@@ -96,7 +96,7 @@ async function sendTicketEmail(registration, event, qrDataUrl, context) {
       <p style="margin:0 0 8px 0;font-weight:600;color:#001f3f;">💬 Join us on Discord</p>
       <p style="margin:0 0 12px 0;color:#555;font-size:0.9em;">Connect with ${chapterName ? 'the <strong>' + escapeHtml(chapterName) + '</strong> chapter and ' : ''}the wider GSC community — chat about the event, ask questions, and meet fellow attendees.</p>
       <a href="${discordInvite}" style="display:inline-block;padding:8px 20px;background:#5865F2;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.9em;">Join Discord</a>
-    </div>`;
+    </div>${buildPartnerEmailHtml(partners)}`;
 
   const message = {
     senderAddress: SENDER_ADDRESS,
@@ -186,6 +186,34 @@ async function sendBadgeEmail(recipient, badgeSvg, event, badgeType, context) {
 function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function buildPartnerEmailHtml(partners) {
+  if (!partners || partners.length === 0) return '';
+  // Group by tier
+  const tiers = {};
+  partners.forEach(p => {
+    const tier = p.tier || 'Community Partners';
+    if (!tiers[tier]) tiers[tier] = [];
+    tiers[tier].push(p);
+  });
+  let html = '<div style="margin:24px 0 0 0;padding:20px;background:#f8f9fa;border-radius:8px;text-align:center;">';
+  html += '<p style="font-weight:600;color:#001f3f;margin:0 0 12px 0;">🤝 Community Partners</p>';
+  for (const [tierName, items] of Object.entries(tiers)) {
+    if (Object.keys(tiers).length > 1) {
+      html += `<p style="font-size:0.8em;color:#888;margin:8px 0 4px 0;">${escapeHtml(tierName)}</p>`;
+    }
+    items.forEach(p => {
+      const logoSrc = p.logoBase64 ? `data:${p.logoContentType || 'image/png'};base64,${p.logoBase64}` : '';
+      if (logoSrc) {
+        html += `<img src="${logoSrc}" alt="${escapeHtml(p.name)}" style="max-width:120px;max-height:60px;margin:4px 8px;vertical-align:middle;">`;
+      } else {
+        html += `<span style="display:inline-block;margin:4px 8px;font-size:0.9em;color:#555;">${escapeHtml(p.name)}</span>`;
+      }
+    });
+  }
+  html += '</div>';
+  return html;
 }
 
 /**

@@ -54,6 +54,41 @@
             volEl.style.display = 'flex';
           }
         }
+        // Load community partners
+        if (data.id) { loadPartners(data.id); }
+      })
+      .catch(function() {});
+  }
+
+  function loadPartners(eventId) {
+    fetch('/api/getCommunityPartners?eventId=' + encodeURIComponent(eventId))
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        if (!data || !data.partners) return;
+        var tiers = data.partners;
+        var tierNames = Object.keys(tiers);
+        if (tierNames.length === 0) return;
+
+        var section = document.getElementById('community-partners');
+        var content = document.getElementById('partners-content');
+        if (!section || !content) return;
+        var html = '';
+        tierNames.forEach(function(tierName) {
+          html += '<div class="partners-tier">';
+          html += '<h3>' + esc(tierName) + '</h3>';
+          html += '<div class="partners-grid">';
+          tiers[tierName].forEach(function(p) {
+            var tag = p.website ? 'a' : 'div';
+            var href = p.website ? ' href="' + esc(p.website) + '" target="_blank" rel="noopener noreferrer"' : '';
+            html += '<' + tag + ' class="partner-logo"' + href + '>';
+            if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" alt="' + esc(p.name) + '">';
+            html += '<span class="partner-name">' + esc(p.name) + '</span>';
+            html += '</' + tag + '>';
+          });
+          html += '</div></div>';
+        });
+        content.innerHTML = html;
+        section.style.display = 'block';
       })
       .catch(function() {});
   }

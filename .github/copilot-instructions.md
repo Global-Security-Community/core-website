@@ -153,7 +153,7 @@ Reverse the three steps above:
 
 - All table operations go through `api/src/helpers/tableStorage.js`
 - Add new operations as exported functions in that file
-- Tables: `Chapters`, `Events`, `EventRegistrations`, `EventDemographics`, `EventBadges`, `ContactSubmissions`, `ChapterApplications`
+- Tables: `Chapters`, `Events`, `EventRegistrations`, `EventDemographics`, `EventBadges`, `ContactSubmissions`, `ChapterApplications`, `SessionizeCache`, `ChapterSubscriptions`, `CommunityPartners`
 - PartitionKey/RowKey patterns vary per table — check existing helpers
 - Boolean values from Table Storage can arrive as strings (`"true"`/`"false"`) — always use strict comparison: `=== true || === 'true'`
 
@@ -192,6 +192,26 @@ Chapter data is stored on the `ChapterApplications` table. After approval, the c
 - Send emails as non-blocking fire-and-forget (don't fail the parent operation if email fails)
 - Ticket confirmation email includes: event details, QR code, "View Event" button (links to event page), "My Tickets" button, and Discord invite section with chapter name
 - All emails use `emailLayout()` wrapper for consistent GSC branding (dark header, teal accent gradient)
+
+### Community Partners
+
+- **Terminology:** "Community Partner" (never "Sponsor") in all UI — the internal `sponsor` registration role is unrelated
+- **Storage:** `CommunityPartners` table — PartitionKey=eventId, RowKey=partnerUUID
+- **Logos:** stored as base64 in Table Storage, auto-resized client-side to max 400px wide via `<canvas>`
+- **Tiers:** flexible admin-defined text (e.g. "Gold", "Community"), no fixed tier system
+- **APIs:**
+  - `POST /api/communityPartner` — add/update/delete (admin only)
+  - `GET /api/getCommunityPartners?eventId=x` — list partners grouped by tier (public)
+  - `GET /api/getCommunityPartners?chapterSlug=x` — all partners across chapter events (public)
+- **Displays:** event page (below speakers), chapter page (aggregated), ticket confirmation email
+- **Dashboard:** "Community Partners" section in event detail — upload form with auto-resize, partner list with delete
+
+### Chapter Subscriptions
+
+- Users can subscribe to chapter event notifications from the chapter page
+- **Storage:** `ChapterSubscriptions` table — PartitionKey=chapterSlug, RowKey=email
+- **API:** `POST /api/chapterSubscribe` — subscribe/unsubscribe/status (authenticated)
+- When a new event is created, all chapter subscribers receive an email via `sendEventNotificationEmail()`
 
 ---
 

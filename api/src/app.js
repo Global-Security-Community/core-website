@@ -19,6 +19,8 @@ const getChapterHandler = require('./functions/getChapter');
 const refreshSessionizeHandler = require('./functions/refreshSessionize');
 const getSessionizeDataHandler = require('./functions/getSessionizeData');
 const chapterSubscribeHandler = require('./functions/chapterSubscribe');
+const communityPartnerHandler = require('./functions/communityPartner');
+const getCommunityPartnersHandler = require('./functions/getCommunityPartners');
 
 // ─── Public endpoints ───
 app.post('contactForm', { authLevel: 'anonymous', handler: contactFormHandler });
@@ -26,6 +28,7 @@ app.post('chapterApplication', { authLevel: 'anonymous', handler: chapterApplica
 app.get('chapterApproval', { authLevel: 'anonymous', handler: chapterApprovalHandler });
 app.get('getEvent', { authLevel: 'anonymous', handler: getEventHandler });
 app.get('getSessionizeData', { authLevel: 'anonymous', handler: getSessionizeDataHandler });
+app.get('getCommunityPartners', { authLevel: 'anonymous', handler: getCommunityPartnersHandler });
 
 // ─── Auth: role assignment ───
 app.post('roles', { authLevel: 'anonymous', handler: rolesHandler });
@@ -47,3 +50,4 @@ app.post('registerAdmin', { authLevel: 'anonymous', route: 'manualRegister', han
 app.post('updateChapter', { authLevel: 'anonymous', handler: updateChapterHandler });
 app.get('getChapter', { authLevel: 'anonymous', handler: getChapterHandler });
 app.post('refreshSessionize', { authLevel: 'anonymous', handler: refreshSessionizeHandler });
+app.post('communityPartner', { authLevel: 'anonymous', handler: communityPartnerHandler });

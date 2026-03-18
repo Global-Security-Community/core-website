@@ -46,7 +46,11 @@ jest.mock('../src/helpers/tableStorage', () => ({
   storeSubscription: jest.fn().mockResolvedValue({}),
   removeSubscription: jest.fn().mockResolvedValue({}),
   getSubscriptionsByChapter: jest.fn().mockResolvedValue([]),
-  isSubscribed: jest.fn().mockResolvedValue(false)
+  isSubscribed: jest.fn().mockResolvedValue(false),
+  storePartner: jest.fn().mockResolvedValue({}),
+  deletePartner: jest.fn().mockResolvedValue({}),
+  getPartnersByEvent: jest.fn().mockResolvedValue([]),
+  getPartnersByChapter: jest.fn().mockResolvedValue([])
 }));
 
 jest.mock('../src/helpers/discordBot', () => ({
@@ -974,5 +978,107 @@ describe('chapterSubscribe function', () => {
     const res = await chapterSubscribe(makeAuthRequest('POST', { chapterSlug: 'perth', action: 'status' }), context);
     expect(res.status).toBe(200);
     expect(JSON.parse(res.body).subscribed).toBe(true);
+  });
+});
+
+// ─── communityPartner ───────────────────────────────────────────────
+
+describe('communityPartner function', () => {
+  const communityPartner = require('../src/functions/communityPartner');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('rejects unauthenticated requests', async () => {
+    const res = await communityPartner(makeRequest('POST', { eventId: 'ev-1' }), context);
+    expect(res.status).toBe(401);
+  });
+
+  test('rejects non-admin users', async () => {
+    const res = await communityPartner(makeAuthRequest('POST', { eventId: 'ev-1' }, ['authenticated']), context);
+    expect(res.status).toBe(403);
+  });
+
+  test('returns 400 for missing eventId', async () => {
+    const res = await communityPartner(makeAuthRequest('POST', {}, ['admin']), context);
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 400 for missing name', async () => {
+    const res = await communityPartner(makeAuthRequest('POST', { eventId: 'ev-1', logoBase64: 'abc' }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/name/);
+  });
+
+  test('returns 400 for missing logo', async () => {
+    const res = await communityPartner(makeAuthRequest('POST', { eventId: 'ev-1', name: 'Acme' }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/logo/i);
+  });
+
+  test('returns 400 for oversized logo', async () => {
+    const res = await communityPartner(makeAuthRequest('POST', {
+      eventId: 'ev-1', name: 'Acme', logoBase64: 'x'.repeat(210000)
+    }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/too large/i);
+  });
+
+  test('adds partner successfully', async () => {
+    const res = await communityPartner(makeAuthRequest('POST', {
+      eventId: 'ev-1', name: 'Acme Corp', tier: 'Gold', logoBase64: 'abc123', logoContentType: 'image/png', website: 'https://acme.com'
+    }, ['admin']), context);
+    expect(res.status).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.partner.name).toBe('Acme Corp');
+    expect(storage.storePartner).toHaveBeenCalledTimes(1);
+  });
+
+  test('deletes partner successfully', async () => {
+    const res = await communityPartner(makeAuthRequest('POST', {
+      eventId: 'ev-1', partnerId: 'p-1', action: 'delete'
+    }, ['admin']), context);
+    expect(res.status).toBe(200);
+    expect(storage.deletePartner).toHaveBeenCalledWith('ev-1', 'p-1');
+  });
+});
+
+// ─── getCommunityPartners ───────────────────────────────────────────
+
+describe('getCommunityPartners function', () => {
+  const getCommunityPartners = require('../src/functions/getCommunityPartners');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('returns 400 for missing parameters', async () => {
+    const req = makeRequest('GET');
+    req.url = 'https://example.com/api/getCommunityPartners';
+    const res = await getCommunityPartners(req, context);
+    expect(res.status).toBe(400);
+  });
+
+  test('returns partners grouped by tier', async () => {
+    storage.getPartnersByEvent.mockResolvedValueOnce([
+      { id: 'p1', name: 'Acme', tier: 'Gold', logoBase64: 'abc', logoContentType: 'image/png', website: 'https://acme.com' },
+      { id: 'p2', name: 'Beta', tier: 'Gold', logoBase64: 'def', logoContentType: 'image/png', website: '' },
+      { id: 'p3', name: 'Gamma', tier: 'Silver', logoBase64: 'ghi', logoContentType: 'image/png', website: '' }
+    ]);
+    const req = makeRequest('GET');
+    req.url = 'https://example.com/api/getCommunityPartners?eventId=ev-1';
+    const res = await getCommunityPartners(req, context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.partners['Gold']).toHaveLength(2);
+    expect(body.partners['Silver']).toHaveLength(1);
+    expect(body.partners['Gold'][0].logoDataUrl).toContain('data:image/png;base64,abc');
+  });
+
+  test('returns empty when no partners', async () => {
+    storage.getPartnersByEvent.mockResolvedValueOnce([]);
+    const req = makeRequest('GET');
+    req.url = 'https://example.com/api/getCommunityPartners?eventId=ev-1';
+    const res = await getCommunityPartners(req, context);
+    expect(res.status).toBe(200);
+    expect(JSON.parse(res.body).partners).toEqual({});
   });
 });

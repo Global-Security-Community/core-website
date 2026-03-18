@@ -162,6 +162,109 @@
           });
         }
 
+        // Community Partners management section
+        var partnerSection = document.createElement('div');
+        partnerSection.className = 'card';
+        partnerSection.style.cssText = 'margin-top:1rem;padding:1rem;';
+        partnerSection.innerHTML =
+          '<h4 style="margin:0 0 0.75rem 0;">🤝 Community Partners</h4>' +
+          '<div id="partner-list" style="margin-bottom:0.75rem;"></div>' +
+          '<details><summary style="cursor:pointer;color:var(--color-primary-teal);font-weight:600;">Add Partner</summary>' +
+          '<div style="margin-top:0.75rem;">' +
+            '<input type="text" id="cp-name" placeholder="Partner name" maxlength="100" style="width:100%;margin-bottom:0.5rem;">' +
+            '<input type="text" id="cp-tier" placeholder="Tier (e.g. Gold, Community)" maxlength="50" style="width:100%;margin-bottom:0.5rem;">' +
+            '<input type="url" id="cp-website" placeholder="Website URL (optional)" maxlength="300" style="width:100%;margin-bottom:0.5rem;">' +
+            '<label style="display:block;margin-bottom:0.25rem;font-size:0.85rem;">Logo (PNG/JPG, recommended 400×200px — auto-resized):</label>' +
+            '<input type="file" id="cp-logo" accept="image/png,image/jpeg,image/svg+xml" style="margin-bottom:0.5rem;">' +
+            '<div id="cp-preview" style="margin-bottom:0.5rem;"></div>' +
+            '<button id="cp-add-btn" style="width:100%;">Add Community Partner</button>' +
+            '<p id="cp-msg" style="display:none;font-size:0.85rem;margin:0.5rem 0 0 0;"></p>' +
+          '</div></details>';
+        var actionsParent = document.getElementById('detail-actions').parentNode;
+        actionsParent.insertBefore(partnerSection, document.getElementById('detail-attendees'));
+
+        // Load existing partners
+        loadEventPartners(eventId);
+
+        // Logo preview with auto-resize
+        document.getElementById('cp-logo').addEventListener('change', function(e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          var preview = document.getElementById('cp-preview');
+          if (file.type === 'image/svg+xml') {
+            var reader = new FileReader();
+            reader.onload = function(ev) {
+              preview.innerHTML = '<img src="' + ev.target.result + '" style="max-width:200px;max-height:100px;">';
+            };
+            reader.readAsDataURL(file);
+            return;
+          }
+          var img = new Image();
+          img.onload = function() {
+            var maxW = 400;
+            var w = img.width, h = img.height;
+            if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+            var canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            var resized = canvas.toDataURL(file.type, 0.85);
+            preview.innerHTML = '<img src="' + resized + '" style="max-width:200px;max-height:100px;">' +
+              '<p style="font-size:0.75rem;color:#666;margin:0.25rem 0 0 0;">Resized to ' + w + '×' + h + 'px</p>';
+            preview.dataset.logoData = resized;
+          };
+          img.src = URL.createObjectURL(file);
+        });
+
+        // Add partner button
+        document.getElementById('cp-add-btn').addEventListener('click', function() {
+          var name = document.getElementById('cp-name').value.trim();
+          var tier = document.getElementById('cp-tier').value.trim();
+          var website = document.getElementById('cp-website').value.trim();
+          var msg = document.getElementById('cp-msg');
+          var preview = document.getElementById('cp-preview');
+          var fileInput = document.getElementById('cp-logo');
+          var btn = this;
+
+          if (!name) { msg.textContent = 'Please enter a partner name.'; msg.style.display = 'block'; msg.style.color = '#721c24'; return; }
+
+          var logoData = preview.dataset.logoData || '';
+          var file = fileInput.files[0];
+
+          function sendPartner(base64, contentType) {
+            var raw = base64.replace(/^data:[^;]+;base64,/, '');
+            btn.disabled = true; btn.textContent = 'Adding...';
+            fetch('/api/communityPartner', {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ eventId: eventId, name: name, tier: tier, logoBase64: raw, logoContentType: contentType, website: website })
+            }).then(function(r) { return r.json(); }).then(function(d) {
+              btn.disabled = false; btn.textContent = 'Add Community Partner';
+              if (d.success) {
+                msg.textContent = '✅ ' + name + ' added!'; msg.style.color = '#155724'; msg.style.display = 'block';
+                document.getElementById('cp-name').value = '';
+                document.getElementById('cp-tier').value = '';
+                document.getElementById('cp-website').value = '';
+                fileInput.value = ''; preview.innerHTML = ''; delete preview.dataset.logoData;
+                loadEventPartners(eventId);
+              } else {
+                msg.textContent = '❌ ' + (d.error || 'Failed'); msg.style.color = '#721c24'; msg.style.display = 'block';
+              }
+            }).catch(function() {
+              btn.disabled = false; btn.textContent = 'Add Community Partner';
+              msg.textContent = '❌ Network error'; msg.style.color = '#721c24'; msg.style.display = 'block';
+            });
+          }
+
+          if (logoData) {
+            sendPartner(logoData, file && file.type === 'image/svg+xml' ? 'image/svg+xml' : 'image/png');
+          } else if (file && file.type === 'image/svg+xml') {
+            var reader = new FileReader();
+            reader.onload = function(ev) { sendPartner(ev.target.result, 'image/svg+xml'); };
+            reader.readAsDataURL(file);
+          } else {
+            msg.textContent = 'Please select a logo image.'; msg.style.display = 'block'; msg.style.color = '#721c24';
+          }
+        });
+
         // Load attendees with role support
         var adminRegBtn = document.getElementById('admin-reg-btn');
         adminRegBtn.addEventListener('click', function() { adminRegister(eventId); });
@@ -208,6 +311,45 @@
   function exportCSV(eventId) {
     window.open('/api/eventAttendance?eventId=' + encodeURIComponent(eventId) + '&format=csv', '_blank');
   };
+
+  function loadEventPartners(eventId) {
+    var listEl = document.getElementById('partner-list');
+    if (!listEl) return;
+    fetch('/api/getCommunityPartners?eventId=' + encodeURIComponent(eventId))
+      .then(function(r) { return r.ok ? r.json() : { partners: {} }; })
+      .then(function(data) {
+        var tiers = data.partners || {};
+        var allPartners = [];
+        Object.keys(tiers).forEach(function(t) {
+          tiers[t].forEach(function(p) { p.tierName = t; allPartners.push(p); });
+        });
+        if (allPartners.length === 0) {
+          listEl.innerHTML = '<p style="font-size:0.85rem;color:#666;">No community partners yet.</p>';
+          return;
+        }
+        var html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">';
+        allPartners.forEach(function(p) {
+          html += '<div style="display:flex;align-items:center;gap:0.5rem;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;padding:0.4rem 0.6rem;">';
+          if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" style="max-width:40px;max-height:20px;object-fit:contain;">';
+          html += '<span style="font-size:0.85rem;">' + esc(p.name) + '</span>';
+          if (p.tierName) html += '<span style="font-size:0.7rem;color:#888;">(' + esc(p.tierName) + ')</span>';
+          html += '<button class="cp-delete" data-id="' + esc(p.id) + '" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:0.9rem;padding:0 0.25rem;" title="Remove">✕</button>';
+          html += '</div>';
+        });
+        html += '</div>';
+        listEl.innerHTML = html;
+        listEl.querySelectorAll('.cp-delete').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            if (!confirm('Remove this community partner?')) return;
+            fetch('/api/communityPartner', {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ eventId: eventId, partnerId: btn.dataset.id, action: 'delete' })
+            }).then(function() { loadEventPartners(eventId); });
+          });
+        });
+      })
+      .catch(function() {});
+  }
 
   function closeReg(eventId, chapterSlug) {
     if (!confirm('Close registration for this event?')) return;

@@ -1207,6 +1207,83 @@ thead tr:hover {
   }
 }
 
+/* ─── Community Partners ─── */
+
+.partners-section {
+  margin: 2rem 0;
+}
+
+.partners-tier {
+  margin-bottom: 1.5rem;
+}
+
+.partners-tier h3 {
+  color: var(--color-primary-navy);
+  font-size: 1rem;
+  margin: 0 0 0.75rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-primary-teal);
+}
+
+.partners-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.partner-logo {
+  display: inline-block;
+  padding: 0.75rem;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+  text-align: center;
+  text-decoration: none;
+}
+
+.partner-logo:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.partner-logo img {
+  max-width: 180px;
+  max-height: 90px;
+  object-fit: contain;
+}
+
+.partner-logo .partner-name {
+  display: block;
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 0.35rem;
+}
+
+/* Chapter partners: smaller with event label */
+.chapter-partner-card {
+  text-align: center;
+  padding: 1rem;
+  background: var(--color-light-gray);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  max-width: 200px;
+}
+
+.chapter-partner-card img {
+  max-width: 140px;
+  max-height: 70px;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+
+.chapter-partner-card .partner-event {
+  font-size: 0.7rem;
+  color: #999;
+}
+
 /* Event Cards */
 .events-grid {
   display: grid;
