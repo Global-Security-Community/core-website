@@ -24,7 +24,7 @@
               (t.qrDataUrl && t.qrDataUrl.indexOf('data:image/') === 0 ? '<img src="' + t.qrDataUrl + '" alt="QR Code">' : '') +
             '</div>' +
             '<div class="ticket-code">' + esc(t.ticketCode) + '</div>' +
-            '<div class="ticket-type">ATTENDEE</div>' +
+            '<div class="ticket-type"><span class="role-badge role-badge--' + esc(t.role || 'attendee') + '">' + esc((t.role || 'attendee').toUpperCase()) + '</span></div>' +
             '<div class="ticket-name">' + esc(t.fullName) + (t.company ? ' \u2013 ' + esc(t.company) : '') + '</div>' +
           '</div>' +
           '<div class="ticket-footer">' +

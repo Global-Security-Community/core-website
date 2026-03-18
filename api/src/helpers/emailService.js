@@ -73,6 +73,12 @@ async function sendTicketEmail(registration, event, qrDataUrl, context) {
     ? '<img src="cid:qrcode" alt="Ticket QR Code" style="width:180px;height:180px;">'
     : '<p style="color:#999;">[QR code unavailable — use your ticket code at check-in]</p>';
 
+  const eventPageUrl = event.slug ? `${SITE_URL}/events/${escapeHtml(event.slug)}/` : '';
+  const chapterName = event.chapterSlug
+    ? event.chapterSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    : '';
+  const discordInvite = 'https://discord.gg/mDRWDkCNPq';
+
   const bodyHtml = `
     <h2 style="color:#001f3f;margin:0 0 8px 0;">You're registered! 🎉</h2>
     <p style="color:#555;margin:0 0 20px 0;">Hi ${escapeHtml(registration.fullName)}, your ticket is confirmed.</p>
@@ -82,9 +88,15 @@ async function sendTicketEmail(registration, event, qrDataUrl, context) {
       ${qrHtml}
       <p style="margin:12px 0 0 0;font-family:'Courier New',monospace;font-size:1.3em;font-weight:700;color:#001f3f;letter-spacing:0.1em;">${escapeHtml(registration.ticketCode)}</p>
     </div>
-    <p style="text-align:center;">
-      <a href="${SITE_URL}/my-tickets/" style="display:inline-block;padding:10px 24px;background:#20b2aa;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">View My Tickets</a>
-    </p>`;
+    <div style="text-align:center;margin:0 0 24px 0;">
+      ${eventPageUrl ? '<a href="' + eventPageUrl + '" style="display:inline-block;padding:10px 24px;background:#20b2aa;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;margin:4px;">View Event</a>' : ''}
+      <a href="${SITE_URL}/my-tickets/" style="display:inline-block;padding:10px 24px;background:#20b2aa;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;margin:4px;">My Tickets</a>
+    </div>
+    <div style="margin:24px 0 0 0;padding:20px;background:#f0faf9;border-radius:8px;border-left:3px solid #20b2aa;">
+      <p style="margin:0 0 8px 0;font-weight:600;color:#001f3f;">💬 Join us on Discord</p>
+      <p style="margin:0 0 12px 0;color:#555;font-size:0.9em;">Connect with ${chapterName ? 'the <strong>' + escapeHtml(chapterName) + '</strong> chapter and ' : ''}the wider GSC community — chat about the event, ask questions, and meet fellow attendees.</p>
+      <a href="${discordInvite}" style="display:inline-block;padding:8px 20px;background:#5865F2;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.9em;">Join Discord</a>
+    </div>`;
 
   const message = {
     senderAddress: SENDER_ADDRESS,
@@ -126,10 +138,17 @@ async function sendBadgeEmail(recipient, badgeSvg, event, badgeType, context) {
   const client = getEmailClient();
   const badgeBuffer = Buffer.from(badgeSvg, 'utf-8');
 
-  const roleText = badgeType === 'Speaker' ? 'speaking at' : badgeType === 'Organiser' ? 'organising' : 'attending';
+  const roleMessages = {
+    'Speaker': { roleText: 'speaking at', gratitude: 'Your knowledge sharing inspires the community.' },
+    'Organiser': { roleText: 'organising', gratitude: 'Your leadership drives the community forward.' },
+    'Volunteer': { roleText: 'volunteering at', gratitude: 'Your contribution made this event possible.' },
+    'Sponsor': { roleText: 'sponsoring', gratitude: 'Your support helps us build the security community.' },
+    'Attendee': { roleText: 'attending', gratitude: '' }
+  };
+  const msg = roleMessages[badgeType] || roleMessages['Attendee'];
   const bodyHtml = `
-    <h2 style="color:#001f3f;margin:0 0 8px 0;">Thank you for ${roleText} ${escapeHtml(event.title)}! 🏅</h2>
-    <p style="color:#555;margin:0 0 20px 0;">Your digital <strong>${escapeHtml(badgeType)}</strong> badge is attached to this email.</p>
+    <h2 style="color:#001f3f;margin:0 0 8px 0;">Thank you for ${msg.roleText} ${escapeHtml(event.title)}! 🏅</h2>
+    <p style="color:#555;margin:0 0 20px 0;">Your digital <strong>${escapeHtml(badgeType)}</strong> badge is attached to this email.${msg.gratitude ? ' ' + msg.gratitude : ''}</p>
     ${eventDetailsBlock(event)}
     <p style="text-align:center;margin-top:24px;">
       <a href="${SITE_URL}/my-tickets/" style="display:inline-block;padding:10px 24px;background:#20b2aa;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">View My Account</a>

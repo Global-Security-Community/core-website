@@ -40,6 +40,19 @@ async function getApplication(applicationId) {
   return await client.getEntity('applications', applicationId);
 }
 
+async function getApprovedApplicationBySlug(slug) {
+  const client = getTableClient('ChapterApplications');
+  const normalised = slug.trim().toLowerCase();
+  const entities = client.listEntities({
+    queryOptions: { filter: `status eq 'approved'` }
+  });
+  for await (const entity of entities) {
+    const citySlug = (entity.city || '').toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
+    if (citySlug === normalised) return entity;
+  }
+  return null;
+}
+
 async function updateApplicationStatus(applicationId, status) {
   const client = getTableClient('ChapterApplications');
   const entity = await client.getEntity('applications', applicationId);
@@ -139,6 +152,8 @@ async function storeRegistration(registration) {
     email: registration.email,
     company: registration.company || '',
     ticketCode: registration.ticketCode,
+    role: registration.role || 'attendee',
+    volunteerInterest: registration.volunteerInterest === true,
     checkedIn: false,
     checkedInAt: '',
     registeredAt: new Date().toISOString()
@@ -306,6 +321,28 @@ async function isVolunteerForAnyEvent(email) {
   return null;
 }
 
+// ─── Registration Role Helpers ───
+
+const VALID_ROLES = ['attendee', 'volunteer', 'speaker', 'sponsor', 'organiser'];
+
+async function getRegistrationsByRole(eventId, role) {
+  const regs = await getRegistrationsByEvent(eventId);
+  return regs.filter(r => (r.role || 'attendee') === role);
+}
+
+async function isVolunteerOrOrganiserByRegistration(email) {
+  const client = getTableClient('EventRegistrations');
+  const normalised = email.trim().toLowerCase();
+  const entities = client.listEntities({
+    queryOptions: { filter: `email eq '${normalised.replace(/'/g, "''")}'` }
+  });
+  for await (const entity of entities) {
+    const role = entity.role || 'attendee';
+    if (role === 'volunteer' || role === 'organiser') return entity;
+  }
+  return null;
+}
+
 // ─── Chapter Leads (for role assignment) ───
 
 async function getApprovedApplicationByEmail(email) {
@@ -322,7 +359,7 @@ async function getApprovedApplicationByEmail(email) {
 }
 
 module.exports = {
-  storeApplication, getApplication, updateApplicationStatus,
+  storeApplication, getApplication, updateApplicationStatus, getApprovedApplicationBySlug,
   storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent,
   storeRegistration, getRegistrationByTicketCode, getRegistrationsByUser,
   getRegistrationsByEvent, countRegistrations, updateRegistration,
@@ -330,5 +367,6 @@ module.exports = {
   storeDemographics,
   storeBadge, getBadge, getBadgesByEvent,
   storeVolunteer, getVolunteersByEvent, removeVolunteer, isVolunteerForAnyEvent,
+  getRegistrationsByRole, isVolunteerOrOrganiserByRegistration, VALID_ROLES,
   getApprovedApplicationByEmail
 };

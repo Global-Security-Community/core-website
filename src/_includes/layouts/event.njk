@@ -33,6 +33,10 @@ layout: base.njk
   <h2>About This Event</h2>
   <p>{{ description }}</p>
 
+  <div id="volunteer-cards" class="volunteer-cards" style="display:none;">
+    <h3 style="width:100%;margin-bottom:0.5rem;">Event Volunteers</h3>
+  </div>
+
   {% if sessionizeApiId %}
   <h2>Agenda</h2>
   <div id="sessionize-agenda"><p>Loading agenda...</p></div>

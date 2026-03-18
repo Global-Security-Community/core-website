@@ -1,5 +1,5 @@
 const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
-const { getApprovedApplicationByEmail, isVolunteerForAnyEvent } = require('../helpers/tableStorage');
+const { getApprovedApplicationByEmail, isVolunteerForAnyEvent, isVolunteerOrOrganiserByRegistration } = require('../helpers/tableStorage');
 
 /**
  * POST /api/roles
@@ -55,12 +55,18 @@ module.exports = async function (request, context) {
       context.log(`Assigned admin role to ${email} (chapter lead for ${application.city})`);
     }
 
-    // Check if this email is a volunteer for any event
+    // Check if this email is a volunteer for any event (check both old EventVolunteers table and new role field on registrations)
     if (!application) {
-      const volunteer = await isVolunteerForAnyEvent(email);
-      if (volunteer) {
+      const volunteerByRole = await isVolunteerOrOrganiserByRegistration(email);
+      if (volunteerByRole) {
         roles.push('volunteer');
-        context.log(`Assigned volunteer role to ${email} (event ${volunteer.partitionKey})`);
+        context.log(`Assigned volunteer role to ${email} (registration role: ${volunteerByRole.role || 'volunteer'})`);
+      } else {
+        const volunteer = await isVolunteerForAnyEvent(email);
+        if (volunteer) {
+          roles.push('volunteer');
+          context.log(`Assigned volunteer role to ${email} (legacy EventVolunteers table)`);
+        }
       }
     }
 

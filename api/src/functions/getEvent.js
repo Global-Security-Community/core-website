@@ -1,4 +1,4 @@
-const { getEventBySlug, countRegistrations, listEvents } = require('../helpers/tableStorage');
+const { getEventBySlug, countRegistrations, listEvents, getRegistrationsByRole } = require('../helpers/tableStorage');
 
 /**
  * GET /api/getEvent?slug={slug}       — returns a single event
@@ -55,6 +55,16 @@ module.exports = async function (request, context) {
 
     const registrationCount = await countRegistrations(event.rowKey);
 
+    // Fetch volunteers (public-safe info only)
+    let volunteers = [];
+    try {
+      const volRegs = await getRegistrationsByRole(event.rowKey, 'volunteer');
+      volunteers = volRegs.map(v => ({
+        name: v.fullName,
+        company: v.company || ''
+      }));
+    } catch { /* non-critical */ }
+
     return {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
@@ -70,7 +80,8 @@ module.exports = async function (request, context) {
         sessionizeApiId: event.sessionizeApiId || '',
         registrationCap: event.registrationCap || 0,
         registrationCount,
-        status: event.status
+        status: event.status,
+        volunteers
       })
     };
   } catch (error) {
