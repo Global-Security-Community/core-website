@@ -94,7 +94,7 @@ module.exports = async function (request, context) {
     return {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: true, issued, total: recipientList.length, errors: errors.length > 0 ? errors : undefined })
+      body: JSON.stringify({ success: true, issued, total: checkedInRegs.length, errors: errors.length > 0 ? errors : undefined })
     };
   } catch (error) {
     context.log(`issueBadges error: ${error.message}`);
