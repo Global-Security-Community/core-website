@@ -16,12 +16,15 @@ const updateRegistrationRoleHandler = require('./functions/updateRegistrationRol
 const adminRegisterHandler = require('./functions/adminRegister');
 const updateChapterHandler = require('./functions/updateChapter');
 const getChapterHandler = require('./functions/getChapter');
+const refreshSessionizeHandler = require('./functions/refreshSessionize');
+const getSessionizeDataHandler = require('./functions/getSessionizeData');
 
 // ─── Public endpoints ───
 app.post('contactForm', { authLevel: 'anonymous', handler: contactFormHandler });
 app.post('chapterApplication', { authLevel: 'anonymous', handler: chapterApplicationHandler });
 app.get('chapterApproval', { authLevel: 'anonymous', handler: chapterApprovalHandler });
 app.get('getEvent', { authLevel: 'anonymous', handler: getEventHandler });
+app.get('getSessionizeData', { authLevel: 'anonymous', handler: getSessionizeDataHandler });
 
 // ─── Auth: role assignment ───
 app.post('roles', { authLevel: 'anonymous', handler: rolesHandler });
@@ -41,3 +44,4 @@ app.post('updateRegistrationRole', { authLevel: 'anonymous', handler: updateRegi
 app.post('registerAdmin', { authLevel: 'anonymous', route: 'manualRegister', handler: adminRegisterHandler });
 app.post('updateChapter', { authLevel: 'anonymous', handler: updateChapterHandler });
 app.get('getChapter', { authLevel: 'anonymous', handler: getChapterHandler });
+app.post('refreshSessionize', { authLevel: 'anonymous', handler: refreshSessionizeHandler });

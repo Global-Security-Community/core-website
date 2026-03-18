@@ -59,7 +59,8 @@ module.exports = async function (request, context) {
           location: ev.location,
           status: ev.status,
           registrationCap: ev.registrationCap || 0,
-          registrationCount: count
+          registrationCount: count,
+          sessionizeApiId: ev.sessionizeApiId || ''
         });
       }
 

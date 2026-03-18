@@ -358,6 +358,46 @@ async function getApprovedApplicationByEmail(email) {
   return null;
 }
 
+// ─── Sessionize Cache ───
+
+let sessionizeCacheTableReady = false;
+
+async function ensureSessionizeCacheTable() {
+  if (sessionizeCacheTableReady) return;
+  try {
+    const client = getTableClient('SessionizeCache');
+    await client.createTable();
+  } catch (e) {
+    // Table already exists — ignore
+  }
+  sessionizeCacheTableReady = true;
+}
+
+async function storeSessionizeCache(sessionizeId, type, data) {
+  await ensureSessionizeCacheTable();
+  const client = getTableClient('SessionizeCache');
+  await client.upsertEntity({
+    partitionKey: sessionizeId,
+    rowKey: type,
+    data: JSON.stringify(data),
+    lastRefreshed: new Date().toISOString()
+  });
+}
+
+async function getSessionizeCache(sessionizeId, type) {
+  await ensureSessionizeCacheTable();
+  const client = getTableClient('SessionizeCache');
+  try {
+    const entity = await client.getEntity(sessionizeId, type);
+    return {
+      data: JSON.parse(entity.data),
+      lastRefreshed: entity.lastRefreshed
+    };
+  } catch {
+    return null;
+  }
+}
+
 module.exports = {
   storeApplication, getApplication, updateApplicationStatus, getApprovedApplicationBySlug,
   storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent,
@@ -368,5 +408,6 @@ module.exports = {
   storeBadge, getBadge, getBadgesByEvent,
   storeVolunteer, getVolunteersByEvent, removeVolunteer, isVolunteerForAnyEvent,
   getRegistrationsByRole, isVolunteerOrOrganiserByRegistration, VALID_ROLES,
-  getApprovedApplicationByEmail
+  getApprovedApplicationByEmail,
+  storeSessionizeCache, getSessionizeCache
 };

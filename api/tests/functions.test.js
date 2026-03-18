@@ -29,7 +29,9 @@ jest.mock('../src/helpers/tableStorage', () => ({
   isVolunteerForAnyEvent: jest.fn().mockResolvedValue(null),
   VALID_ROLES: ['attendee', 'volunteer', 'speaker', 'sponsor', 'organiser'],
   getApprovedApplicationByEmail: jest.fn(),
-  getApprovedApplicationBySlug: jest.fn()
+  getApprovedApplicationBySlug: jest.fn(),
+  storeSessionizeCache: jest.fn().mockResolvedValue({}),
+  getSessionizeCache: jest.fn()
 }));
 
 jest.mock('../src/helpers/discordBot', () => ({

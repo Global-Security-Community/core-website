@@ -45,7 +45,7 @@
         }
         var html = '<div class="cards">';
         data.events.forEach(function(ev) {
-          html += '<div class="card event-card" data-event-id="' + esc(ev.id) + '" data-chapter-slug="' + esc(ev.chapterSlug) + '" data-event-title="' + esc(ev.title) + '">';
+          html += '<div class="card event-card" data-event-id="' + esc(ev.id) + '" data-chapter-slug="' + esc(ev.chapterSlug) + '" data-event-title="' + esc(ev.title) + '" data-sessionize-id="' + esc(ev.sessionizeApiId || '') + '">';
           html += '<h3>' + esc(ev.title) + '</h3>';
           html += '<p>📅 ' + esc(ev.date) + ' &nbsp; 📍 ' + esc(ev.location) + '</p>';
           html += '<p>🎟️ ' + ev.registrationCount + (ev.registrationCap > 0 ? ' / ' + ev.registrationCap : '') + ' registered</p>';
@@ -58,7 +58,7 @@
         // Attach click handlers to event cards
         el.querySelectorAll('.event-card').forEach(function(card) {
           card.addEventListener('click', function() {
-            viewEvent(card.dataset.eventId, card.dataset.chapterSlug, card.dataset.eventTitle);
+            viewEvent(card.dataset.eventId, card.dataset.chapterSlug, card.dataset.eventTitle, card.dataset.sessionizeId);
           });
         });
       })
@@ -67,7 +67,7 @@
       });
   }
 
-  function viewEvent(eventId, chapterSlug, eventTitle) {
+  function viewEvent(eventId, chapterSlug, eventTitle, sessionizeApiId) {
     currentEventId = eventId;
     currentChapterSlug = chapterSlug;
     showSection('detail');
@@ -109,6 +109,58 @@
         document.getElementById('btn-export').addEventListener('click', function() { exportCSV(eventId); });
         document.getElementById('btn-close-reg').addEventListener('click', function() { closeReg(eventId, chapterSlug); });
         document.getElementById('btn-complete').addEventListener('click', function() { completeEvent(eventId, chapterSlug); });
+
+        // Sessionize refresh button
+        if (sessionizeApiId) {
+          var actionsEl = document.getElementById('detail-actions');
+          var refreshCard = document.createElement('div');
+          refreshCard.className = 'card';
+          refreshCard.style.cssText = 'margin-top:1rem;padding:1rem;';
+          refreshCard.innerHTML =
+            '<h4 style="margin:0 0 0.5rem 0;">🎤 Sessionize Speakers</h4>' +
+            '<p id="sessionize-status" style="font-size:0.85rem;color:#666;margin:0 0 0.5rem 0;">Click refresh to cache speaker data from Sessionize.</p>' +
+            '<button id="btn-refresh-speakers" style="width:100%">Refresh Speakers</button>' +
+            '<div id="sessionize-speakers-list" style="margin-top:0.75rem;"></div>';
+          actionsEl.parentNode.insertBefore(refreshCard, actionsEl.nextSibling);
+
+          document.getElementById('btn-refresh-speakers').addEventListener('click', function() {
+            var btn = this;
+            btn.disabled = true;
+            btn.textContent = 'Refreshing...';
+            document.getElementById('sessionize-status').textContent = 'Fetching from Sessionize...';
+            fetch('/api/refreshSessionize', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug, sessionizeApiId: sessionizeApiId })
+            })
+              .then(function(r) { return r.json(); })
+              .then(function(result) {
+                btn.disabled = false;
+                btn.textContent = 'Refresh Speakers';
+                if (result.success) {
+                  var ts = result.lastRefreshed ? new Date(result.lastRefreshed).toLocaleString() : 'just now';
+                  document.getElementById('sessionize-status').innerHTML =
+                    '✅ Cached <strong>' + result.speakers + '</strong> speakers, <strong>' + result.agenda + '</strong> agenda items. Last refreshed: ' + esc(ts);
+                  if (result.speakerNames && result.speakerNames.length > 0) {
+                    var listHtml = '<p style="font-size:0.8rem;color:#888;margin:0 0 0.25rem 0;">Speakers:</p>';
+                    listHtml += '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;">';
+                    result.speakerNames.forEach(function(name) {
+                      listHtml += '<span style="background:#e9ecef;padding:2px 8px;border-radius:12px;font-size:0.8rem;">' + esc(name) + '</span>';
+                    });
+                    listHtml += '</div>';
+                    document.getElementById('sessionize-speakers-list').innerHTML = listHtml;
+                  }
+                } else {
+                  document.getElementById('sessionize-status').textContent = '⚠️ ' + (result.message || result.error || 'Failed to refresh');
+                }
+              })
+              .catch(function() {
+                btn.disabled = false;
+                btn.textContent = 'Refresh Speakers';
+                document.getElementById('sessionize-status').textContent = '❌ Failed to refresh. Please try again.';
+              });
+          });
+        }
 
         // Load attendees with role support
         var adminRegBtn = document.getElementById('admin-reg-btn');

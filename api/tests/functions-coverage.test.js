@@ -40,7 +40,9 @@ jest.mock('../src/helpers/tableStorage', () => ({
   isVolunteerForAnyEvent: jest.fn().mockResolvedValue(null),
   VALID_ROLES: ['attendee', 'volunteer', 'speaker', 'sponsor', 'organiser'],
   getApprovedApplicationByEmail: jest.fn(),
-  getApprovedApplicationBySlug: jest.fn()
+  getApprovedApplicationBySlug: jest.fn(),
+  storeSessionizeCache: jest.fn().mockResolvedValue({}),
+  getSessionizeCache: jest.fn()
 }));
 
 jest.mock('../src/helpers/discordBot', () => ({
@@ -814,5 +816,112 @@ describe('badgeDownload function', () => {
     const res = await badgeDownload(req, context);
     expect(res.status).toBe(200);
     expect(res.headers['Content-Disposition']).toContain('speaker');
+  });
+});
+
+// ─── getSessionizeData ──────────────────────────────────────────────
+
+describe('getSessionizeData function', () => {
+  const getSessionizeData = require('../src/functions/getSessionizeData');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('returns 400 for missing sessionizeId', async () => {
+    const req = makeRequest('GET');
+    req.url = 'https://example.com/api/getSessionizeData?type=speakers';
+    const res = await getSessionizeData(req, context);
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 400 for invalid type', async () => {
+    const req = makeRequest('GET');
+    req.url = 'https://example.com/api/getSessionizeData?sessionizeId=abc&type=invalid';
+    const res = await getSessionizeData(req, context);
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 404 when no cached data', async () => {
+    storage.getSessionizeCache.mockResolvedValueOnce(null);
+    const req = makeRequest('GET');
+    req.url = 'https://example.com/api/getSessionizeData?sessionizeId=abc&type=speakers';
+    const res = await getSessionizeData(req, context);
+    expect(res.status).toBe(404);
+  });
+
+  test('returns cached speaker data', async () => {
+    storage.getSessionizeCache.mockResolvedValueOnce({
+      data: [{ fullName: 'Alice', bio: 'Expert' }],
+      lastRefreshed: '2026-03-18T10:00:00Z'
+    });
+    const req = makeRequest('GET');
+    req.url = 'https://example.com/api/getSessionizeData?sessionizeId=abc&type=speakers';
+    const res = await getSessionizeData(req, context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.data).toHaveLength(1);
+    expect(body.data[0].fullName).toBe('Alice');
+    expect(body.lastRefreshed).toBeTruthy();
+  });
+});
+
+// ─── refreshSessionize ─────────────────────────────────────────────
+
+describe('refreshSessionize function', () => {
+  const refreshSessionize = require('../src/functions/refreshSessionize');
+
+  const originalFetch = global.fetch;
+  beforeEach(() => {
+    jest.clearAllMocks();
+    global.fetch = jest.fn();
+  });
+  afterAll(() => { global.fetch = originalFetch; });
+
+  test('rejects unauthenticated requests', async () => {
+    const res = await refreshSessionize(makeRequest('POST', { sessionizeApiId: 'abc' }), context);
+    expect(res.status).toBe(401);
+  });
+
+  test('rejects non-admin users', async () => {
+    const res = await refreshSessionize(makeAuthRequest('POST', { sessionizeApiId: 'abc' }, ['authenticated']), context);
+    expect(res.status).toBe(403);
+  });
+
+  test('returns 400 for missing sessionizeApiId', async () => {
+    const res = await refreshSessionize(makeAuthRequest('POST', {}, ['admin']), context);
+    expect(res.status).toBe(400);
+  });
+
+  test('caches speakers and agenda on success', async () => {
+    const mockSpeakers = [{ fullName: 'Alice' }, { fullName: 'Bob' }];
+    const mockAgenda = [{ timeSlots: [] }];
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockSpeakers) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockAgenda) });
+
+    const res = await refreshSessionize(makeAuthRequest('POST', {
+      eventId: 'ev-1', chapterSlug: 'perth', sessionizeApiId: 'abc123'
+    }, ['admin']), context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.speakers).toBe(2);
+    expect(body.agenda).toBe(1);
+    expect(body.speakerNames).toEqual(['Alice', 'Bob']);
+    expect(storage.storeSessionizeCache).toHaveBeenCalledTimes(2);
+  });
+
+  test('handles Sessionize API failure gracefully', async () => {
+    global.fetch
+      .mockResolvedValueOnce({ ok: false, status: 500 })
+      .mockResolvedValueOnce({ ok: false, status: 500 });
+
+    const res = await refreshSessionize(makeAuthRequest('POST', {
+      eventId: 'ev-1', chapterSlug: 'perth', sessionizeApiId: 'bad-id'
+    }, ['admin']), context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.speakers).toBe(0);
+    expect(body.agenda).toBe(0);
+    expect(body.message).toMatch(/No data/);
   });
 });

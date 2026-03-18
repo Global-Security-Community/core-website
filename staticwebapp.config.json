@@ -99,6 +99,10 @@
       "allowedRoles": ["authenticated"]
     },
     {
+      "route": "/api/refreshSessionize",
+      "allowedRoles": ["admin"]
+    },
+    {
       "route": "/api/*",
       "allowedRoles": ["anonymous"],
       "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }
