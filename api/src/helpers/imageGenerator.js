@@ -33,10 +33,10 @@ async function lookupLandmarks(city, country, context) {
       headers: { 'Content-Type': 'application/json', 'api-key': AI_KEY },
       body: JSON.stringify({
         messages: [
-          { role: 'system', content: 'You are a geography expert. Return only a comma-separated list of landmarks, nothing else.' },
-          { role: 'user', content: `List 4 famous, visually recognisable landmarks or iconic locations of ${city}, ${country}. Include buildings, bridges, natural features, or monuments that are distinctive to this city. Return only the names, comma-separated.` }
+          { role: 'system', content: 'You describe city landmarks for an AI image generator that will draw them as line art. Focus on distinctive SHAPES and SILHOUETTES only — no colours, no materials, no surroundings. The image generator needs to know what outline to draw.' },
+          { role: 'user', content: `Name the 2-3 most visually distinctive and recognisable man-made landmarks of ${city}, ${country}. For each, describe ONLY its unique silhouette/shape in under 15 words. Format: "Name: shape description". One per line. Pick landmarks with the most distinctive outlines that cannot be confused with generic buildings.` }
         ],
-        max_tokens: 100,
+        max_tokens: 250,
         temperature: 0.3
       })
     });
@@ -144,14 +144,14 @@ async function applyShieldMask(imageBuffer, context) {
 
 async function generateChapterShield(city, country, context) {
   const landmarks = await lookupLandmarks(city, country, context);
-  const landmarkStr = landmarks || `famous landmarks and skyline of ${city}`;
+  const landmarkStr = landmarks || `the iconic skyline of ${city}`;
 
-  const prompt = `A shield-shaped heraldic emblem for a cybersecurity community in ${city}, ${country}. ` +
-    `Inside the shield shape, illustrate ${landmarkStr} in a stylised modern digital art style. ` +
-    `Colour palette: deep navy blue (#001f3f) background with teal (#20b2aa) and cyan accent highlights. ` +
-    `Subtle cybersecurity elements woven in: faint circuit board traces, small shield motifs, digital particles. ` +
-    `The overall composition should fit within a heraldic shield/crest shape. ` +
-    `Clean, professional, polished illustration. Absolutely no text, no words, no letters, no watermarks.`;
+  const prompt = `Clean line art illustration of the landmarks of ${city}: ${landmarkStr}. ` +
+    `The landmarks fill the entire image as the sole subject, drawn as white and teal (#20b2aa) outlines on a solid deep navy (#001f3f) background. ` +
+    `Flat colour fills only — white, teal, and navy. No other colours. No green, no gold, no red, no warm tones, no gradients. ` +
+    `The landmarks are large, detailed, and recognisable, filling at least 90% of the composition. No sky, no ground, no trees, no water, no clouds, no people, no extra scenery. ` +
+    `Minimalist heraldic crest style. No decorative borders, no patterns, no circuit boards, no tech elements, no shields. ` +
+    `CRITICAL: Absolutely no text, no words, no letters, no numbers, no writing of any kind. No watermarks.`;
 
   if (context) context.log(`Generating shield for ${city}...`);
   const buffer = await callFluxApi(prompt, '1024x1024', context);
@@ -167,12 +167,11 @@ async function generateChapterBanner(city, country, context) {
   const landmarks = await lookupLandmarks(city, country, context);
   const landmarkStr = landmarks || `famous landmarks and skyline of ${city}`;
 
-  const prompt = `A stunning wide panoramic digital illustration of ${city}, ${country}. ` +
-    `Feature ${landmarkStr} prominently in the composition. ` +
-    `Modern, stylised digital art with a colour palette of deep navy blue (#001f3f), teal (#20b2aa), and cyan accents. ` +
-    `Subtle cybersecurity elements: faint circuit patterns in the sky, digital particles, glowing nodes. ` +
-    `Clean, professional, polished illustration style similar to tech conference branding. ` +
-    `Wide panoramic composition with the city skyline as the focal point. ` +
+  const prompt = `Wide panoramic line art illustration of the skyline of ${city}, ${country}, featuring: ${landmarkStr}. ` +
+    `The landmarks form a recognisable city skyline silhouette as the sole subject, drawn as white and teal (#20b2aa) outlines on a solid deep navy (#001f3f) background. ` +
+    `Flat colour fills only — white, teal, and navy. No other colours. No green, no gold, no warm tones. ` +
+    `Landmarks are large and detailed, filling the width of the panoramic frame. ` +
+    `Minimalist, clean, architectural illustration. No circuit boards, no particles, no tech elements, no people, no clouds. ` +
     `Absolutely no text, no words, no letters, no watermarks.`;
 
   if (context) context.log(`Generating banner for ${city}...`);
