@@ -105,6 +105,39 @@ body {
   flex: 1;
 }
 
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.hero-btn {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hero-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.hero-btn-primary {
+  background-color: var(--color-primary-teal);
+  color: white;
+}
+
+.hero-btn-secondary {
+  background-color: transparent;
+  color: var(--color-primary-teal);
+  border: 2px solid var(--color-primary-teal);
+}
+
 .hero-image {
   flex: 1;
   text-align: center;
@@ -188,6 +221,23 @@ a:hover {
 .card h3 {
   margin-top: 0;
   color: var(--color-primary-navy);
+}
+
+a.card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: box-shadow 0.3s ease, transform 0.2s ease, border-color 0.3s ease;
+}
+
+a.card-link:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  border-color: var(--color-primary-teal);
+}
+
+a.card-link h3 {
+  color: var(--color-primary-teal);
 }
 
 /* CTA button */
@@ -400,6 +450,7 @@ a:hover {
 /* Form */
 .form-group {
   margin-bottom: 1.5rem;
+  max-width: 640px;
 }
 
 label {
@@ -1164,8 +1215,9 @@ thead tr:hover {
   margin-top: auto;
   padding-top: 0.5rem;
   font-size: 0.75rem;
-  color: var(--color-primary-teal);
-  font-weight: 600;
+  color: #888;
+  font-weight: 500;
+  font-style: italic;
 }
 
 .speaker-card-back {

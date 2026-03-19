@@ -10,6 +10,10 @@ title: Home
     </div>
     <div class="hero-content">
       <p>Building a worldwide network of cybersecurity professionals committed to advancing global security practices and knowledge sharing.</p>
+      <div class="hero-actions">
+        <a href="/events/" class="hero-btn hero-btn-primary">View Events</a>
+        <a href="/chapters/" class="hero-btn hero-btn-secondary">Find Your Chapter</a>
+      </div>
     </div>
   </div>
 
@@ -20,17 +24,17 @@ title: Home
 
   <h2>What We Offer</h2>
   <div class="cards">
-    <div class="card">
+    <a href="/chapters/" class="card card-link">
       <h3>Local Chapters</h3>
       <p>Connect with security professionals in your region through our established chapters worldwide. Build relationships, mentor others, and grow your network in a supportive community.</p>
-    </div>
-    <div class="card">
+    </a>
+    <a href="/events/" class="card card-link">
       <h3>Events & Conferences</h3>
       <p>Attend workshops, talks, and networking events featuring industry experts and thought leaders. Learn from peers and stay current with emerging security trends.</p>
-    </div>
-    <div class="card">
+    </a>
+    <a href="https://wiki.globalsecurity.community" class="card card-link" target="_blank" rel="noopener noreferrer">
       <h3>Knowledge Sharing</h3>
       <p>Access resources, best practices, and collaborative projects from our global community. Contribute your expertise and learn from the collective wisdom of thousands of professionals.</p>
-    </div>
+    </a>
   </div>
 </div>
