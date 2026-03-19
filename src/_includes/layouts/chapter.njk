@@ -3,8 +3,8 @@ layout: base.njk
 ---
 
 <div class="container">
-  <div id="chapter-banner" data-chapter-slug="{{ city | lower | replace(" ", "-") }}" style="display:none;margin-bottom:1.5rem;border-radius:12px;overflow:hidden;">
-    <img id="chapter-banner-img" alt="{{ city }} Chapter Banner" style="width:100%;height:auto;display:block;">
+  <div id="chapter-banner" data-chapter-slug="{{ city | lower | replace(" ", "-") }}" style="display:none;margin-bottom:1.5rem;border-radius:12px;overflow:hidden;max-height:200px;">
+    <img id="chapter-banner-img" alt="{{ city }} Chapter Banner" style="width:100%;height:200px;object-fit:cover;display:block;">
   </div>
   <h1>Global Security Community {{ city }}</h1>
   <p class="chapter-subtitle">{{ city }}, {{ country }}</p>
