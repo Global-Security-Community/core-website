@@ -22,7 +22,7 @@ async function ensureContainer() {
  * Calls FLUX image generation API via Azure AI Foundry.
  * Returns a PNG buffer.
  */
-async function callFluxApi(prompt, context) {
+async function callFluxApi(prompt, size, context) {
   if (!AI_ENDPOINT || !AI_KEY) {
     throw new Error('Azure AI Foundry credentials not configured');
   }
@@ -38,7 +38,7 @@ async function callFluxApi(prompt, context) {
     body: JSON.stringify({
       prompt,
       n: 1,
-      size: '1024x1024',
+      size: size || '1024x1024',
       response_format: 'b64_json'
     })
   });
@@ -77,32 +77,37 @@ async function uploadToBlob(buffer, blobPath, context) {
 }
 
 /**
- * Generates a chapter banner image (landscape 1024x1024) and uploads to blob storage.
+ * Generates a chapter banner image (landscape 1792x1024) and uploads to blob storage.
  */
 async function generateChapterBanner(city, country, context) {
-  const prompt = `A modern, artistic banner image for a cybersecurity community chapter in ${city}, ${country}. ` +
-    `Incorporate recognisable landmarks and cultural elements of ${city}. ` +
-    `Dark navy blue and teal colour scheme with subtle digital/cyber elements like circuit patterns or shield motifs. ` +
-    `Professional, clean, community-focused. No text, no words, no letters.`;
+  const prompt = `A stunning wide landscape digital illustration banner for "${city}, ${country}" cybersecurity community. ` +
+    `Feature the iconic skyline and famous landmarks of ${city} in a modern, stylised digital art style. ` +
+    `Use a colour palette of deep navy blue (#001f3f), teal (#20b2aa), and subtle cyan accents. ` +
+    `Include subtle cybersecurity elements woven into the cityscape: glowing shield icons, faint circuit board patterns in the sky, digital particles. ` +
+    `Clean, professional, polished illustration style similar to tech conference branding. ` +
+    `Wide panoramic composition with the city skyline as the focal point. ` +
+    `Absolutely no text, no words, no letters, no watermarks.`;
 
   if (context) context.log(`Generating chapter banner for ${city}...`);
-  const buffer = await callFluxApi(prompt, context);
+  const buffer = await callFluxApi(prompt, '1440x1024', context);
   const blobPath = `chapters/${city.toLowerCase().replace(/[^a-z0-9]/g, '-')}.png`;
   return await uploadToBlob(buffer, blobPath, context);
 }
 
 /**
- * Generates an event badge background image and uploads to blob storage.
+ * Generates an event badge background image (square 1024x1024) and uploads to blob storage.
  */
 async function generateEventBadgeBackground(eventTitle, city, slug, context) {
-  const prompt = `An artistic digital badge background for a cybersecurity conference called "${eventTitle}" in ${city}. ` +
-    `Incorporate recognisable landmarks of ${city} with a modern technology and cybersecurity theme. ` +
-    `Dark navy blue and teal colour scheme with subtle digital elements. ` +
-    `Square format, designed as a shareable achievement badge background. ` +
-    `Professional, community-focused. No text, no words, no letters.`;
+  const prompt = `A square digital illustration for a cybersecurity conference badge in ${city}. ` +
+    `Feature recognisable landmarks and skyline of ${city} in a modern, stylised digital art style. ` +
+    `Use deep navy blue (#001f3f) and teal (#20b2aa) colour palette with subtle cyan glowing accents. ` +
+    `Include cybersecurity visual elements: shield icons, circuit patterns, digital particles, lock symbols. ` +
+    `The bottom third of the image should have a darker gradient area (for text overlay). ` +
+    `Clean, professional, polished — designed as a shareable achievement badge for LinkedIn. ` +
+    `Absolutely no text, no words, no letters, no watermarks.`;
 
   if (context) context.log(`Generating event badge background for ${eventTitle}...`);
-  const buffer = await callFluxApi(prompt, context);
+  const buffer = await callFluxApi(prompt, '1024x1024', context);
   const blobPath = `events/${slug || 'event'}.png`;
   return await uploadToBlob(buffer, blobPath, context);
 }

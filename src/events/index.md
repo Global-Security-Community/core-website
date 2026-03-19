@@ -8,7 +8,6 @@ title: Events
 
   <p>Join us at upcoming events where security professionals gather to learn, network, and share insights.</p>
 
-  <h2>Upcoming Events</h2>
   <div id="events-list">
     <p>Loading events...</p>
   </div>
