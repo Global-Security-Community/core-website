@@ -7,7 +7,7 @@
   // Try to load AI-generated chapter banner
   var banner = document.getElementById('chapter-banner');
   if (banner) {
-    var bannerUrl = 'https://gsccoresa.blob.core.windows.net/generated-images/chapters/' + encodeURIComponent(chapterSlug) + '.png';
+    var bannerUrl = 'https://gsccoresa.blob.core.windows.net/generated-images/chapters/' + encodeURIComponent(chapterSlug) + '-banner.png';
     var img = document.getElementById('chapter-banner-img');
     img.onload = function() { banner.style.display = 'block'; };
     img.onerror = function() { banner.style.display = 'none'; };

@@ -1,6 +1,6 @@
 const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
 const { getEventBySlug, updateEvent, getApprovedApplicationBySlug, updateApplicationStatus } = require('../helpers/tableStorage');
-const { generateChapterBanner, generateEventBadgeBackground } = require('../helpers/imageGenerator');
+const { generateChapterBanner, generateChapterShield, generateEventBadgeBackground } = require('../helpers/imageGenerator');
 
 /**
  * POST /api/regenerateImage
@@ -30,14 +30,28 @@ module.exports = async function (request, context) {
 
     let imageUrl;
 
-    if (type === 'chapter') {
+    if (type === 'chapter-shield' || type === 'chapter') {
+      const app = await getApprovedApplicationBySlug(slug);
+      if (!app) {
+        return { status: 400, headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ error: 'Chapter not found' }) };
+      }
+      const { TableClient } = require('@azure/data-tables');
+      const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
+      const client = TableClient.fromConnectionString(connStr, 'ChapterApplications');
+
+      if (type === 'chapter-shield' || type === 'chapter') {
+        imageUrl = await generateChapterShield(app.city, app.country, context);
+        await client.updateEntity({ partitionKey: app.partitionKey, rowKey: app.rowKey, shieldImageUrl: imageUrl }, 'Merge');
+      }
+
+    } else if (type === 'chapter-banner') {
       const app = await getApprovedApplicationBySlug(slug);
       if (!app) {
         return { status: 400, headers: { 'Content-Type': 'application/json' },
                  body: JSON.stringify({ error: 'Chapter not found' }) };
       }
       imageUrl = await generateChapterBanner(app.city, app.country, context);
-      // Store URL on the application entity — use a simple Table Storage update
       const { TableClient } = require('@azure/data-tables');
       const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
       const client = TableClient.fromConnectionString(connStr, 'ChapterApplications');
