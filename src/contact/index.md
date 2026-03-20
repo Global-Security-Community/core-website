@@ -35,5 +35,5 @@ title: Contact Us
     </form>
   </div>
 
-<script src="/js/contact-form.js"></script>
+<script src="/js/contact-form.js?v={{ cacheBust }}"></script>
 </div>

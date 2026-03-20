@@ -206,4 +206,4 @@ title: Dashboard
   </div>
 </div>
 
-<script src="/js/dashboard.js"></script>
+<script src="/js/dashboard.js?v={{ cacheBust }}"></script>
