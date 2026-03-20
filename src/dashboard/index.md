@@ -102,6 +102,7 @@ title: Dashboard
   <div id="section-detail" style="display:none;">
     <div class="detail-actions">
       <button id="btn-back-events" class="btn-outline">&larr; Back to Events</button>
+      <button id="btn-edit-event" class="btn-outline" style="margin-left:0.5rem;">✏️ Edit Event</button>
     </div>
     <h2 id="detail-title">Event Details</h2>
     <p id="detail-subtitle" style="margin:-0.5rem 0 1rem 0;color:#666;"></p>
@@ -135,6 +136,64 @@ title: Dashboard
       <button id="role-apply-btn" type="button">Apply</button>
     </div>
     <div id="detail-attendees"></div>
+  </div>
+
+  <!-- Edit Event -->
+  <div id="section-edit-event" style="display:none;">
+    <div class="detail-actions">
+      <button id="btn-back-detail" class="btn-outline">&larr; Back to Event</button>
+    </div>
+    <h2>Edit Event</h2>
+    <div id="edit-event-message" class="form-message" style="display:none;"></div>
+    <div id="edit-event-form" class="reg-form-wrap">
+      <div class="form-group">
+        <label for="edit-title">Event Title *</label>
+        <input type="text" id="edit-title" maxlength="200">
+      </div>
+      <div class="form-group">
+        <label for="edit-date">Start Date *</label>
+        <input type="date" id="edit-date">
+      </div>
+      <div class="form-group">
+        <label for="edit-enddate">End Date</label>
+        <input type="date" id="edit-enddate">
+      </div>
+      <div class="form-group">
+        <label for="edit-building">Building / Venue Name</label>
+        <input type="text" id="edit-building" maxlength="200">
+      </div>
+      <div class="form-group">
+        <label for="edit-address1">Address Line 1 *</label>
+        <input type="text" id="edit-address1" maxlength="200">
+      </div>
+      <div class="form-group">
+        <label for="edit-address2">Address Line 2</label>
+        <input type="text" id="edit-address2" maxlength="200">
+      </div>
+      <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <div>
+          <label for="edit-city">City *</label>
+          <input type="text" id="edit-city" maxlength="100">
+        </div>
+        <div>
+          <label for="edit-state">State</label>
+          <input type="text" id="edit-state" maxlength="100">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="edit-description">Description *</label>
+        <textarea id="edit-description" rows="5" maxlength="5000"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="edit-sessionize">Sessionize API ID</label>
+        <input type="text" id="edit-sessionize">
+      </div>
+      <div class="form-group">
+        <label for="edit-cap">Registration Cap (0 = unlimited)</label>
+        <input type="number" id="edit-cap" value="0" min="0">
+      </div>
+      <button id="edit-save-btn" type="button">Save Changes</button>
+    </div>
   </div>
 
   <!-- Edit Chapter -->

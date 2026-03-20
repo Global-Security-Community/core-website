@@ -22,6 +22,7 @@ const chapterSubscribeHandler = require('./functions/chapterSubscribe');
 const communityPartnerHandler = require('./functions/communityPartner');
 const getCommunityPartnersHandler = require('./functions/getCommunityPartners');
 const regenerateImageHandler = require('./functions/regenerateImage');
+const updateEventHandler = require('./functions/updateEvent');
 
 // ─── Public endpoints ───
 app.post('contactForm', { authLevel: 'anonymous', handler: contactFormHandler });
@@ -53,3 +54,4 @@ app.get('getChapter', { authLevel: 'anonymous', handler: getChapterHandler });
 app.post('refreshSessionize', { authLevel: 'anonymous', handler: refreshSessionizeHandler });
 app.post('communityPartner', { authLevel: 'anonymous', handler: communityPartnerHandler });
 app.post('regenerateImage', { authLevel: 'anonymous', handler: regenerateImageHandler });
+app.post('updateEvent', { authLevel: 'anonymous', handler: updateEventHandler });

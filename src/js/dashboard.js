@@ -6,7 +6,7 @@
 
   function showSection(s) {
     currentSection = s;
-    ['events','create','detail','chapter'].forEach(function(id) {
+    ['events','create','detail','edit-event','chapter'].forEach(function(id) {
       document.getElementById('section-' + id).style.display = id === s ? 'block' : 'none';
     });
   }
@@ -649,6 +649,126 @@
     d.textContent = str;
     return d.innerHTML;
   }
+
+  // ─── Edit Event ───
+
+  var editEventData = null;
+
+  document.getElementById('btn-edit-event').addEventListener('click', function() {
+    if (!currentEventId || !currentChapterSlug) return;
+    showSection('edit-event');
+    loadEditEvent();
+  });
+
+  document.getElementById('btn-back-detail').addEventListener('click', function() {
+    showSection('detail');
+  });
+
+  function loadEditEvent() {
+    var msg = document.getElementById('edit-event-message');
+    msg.style.display = 'none';
+    document.getElementById('edit-event-form').style.display = 'none';
+
+    fetch('/api/getEvent?id=' + encodeURIComponent(currentEventId) + '&chapterSlug=' + encodeURIComponent(currentChapterSlug))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) {
+          msg.style.display = 'block';
+          msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
+          msg.textContent = data.error;
+          return;
+        }
+        editEventData = data;
+        document.getElementById('edit-title').value = data.title || '';
+        document.getElementById('edit-date').value = data.date || '';
+        document.getElementById('edit-enddate').value = data.endDate || '';
+        document.getElementById('edit-building').value = data.locationBuilding || '';
+        document.getElementById('edit-address1').value = data.locationAddress1 || '';
+        document.getElementById('edit-address2').value = data.locationAddress2 || '';
+        document.getElementById('edit-city').value = data.locationCity || '';
+        document.getElementById('edit-state').value = data.locationState || '';
+        document.getElementById('edit-description').value = data.description || '';
+        document.getElementById('edit-sessionize').value = data.sessionizeApiId || '';
+        document.getElementById('edit-cap').value = data.registrationCap || 0;
+        document.getElementById('edit-event-form').style.display = 'block';
+      })
+      .catch(function() {
+        msg.style.display = 'block';
+        msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
+        msg.textContent = 'Failed to load event data.';
+      });
+  }
+
+  document.getElementById('edit-save-btn').addEventListener('click', function() {
+    var btn = this;
+    var msg = document.getElementById('edit-event-message');
+
+    var title = document.getElementById('edit-title').value.trim();
+    var date = document.getElementById('edit-date').value;
+    var description = document.getElementById('edit-description').value.trim();
+    var address1 = document.getElementById('edit-address1').value.trim();
+
+    if (!title || !date || !description) {
+      msg.style.display = 'block';
+      msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
+      msg.textContent = 'Title, date, and description are required.';
+      return;
+    }
+    if (!address1) {
+      msg.style.display = 'block';
+      msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
+      msg.textContent = 'Address is required.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    msg.style.display = 'none';
+
+    var payload = {
+      eventId: currentEventId,
+      chapterSlug: currentChapterSlug,
+      title: title,
+      date: date,
+      endDate: document.getElementById('edit-enddate').value,
+      locationBuilding: document.getElementById('edit-building').value,
+      locationAddress1: address1,
+      locationAddress2: document.getElementById('edit-address2').value,
+      locationCity: document.getElementById('edit-city').value,
+      locationState: document.getElementById('edit-state').value,
+      description: description,
+      sessionizeApiId: document.getElementById('edit-sessionize').value,
+      registrationCap: document.getElementById('edit-cap').value
+    };
+
+    fetch('/api/updateEvent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+        if (data.success) {
+          msg.style.display = 'block';
+          msg.style.backgroundColor = '#d4edda'; msg.style.color = '#155724';
+          msg.textContent = 'Event updated successfully!';
+          loadEvents();
+        } else {
+          msg.style.display = 'block';
+          msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
+          msg.textContent = data.error || 'Failed to update event.';
+        }
+      })
+      .catch(function() {
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+        msg.style.display = 'block';
+        msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
+        msg.textContent = 'Network error. Please try again.';
+      });
+  });
 
   // ─── Chapter Edit ───
 
