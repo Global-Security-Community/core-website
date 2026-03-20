@@ -655,31 +655,22 @@
   var chapterEditLoaded = false;
 
   function loadChapterEdit() {
-    if (!currentChapterSlug) {
-      if (eventsLoadedPromise) {
-        document.getElementById('chapter-edit-form').innerHTML = '<p>Loading chapter data...</p>';
-        eventsLoadedPromise.then(function() {
-          if (!currentChapterSlug) {
-            document.getElementById('chapter-edit-form').innerHTML = '<p>Could not determine chapter slug. Please go back to events first.</p>';
-          } else {
-            loadChapterEdit();
-          }
-        });
-        return;
-      }
-      document.getElementById('chapter-edit-form').innerHTML = '<p>Could not determine chapter slug. Please go back to events first.</p>';
-      return;
-    }
     document.getElementById('chapter-edit-form').innerHTML = '<p>Loading chapter data...</p>';
     document.getElementById('chapter-edit-message').style.display = 'none';
 
-    fetch('/api/getChapter?slug=' + encodeURIComponent(currentChapterSlug))
+    // If we already know the slug, use it; otherwise ask the API to look it up by email
+    var url = currentChapterSlug
+      ? '/api/getChapter?slug=' + encodeURIComponent(currentChapterSlug)
+      : '/api/getChapter?mine=true';
+
+    fetch(url)
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.error) {
           document.getElementById('chapter-edit-form').innerHTML = '<p>' + esc(data.error) + '</p>';
           return;
         }
+        if (data.slug) currentChapterSlug = data.slug;
         renderChapterForm(data.leads || [], data.city, data.country);
         chapterEditLoaded = true;
       })

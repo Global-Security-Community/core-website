@@ -20,6 +20,7 @@ title: Apply to Lead a Chapter
 
       <div class="form-group">
         <label for="email">Email *</label>
+        <small style="display: block; color: #666; margin-bottom: 0.25rem;">This must be the email address you use to log in to the Global Security Community website.</small>
         <input type="email" id="email" name="email" required>
       </div>
 
@@ -42,6 +43,7 @@ title: Apply to Lead a Chapter
 
       <div class="form-group">
         <label for="secondLeadEmail">Email</label>
+        <small style="display: block; color: #666; margin-bottom: 0.25rem;">Must match the email they use to log in to the website.</small>
         <input type="email" id="secondLeadEmail" name="secondLeadEmail">
       </div>
 

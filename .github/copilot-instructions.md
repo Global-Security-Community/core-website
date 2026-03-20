@@ -287,9 +287,15 @@ API secrets are stored in `api/local.settings.json` (gitignored). Required value
 | `CIAM_CLIENT_SECRET` | Azure AD B2C app client secret |
 | `AZURE_COMMUNICATION_CONNECTION_STRING` | ACS connection (optional — emails fail gracefully) |
 | `DISCORD_BOT_TOKEN` | Discord bot token (optional — notifications fail gracefully) |
+| `DISCORD_CONTACT_CHANNEL_ID` | Discord channel ID for contact form submissions |
+| `DISCORD_NOTIFICATIONS_CHANNEL_ID` | Discord channel ID for chapter/event notifications |
+| `DISCORD_GUILD_ID` | Discord server (guild) ID for chapter channel creation |
+| `DISCORD_CHAPTERS_CATEGORY_ID` | Discord category ID to group chapter channels under |
 | `GITHUB_APP_ID` / `GITHUB_APP_PRIVATE_KEY` | GitHub App credentials (optional — chapter edit won't push to repo) |
 
 To get these values: Azure Portal → `gsc-corewebsite-swa` → Configuration → Application settings
+
+> ⚠️ **Discord env vars must be set in TWO places:** GitHub Secrets (for workflows like `delete-chapter.yml`) AND Azure SWA Application Settings (for runtime API functions like `contactForm`, `chapterApplication`, `createEvent`). They are independent — a GitHub Secret is NOT available to Azure Functions at runtime.
 
 ### Known Issues
 
@@ -351,3 +357,5 @@ To get these values: Azure Portal → `gsc-corewebsite-swa` → Configuration �
 7. **`/admin*` routes fail locally** — Azure Functions reserves these paths; use alternative route names (e.g. `manualRegister` not `adminRegister`)
 8. **Wrong Node version** — Local SWA CLI requires Node ≤22; run `nvm use 22` before starting
 9. **SWA route wildcard ordering** — `/api/*` catch-all must be the LAST route entry; placing it before specific routes causes build failures
+10. **Discord settings missing at runtime** — `DISCORD_BOT_TOKEN` and channel IDs must be set as **SWA Application Settings** (not just GitHub Secrets) for API functions to use them. Symptom: contact form returns "Failed to send message"
+11. **Async race conditions in dashboard** — Dashboard JS loads data via async `fetch()` calls; UI actions that depend on that data (like Edit Chapter needing the chapter slug) must wait for the fetch promise to resolve before proceeding

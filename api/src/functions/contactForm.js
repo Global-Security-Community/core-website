@@ -1,6 +1,7 @@
 const { app } = require('@azure/functions');
 const { sendMessage } = require('../helpers/discordBot');
 const { stripHtml } = require('../helpers/sanitise');
+const { storeContactSubmission } = require('../helpers/tableStorage');
 
 // Simple in-memory rate limiting (IP-based)
 // In production, consider using Azure Cache for Redis
@@ -108,70 +109,45 @@ module.exports = async function (request, context) {
       };
     }
 
+    // Store in Table Storage (primary persistence)
+    try {
+      await storeContactSubmission({ name: safeName, email, subject: safeSubject, message: safeMessage });
+      context.log('Contact form stored in Table Storage');
+    } catch (storeErr) {
+      context.log(`Table Storage error (non-blocking): ${storeErr.message}`);
+    }
+
     // Get Discord channel ID from environment
     const discordChannelId = process.env.DISCORD_CONTACT_CHANNEL_ID;
     if (!discordChannelId) {
-      context.log('Discord contact channel ID not configured');
-      return {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Configuration error' })
-      };
-    }
-
-    // Format message for Discord
-    const discordMessage = {
-      embeds: [
-        {
-          title: '📧 New Contact Form Submission',
-          color: 0x20b2aa,
-          fields: [
-            {
-              name: 'Name',
-              value: safeName,
-              inline: true
-            },
-            {
-              name: 'Email',
-              value: email,
-              inline: true
-            },
-            {
-              name: 'Subject',
-              value: safeSubject,
-              inline: false
-            },
-            {
-              name: 'Message',
-              value: safeMessage,
-              inline: false
-            },
-            {
-              name: 'Submitted',
-              value: new Date().toISOString(),
-              inline: false
-            }
-          ],
-          footer: {
-            text: 'Global Security Community'
+      context.log('Discord contact channel ID not configured — skipping notification');
+    } else {
+      // Format message for Discord
+      const discordMessage = {
+        embeds: [
+          {
+            title: '📧 New Contact Form Submission',
+            color: 0x20b2aa,
+            fields: [
+              { name: 'Name', value: safeName, inline: true },
+              { name: 'Email', value: email, inline: true },
+              { name: 'Subject', value: safeSubject, inline: false },
+              { name: 'Message', value: safeMessage, inline: false },
+              { name: 'Submitted', value: new Date().toISOString(), inline: false }
+            ],
+            footer: { text: 'Global Security Community' }
           }
-        }
-      ]
-    };
-
-    // Send to Discord via bot
-    const sent = await sendMessage(discordChannelId, discordMessage, context);
-
-    if (!sent) {
-      context.log('Discord message send failed');
-      return {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Failed to send message' })
+        ]
       };
-    }
 
-    context.log('Message sent to Discord successfully');
+      // Send to Discord as fire-and-forget notification
+      sendMessage(discordChannelId, discordMessage, context)
+        .then(sent => {
+          if (!sent) context.log('Discord notification failed (non-blocking)');
+          else context.log('Discord notification sent');
+        })
+        .catch(err => context.log(`Discord error (non-blocking): ${err.message}`));
+    }
 
     return {
       status: 200,

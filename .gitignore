@@ -38,3 +38,4 @@ api/coverage/
 e2e/test-results/
 e2e/screenshots/
 playwright-report/
+e2e/audit-screenshots/
