@@ -20,11 +20,10 @@
         var el = document.getElementById('reg-count');
         var count = data.registrationCount;
         var cap = data.registrationCap;
-        // For completed events with a cap, show as fully attended
-        if (data.status === 'completed' && cap > 0) {
-          count = cap;
-        }
-        if (el && cap > 0) {
+        if (el && data.status === 'completed') {
+          // Past events: show attendance rather than registration count
+          el.textContent = count + ' attended';
+        } else if (el && cap > 0) {
           el.textContent = count + ' / ' + cap + ' registered';
         } else if (el) {
           el.textContent = count + ' registered';
