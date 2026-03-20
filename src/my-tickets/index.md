@@ -8,4 +8,4 @@ title: My Tickets
   <div id="tickets-list" aria-live="polite"><p>Loading your tickets...</p></div>
 </div>
 
-<script src="/js/my-tickets.js"></script>
+<script src="/js/my-tickets.js?v={{ cacheBust }}"></script>

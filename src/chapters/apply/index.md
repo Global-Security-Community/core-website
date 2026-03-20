@@ -163,5 +163,5 @@ title: Apply to Lead a Chapter
     </form>
   </div>
 
-<script src="/js/chapter-apply-form.js"></script>
+<script src="/js/chapter-apply-form.js?v={{ cacheBust }}"></script>
 </div>

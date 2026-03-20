@@ -16,4 +16,4 @@ title: Events
   <p>Is your chapter planning an event? Chapter leads can create events from the <a href="/dashboard/">Dashboard</a>.</p>
 </div>
 
-<script src="/js/events-list.js"></script>
+<script src="/js/events-list.js?v={{ cacheBust }}"></script>

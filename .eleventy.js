@@ -14,6 +14,9 @@ module.exports = function(eleventyConfig) {
     return crypto.createHash('md5').update(value.trim().toLowerCase()).digest('hex');
   });
 
+  // Cache-busting version string (changes each build)
+  eleventyConfig.addGlobalData("cacheBust", Date.now().toString(36));
+
   return {
     dir: {
       input: "src",
