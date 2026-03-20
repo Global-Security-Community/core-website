@@ -20,8 +20,10 @@
         var el = document.getElementById('reg-count');
         var count = data.registrationCount;
         var cap = data.registrationCap;
+        // Use front-matter attendeeCount override for legacy events (pre-platform)
+        var override = slug ? slug.getAttribute('data-attendee-count') : null;
+        if (override) count = parseInt(override);
         if (el && data.status === 'completed') {
-          // Past events: show attendance rather than registration count
           el.textContent = count + ' attended';
         } else if (el && cap > 0) {
           el.textContent = count + ' / ' + cap + ' registered';
