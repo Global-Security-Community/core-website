@@ -82,7 +82,8 @@ jest.mock('../src/helpers/badgeGenerator', () => ({
 }));
 
 jest.mock('../src/helpers/imageGenerator', () => ({
-  generateChapterBanner: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/chapters/test.png'),
+  generateChapterBanner: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/chapters/test-banner.png'),
+  generateChapterShield: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/chapters/test-shield.png'),
   generateEventBadgeBackground: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/events/test.png'),
   callFluxApi: jest.fn().mockResolvedValue(Buffer.from('mock')),
   uploadToBlob: jest.fn().mockResolvedValue('https://mock.blob.url/test.png')

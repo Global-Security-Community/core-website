@@ -13,7 +13,9 @@ title: Chapters
     {%- for chapter in collections.chapter | sort(false, false, "data.city") %}
     <a href="{{ chapter.url }}" class="chapter-card">
       <div class="chapter-card-banner">
-        <img src="/assets/GSC-Shield.png" alt="GSC Shield" class="chapter-card-logo">
+        <img src="https://gsccoresa.blob.core.windows.net/generated-images/chapters/{{ chapter.data.city | lower | replace(" ", "-") }}-shield.png" 
+             alt="{{ chapter.data.city }} Chapter" class="chapter-card-logo"
+             onerror="this.src='/assets/GSC-Shield.png'">
       </div>
       <div class="chapter-card-body">
         <span class="chapter-card-badge">Official Chapter</span>

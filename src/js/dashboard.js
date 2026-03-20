@@ -2,6 +2,7 @@
   var currentSection = 'events';
   var currentEventId = '';
   var currentChapterSlug = '';
+  var eventsLoadedPromise = null;
 
   function showSection(s) {
     currentSection = s;
@@ -22,7 +23,7 @@
     .then(function(d) {
       if (d.clientPrincipal) {
         document.getElementById('dash-user').textContent = 'Welcome, ' + (d.clientPrincipal.userDetails || 'Admin');
-        loadEvents();
+        eventsLoadedPromise = loadEvents();
       }
     })
     .catch(function() {
@@ -30,7 +31,7 @@
     });
 
   function loadEvents() {
-    fetch('/api/eventAttendance?action=list')
+    return fetch('/api/eventAttendance?action=list')
       .then(function(r) { return r.json(); })
       .then(function(data) {
         var el = document.getElementById('events-list');
@@ -655,6 +656,17 @@
 
   function loadChapterEdit() {
     if (!currentChapterSlug) {
+      if (eventsLoadedPromise) {
+        document.getElementById('chapter-edit-form').innerHTML = '<p>Loading chapter data...</p>';
+        eventsLoadedPromise.then(function() {
+          if (!currentChapterSlug) {
+            document.getElementById('chapter-edit-form').innerHTML = '<p>Could not determine chapter slug. Please go back to events first.</p>';
+          } else {
+            loadChapterEdit();
+          }
+        });
+        return;
+      }
       document.getElementById('chapter-edit-form').innerHTML = '<p>Could not determine chapter slug. Please go back to events first.</p>';
       return;
     }
