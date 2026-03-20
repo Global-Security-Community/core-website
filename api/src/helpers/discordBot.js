@@ -16,22 +16,27 @@ function botHeaders() {
  */
 async function sendMessage(channelId, message, context) {
   if (!DISCORD_BOT_TOKEN) {
-    context.log('Discord bot token not configured — skipping message');
+    context.log('DISCORD_BOT_TOKEN is not set in SWA Application Settings — cannot send Discord message');
     return false;
   }
 
-  const response = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
-    method: 'POST',
-    headers: botHeaders(),
-    body: JSON.stringify(message)
-  });
+  try {
+    const response = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: botHeaders(),
+      body: JSON.stringify(message)
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    context.log(`Discord message send failed: ${response.status} ${error}`);
+    if (!response.ok) {
+      const error = await response.text();
+      context.log(`Discord API error ${response.status} on channel ${channelId}: ${error}`);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    context.log(`Discord network error: ${err.message}`);
     return false;
   }
-  return true;
 }
 
 /**
