@@ -24,11 +24,11 @@
   "routes": [
     {
       "route": "/css/*",
-      "headers": { "Cache-Control": "public, max-age=86400, must-revalidate" }
+      "headers": { "Cache-Control": "public, max-age=300, must-revalidate" }
     },
     {
       "route": "/js/*",
-      "headers": { "Cache-Control": "public, max-age=86400, must-revalidate" }
+      "headers": { "Cache-Control": "public, max-age=300, must-revalidate" }
     },
     {
       "route": "/assets/*",
