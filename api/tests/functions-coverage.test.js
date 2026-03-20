@@ -50,7 +50,8 @@ jest.mock('../src/helpers/tableStorage', () => ({
   storePartner: jest.fn().mockResolvedValue({}),
   deletePartner: jest.fn().mockResolvedValue({}),
   getPartnersByEvent: jest.fn().mockResolvedValue([]),
-  getPartnersByChapter: jest.fn().mockResolvedValue([])
+  getPartnersByChapter: jest.fn().mockResolvedValue([]),
+  storeContactSubmission: jest.fn().mockResolvedValue({})
 }));
 
 jest.mock('../src/helpers/discordBot', () => ({
@@ -200,34 +201,35 @@ describe('contactForm function', () => {
     expect(JSON.parse(res.body).error).toMatch(/length/);
   });
 
-  test('returns 500 when Discord channel not configured', async () => {
+  test('returns 200 even when Discord channel not configured (stores in table)', async () => {
     const saved = process.env.DISCORD_CONTACT_CHANNEL_ID;
     delete process.env.DISCORD_CONTACT_CHANNEL_ID;
-    // Need to re-require to pick up missing env var — but module is cached.
-    // Instead, the function reads env at runtime, so deleting it works.
     const res = await contactForm(contactRequest({
       name: 'Alice', email: 'alice@test.com', subject: 'Test', message: 'Hello'
     }), context);
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+    expect(storage.storeContactSubmission).toHaveBeenCalled();
     process.env.DISCORD_CONTACT_CHANNEL_ID = saved;
   });
 
-  test('returns 500 when Discord send fails', async () => {
+  test('returns 200 even when Discord send fails (non-blocking)', async () => {
     discord.sendMessage.mockResolvedValueOnce(false);
     const res = await contactForm(contactRequest({
       name: 'Alice', email: 'alice@test.com', subject: 'Test', message: 'Hello'
     }), context);
-    expect(res.status).toBe(500);
-    expect(JSON.parse(res.body).error).toMatch(/Failed to send/);
+    expect(res.status).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+    expect(storage.storeContactSubmission).toHaveBeenCalled();
   });
 
-  test('returns 200 on successful submission', async () => {
+  test('returns 200 on successful submission and stores in table', async () => {
     const res = await contactForm(contactRequest({
       name: 'Alice', email: 'alice@test.com', subject: 'Test', message: 'Hello world'
     }), context);
     expect(res.status).toBe(200);
     expect(JSON.parse(res.body).success).toBe(true);
-    expect(discord.sendMessage).toHaveBeenCalledWith('test-contact-channel', expect.any(Object), context);
+    expect(storage.storeContactSubmission).toHaveBeenCalled();
   });
 
   test('rate limits after too many requests from same IP', async () => {

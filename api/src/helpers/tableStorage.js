@@ -521,6 +521,24 @@ async function getPartnersByChapter(chapterSlug) {
   return allPartners;
 }
 
+// ─── Contact Submissions ───
+
+async function storeContactSubmission({ name, email, subject, message }) {
+  const client = getTableClient('ContactSubmissions');
+  const id = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+  const entity = {
+    partitionKey: 'contact',
+    rowKey: id,
+    name,
+    email,
+    subject,
+    message,
+    createdAt: new Date().toISOString()
+  };
+  await client.upsertEntity(entity, 'Replace');
+  return entity;
+}
+
 module.exports = {
   storeApplication, getApplication, updateApplicationStatus, getApprovedApplicationBySlug,
   storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent,
@@ -534,5 +552,6 @@ module.exports = {
   getApprovedApplicationByEmail,
   storeSessionizeCache, getSessionizeCache,
   storeSubscription, removeSubscription, getSubscriptionsByChapter, isSubscribed,
-  storePartner, deletePartner, getPartnersByEvent, getPartnersByChapter
+  storePartner, deletePartner, getPartnersByEvent, getPartnersByChapter,
+  storeContactSubmission
 };
