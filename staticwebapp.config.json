@@ -79,6 +79,10 @@
       "allowedRoles": ["admin"]
     },
     {
+      "route": "/api/updateEvent",
+      "allowedRoles": ["admin"]
+    },
+    {
       "route": "/api/getChapter",
       "allowedRoles": ["admin"]
     },

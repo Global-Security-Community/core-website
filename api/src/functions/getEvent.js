@@ -1,9 +1,10 @@
-const { getEventBySlug, countRegistrations, listEvents, getRegistrationsByRole } = require('../helpers/tableStorage');
+const { getEventBySlug, getEvent, countRegistrations, listEvents, getRegistrationsByRole } = require('../helpers/tableStorage');
 
 /**
- * GET /api/getEvent?slug={slug}       — returns a single event
- * GET /api/getEvent?action=list       — returns all published events
- * GET /api/getEvent?action=list&chapter={slug} — returns published events for a chapter
+ * GET /api/getEvent?slug={slug}                      — returns a single event (public, by slug)
+ * GET /api/getEvent?id={id}&chapterSlug={chapterSlug} — returns a single event (by ID)
+ * GET /api/getEvent?action=list                       — returns all published events
+ * GET /api/getEvent?action=list&chapter={slug}        — returns published events for a chapter
  * Public endpoint.
  */
 module.exports = async function (request, context) {
@@ -11,7 +12,8 @@ module.exports = async function (request, context) {
     const url = new URL(request.url);
     const action = url.searchParams.get('action');
     const slug = url.searchParams.get('slug');
-    const chapterSlug = url.searchParams.get('chapter');
+    const id = url.searchParams.get('id');
+    const chapterSlug = url.searchParams.get('chapterSlug') || url.searchParams.get('chapter');
 
     if (action === 'list') {
       // Fetch all events — filter by chapter case-insensitively in code
@@ -39,6 +41,37 @@ module.exports = async function (request, context) {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(published)
+      };
+    }
+
+    // Lookup by ID + chapterSlug (for edit form)
+    if (id && chapterSlug) {
+      const event = await getEvent(chapterSlug, id);
+      if (!event) {
+        return { status: 400, headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ error: 'Event not found' }) };
+      }
+      return {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: event.rowKey,
+          title: event.title,
+          slug: event.slug,
+          chapterSlug: event.chapterSlug || event.partitionKey,
+          date: event.date,
+          endDate: event.endDate || '',
+          location: event.location,
+          locationBuilding: event.locationBuilding || '',
+          locationAddress1: event.locationAddress1 || '',
+          locationAddress2: event.locationAddress2 || '',
+          locationCity: event.locationCity || '',
+          locationState: event.locationState || '',
+          description: event.description,
+          sessionizeApiId: event.sessionizeApiId || '',
+          registrationCap: event.registrationCap || 0,
+          status: event.status
+        })
       };
     }
 
