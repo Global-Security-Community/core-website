@@ -18,10 +18,16 @@
       .then(function(r) { return r.json(); })
       .then(function(data) {
         var el = document.getElementById('reg-count');
-        if (el && data.registrationCap > 0) {
-          el.textContent = data.registrationCount + ' / ' + data.registrationCap + ' registered';
+        var count = data.registrationCount;
+        var cap = data.registrationCap;
+        // For completed events with a cap, show as fully attended
+        if (data.status === 'completed' && cap > 0) {
+          count = cap;
+        }
+        if (el && cap > 0) {
+          el.textContent = count + ' / ' + cap + ' registered';
         } else if (el) {
-          el.textContent = data.registrationCount + ' registered';
+          el.textContent = count + ' registered';
         }
         if (data.status === 'closed' || data.status === 'completed') {
           var btn = document.getElementById('register-btn');
