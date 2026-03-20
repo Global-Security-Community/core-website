@@ -12,7 +12,7 @@
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var principal = data.clientPrincipal;
-      if (!principal || !principal.userDetails) return;
+      if (!principal) return;
 
       // User is logged in — show subscribe button, hide login hint
       loginHint.style.display = 'none';
