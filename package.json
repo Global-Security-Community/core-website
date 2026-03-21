@@ -9,7 +9,7 @@
     "test:e2e:headed": "npx playwright test --headed"
   },
   "dependencies": {
-    "@11ty/eleventy": "^3.1.2"
+    "@11ty/eleventy": "^3.1.5"
   },
   "devDependencies": {
     "@azure/static-web-apps-cli": "^2.0.8",
