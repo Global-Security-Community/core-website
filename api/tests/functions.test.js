@@ -29,6 +29,7 @@ jest.mock('../src/helpers/tableStorage', () => ({
   isVolunteerForAnyEvent: jest.fn().mockResolvedValue(null),
   VALID_ROLES: ['attendee', 'volunteer', 'speaker', 'sponsor', 'organiser'],
   getApprovedApplicationByEmail: jest.fn(),
+  getApprovedApplicationsByEmail: jest.fn().mockResolvedValue([{ city: 'Perth' }]),
   getApprovedApplicationBySlug: jest.fn(),
   storeSessionizeCache: jest.fn().mockResolvedValue({}),
   getSessionizeCache: jest.fn(),
@@ -351,7 +352,7 @@ describe('adminRegister function', () => {
   });
 
   test('blocks attendee registration at capacity', async () => {
-    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', title: 'Test', status: 'published', registrationCap: 2 });
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', title: 'Test', status: 'published', registrationCap: 2 });
     storage.getRegistrationsByEvent.mockResolvedValueOnce([{ rowKey: 'r1', email: 'a@a.com' }, { rowKey: 'r2', email: 'b@b.com' }]);
     const req = makeAuthRequest('POST', { eventId: 'ev-1', name: 'Alice', email: 'alice@test.com', role: 'attendee' }, ['admin']);
     const res = await adminRegister(req, context);
@@ -360,7 +361,7 @@ describe('adminRegister function', () => {
   });
 
   test('allows speaker registration at capacity (cap bypass)', async () => {
-    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', title: 'Test', status: 'published', registrationCap: 2 });
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', title: 'Test', status: 'published', registrationCap: 2 });
     storage.getRegistrationsByEvent.mockResolvedValueOnce([{ rowKey: 'r1', email: 'x@x.com' }, { rowKey: 'r2', email: 'y@y.com' }]);
     const req = makeAuthRequest('POST', { eventId: 'ev-1', name: 'Speaker', email: 'speaker@test.com', role: 'speaker' }, ['admin']);
     const res = await adminRegister(req, context);
@@ -369,7 +370,7 @@ describe('adminRegister function', () => {
   });
 
   test('rejects duplicate email', async () => {
-    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', title: 'Test', status: 'published', registrationCap: 0 });
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', title: 'Test', status: 'published', registrationCap: 0 });
     storage.getRegistrationsByEvent.mockResolvedValueOnce([{ rowKey: 'r1', email: 'alice@test.com' }]);
     const req = makeAuthRequest('POST', { eventId: 'ev-1', name: 'Alice', email: 'alice@test.com' }, ['admin']);
     const res = await adminRegister(req, context);
@@ -377,7 +378,7 @@ describe('adminRegister function', () => {
   });
 
   test('registers with default attendee role', async () => {
-    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', title: 'Test', status: 'published', registrationCap: 0 });
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', title: 'Test', status: 'published', registrationCap: 0 });
     storage.getRegistrationsByEvent.mockResolvedValueOnce([]);
     const req = makeAuthRequest('POST', { eventId: 'ev-1', name: 'Bob', email: 'bob@test.com' }, ['admin']);
     const res = await adminRegister(req, context);
@@ -486,7 +487,7 @@ describe('updateChapter function', () => {
     storage.getApprovedApplicationBySlug.mockResolvedValueOnce(null);
     const req = makeAuthRequest('POST', { chapterSlug: 'nonexistent', leads: [{ name: 'A', email: 'a@a.com' }] }, ['admin']);
     const res = await updateChapter(req, context);
-    expect(res.status).toBe(400);
-    expect(JSON.parse(res.body).error).toMatch(/No approved chapter/);
+    // Chapter access check runs before the slug lookup, so admin gets 403 for chapters they don't lead
+    expect(res.status).toBe(403);
   });
 });

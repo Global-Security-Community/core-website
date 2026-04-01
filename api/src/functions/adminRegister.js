@@ -1,5 +1,5 @@
 const { randomUUID, randomBytes } = require('crypto');
-const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
+const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { getEventById, storeRegistration, getRegistrationsByEvent, VALID_ROLES } = require('../helpers/tableStorage');
 const { stripHtml } = require('../helpers/sanitise');
 const { sendTicketEmail } = require('../helpers/emailService');
@@ -39,6 +39,12 @@ module.exports = async function (request, context) {
     if (!event) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Event not found' }) };
+    }
+
+    // Verify admin has access to this event's chapter
+    const chapterSlug = event.chapterSlug || event.partitionKey || '';
+    if (!await verifyChapterAccess(user, chapterSlug, context)) {
+      return forbidden('You do not have permission to register attendees for this event');
     }
 
     if (event.status === 'completed') {

@@ -1,5 +1,5 @@
-const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
-const { getRegistrationByTicketCode, updateRegistration } = require('../helpers/tableStorage');
+const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
+const { getRegistrationByTicketCode, updateRegistration, getEventById } = require('../helpers/tableStorage');
 
 /**
  * POST /api/checkIn
@@ -23,6 +23,15 @@ module.exports = async function (request, context) {
     if (!ticketCode || !eventId) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Missing ticketCode or eventId' }) };
+    }
+
+    // Verify admin/volunteer has access to this event's chapter
+    const event = await getEventById(eventId);
+    if (event) {
+      const chapterSlug = event.chapterSlug || event.partitionKey || '';
+      if (!await verifyChapterAccess(user, chapterSlug, context)) {
+        return forbidden('You do not have permission to check in attendees for this event');
+      }
     }
 
     const registration = await getRegistrationByTicketCode(eventId, ticketCode);

@@ -1,5 +1,5 @@
 const { randomUUID } = require('crypto');
-const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
+const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { getRegistrationsByEvent, getEvent, storeBadge, getBadgesByEvent } = require('../helpers/tableStorage');
 const { generateBadge, generateBadgePng } = require('../helpers/badgeGenerator');
 const { sendBadgeEmail } = require('../helpers/emailService');
@@ -33,6 +33,11 @@ module.exports = async function (request, context) {
     if (!event) {
       return { status: 404, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Event not found' }) };
+    }
+
+    // Verify admin has access to this chapter
+    if (!await verifyChapterAccess(user, chapterSlug, context)) {
+      return forbidden('You do not have permission to issue badges for this chapter');
     }
 
     // Issue badges to all checked-in registrations, grouped by role

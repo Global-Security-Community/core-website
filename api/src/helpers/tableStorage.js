@@ -358,6 +358,26 @@ async function getApprovedApplicationByEmail(email) {
   return null;
 }
 
+/**
+ * Returns ALL approved chapter applications where the email is lead or second lead.
+ * Used for chapter-scoped authorization.
+ */
+async function getApprovedApplicationsByEmail(email) {
+  const client = getTableClient('ChapterApplications');
+  const normalised = email.trim().toLowerCase();
+  const entities = client.listEntities({
+    queryOptions: { filter: `status eq 'approved'` }
+  });
+  const results = [];
+  for await (const entity of entities) {
+    if ((entity.email && entity.email.toLowerCase() === normalised) ||
+        (entity.secondLeadEmail && entity.secondLeadEmail.toLowerCase() === normalised)) {
+      results.push(entity);
+    }
+  }
+  return results;
+}
+
 // ─── Sessionize Cache ───
 
 let sessionizeCacheTableReady = false;
@@ -549,7 +569,7 @@ module.exports = {
   storeBadge, getBadge, getBadgesByEvent,
   storeVolunteer, getVolunteersByEvent, removeVolunteer, isVolunteerForAnyEvent,
   getRegistrationsByRole, isVolunteerOrOrganiserByRegistration, VALID_ROLES,
-  getApprovedApplicationByEmail,
+  getApprovedApplicationByEmail, getApprovedApplicationsByEmail,
   storeSessionizeCache, getSessionizeCache,
   storeSubscription, removeSubscription, getSubscriptionsByChapter, isSubscribed,
   storePartner, deletePartner, getPartnersByEvent, getPartnersByChapter,

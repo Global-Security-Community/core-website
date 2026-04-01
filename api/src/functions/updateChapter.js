@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
+const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { getApprovedApplicationBySlug, updateApplicationStatus } = require('../helpers/tableStorage');
 const { stripHtml } = require('../helpers/sanitise');
 const { Octokit } = require('@octokit/rest');
@@ -30,6 +30,11 @@ module.exports = async function (request, context) {
     if (!chapterSlug || !leads || !Array.isArray(leads) || leads.length === 0) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Missing chapterSlug or leads array' }) };
+    }
+
+    // Verify admin has access to this chapter
+    if (!await verifyChapterAccess(user, chapterSlug, context)) {
+      return forbidden('You do not have permission to edit this chapter');
     }
 
     if (leads.length > MAX_LEADS) {

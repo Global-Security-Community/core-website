@@ -1,5 +1,5 @@
-const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
-const { getRegistrationsByEvent, countRegistrations, getEvent, listEvents, updateEvent, getApprovedApplicationByEmail } = require('../helpers/tableStorage');
+const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
+const { getRegistrationsByEvent, countRegistrations, getEvent, getEventById, listEvents, updateEvent, getApprovedApplicationByEmail } = require('../helpers/tableStorage');
 
 /**
  * GET /api/eventAttendance?eventId={eventId}&chapterSlug={chapterSlug}
@@ -31,6 +31,10 @@ module.exports = async function (request, context) {
         return { status: 400, headers: { 'Content-Type': 'application/json' },
                  body: JSON.stringify({ error: 'Missing eventId, chapterSlug, or status' }) };
       }
+      // Verify admin has access to this chapter
+      if (!await verifyChapterAccess(user, chapterSlug, context)) {
+        return forbidden('You do not have permission to manage this chapter');
+      }
       if (!['published', 'closed', 'completed'].includes(status)) {
         return { status: 400, headers: { 'Content-Type': 'application/json' },
                  body: JSON.stringify({ error: 'Invalid status. Must be published, closed, or completed' }) };
@@ -45,8 +49,20 @@ module.exports = async function (request, context) {
     const chapterSlug = url.searchParams.get('chapterSlug');
 
     if (action === 'list') {
-      // List events for dashboard
-      const events = await listEvents(chapterSlug || undefined);
+      // List events for dashboard — scope to admin's chapters
+      const allEvents = await listEvents(chapterSlug || undefined);
+
+      // Filter to only events the admin has access to
+      const { getAdminChapterSlugs, isSuperAdmin } = require('../helpers/auth');
+      const adminEmail = (user.userDetails || '').toLowerCase();
+      const adminSlugs = await getAdminChapterSlugs(adminEmail);
+      const superAdmin = isSuperAdmin(adminEmail);
+
+      const events = superAdmin ? allEvents : allEvents.filter(ev => {
+        const evSlug = (ev.chapterSlug || ev.partitionKey || '').toLowerCase();
+        return adminSlugs.includes(evSlug);
+      });
+
       const enriched = [];
       for (const ev of events) {
         const count = await countRegistrations(ev.rowKey);
@@ -88,6 +104,15 @@ module.exports = async function (request, context) {
     if (!eventId) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Missing eventId parameter' }) };
+    }
+
+    // Verify admin has access to this event's chapter
+    const event = await getEventById(eventId);
+    if (event) {
+      const eventChapterSlug = event.chapterSlug || event.partitionKey || '';
+      if (!await verifyChapterAccess(user, eventChapterSlug, context)) {
+        return forbidden('You do not have permission to view attendance for this event');
+      }
     }
 
     const registrations = await getRegistrationsByEvent(eventId);

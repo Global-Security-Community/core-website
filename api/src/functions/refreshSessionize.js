@@ -1,4 +1,4 @@
-const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
+const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { storeSessionizeCache, getEventById } = require('../helpers/tableStorage');
 
 /**
@@ -24,6 +24,21 @@ module.exports = async function (request, context) {
     if (!sessionizeApiId) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Missing sessionizeApiId' }) };
+    }
+
+    // Verify admin has access to this event's chapter
+    if (eventId) {
+      const event = await getEventById(eventId);
+      if (event) {
+        const evChapterSlug = event.chapterSlug || event.partitionKey || '';
+        if (!await verifyChapterAccess(user, evChapterSlug, context)) {
+          return forbidden('You do not have permission to refresh data for this event');
+        }
+      }
+    } else if (chapterSlug) {
+      if (!await verifyChapterAccess(user, chapterSlug, context)) {
+        return forbidden('You do not have permission to manage this chapter');
+      }
     }
 
     // Fetch speakers from Sessionize

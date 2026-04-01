@@ -1,5 +1,5 @@
 const { randomUUID } = require('crypto');
-const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
+const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { storeEvent, listEvents, getSubscriptionsByChapter, updateEvent } = require('../helpers/tableStorage');
 const { sanitiseFields } = require('../helpers/sanitise');
 const { sendMessage } = require('../helpers/discordBot');
@@ -30,6 +30,11 @@ module.exports = async function (request, context) {
     if (!title || !date || !description || !chapterSlug) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Missing required fields: title, date, description, chapterSlug' }) };
+    }
+
+    // Verify admin has access to this chapter
+    if (!await verifyChapterAccess(user, chapterSlug, context)) {
+      return forbidden('You do not have permission to create events for this chapter');
     }
 
     // Accept structured address OR legacy single location field

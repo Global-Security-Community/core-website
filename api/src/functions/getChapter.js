@@ -1,4 +1,4 @@
-const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
+const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { getApprovedApplicationBySlug, getApprovedApplicationByEmail } = require('../helpers/tableStorage');
 
 /**
@@ -45,6 +45,11 @@ module.exports = async function (request, context) {
     if (!slug) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Missing slug parameter' }) };
+    }
+
+    // Verify admin has access to this chapter
+    if (!await verifyChapterAccess(user, slug, context)) {
+      return forbidden('You do not have permission to view this chapter');
     }
 
     const application = await getApprovedApplicationBySlug(slug);
