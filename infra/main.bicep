@@ -3,11 +3,18 @@ targetScope = 'resourceGroup'
 @description('Location for all resources')
 param location string = resourceGroup().location
 
+@description('Principal ID of the SWA system-assigned managed identity. Enable with: az staticwebapp identity assign --name gsc-corewebsite-swa --resource-group gsc-corewebsite-rg')
+param swaPrincipalId string = ''
+
+@description('IP addresses allowed to manage Key Vault secrets (e.g. admin home/office IPs)')
+param adminIpAddresses array = []
+
 var storageAccountName = 'gsccoresa'
 var keyVaultName = 'gsc-core-kv'
 var logAnalyticsName = 'gsc-core-law'
 var appInsightsName = 'gsc-core-ai'
 var communicationServiceName = 'gsc-core-acs'
+var swaName = 'gsc-corewebsite-swa'
 
 // Storage Account for Table Storage (chapter applications, events, registrations)
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
@@ -70,7 +77,34 @@ resource eventVolunteersTable 'Microsoft.Storage/storageAccounts/tableServices/t
   name: 'EventVolunteers'
 }
 
+// Contact Submissions Table
+resource contactSubmissionsTable 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = {
+  parent: tableService
+  name: 'ContactSubmissions'
+}
+
+// Sessionize Cache Table
+resource sessionizeCacheTable 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = {
+  parent: tableService
+  name: 'SessionizeCache'
+}
+
+// Chapter Subscriptions Table
+resource chapterSubscriptionsTable 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = {
+  parent: tableService
+  name: 'ChapterSubscriptions'
+}
+
+// Community Partners Table
+resource communityPartnersTable 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = {
+  parent: tableService
+  name: 'CommunityPartners'
+}
+
 // Key Vault for GSC secrets
+// Network: deny by default, bypass for trusted Azure services (ARM, SWA Key Vault refs).
+// Admin IPs are allowlisted for CLI management (az keyvault secret set, etc.)
+// RBAC authorization is the primary access control.
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName
   location: location
@@ -87,7 +121,25 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     networkAcls: {
       defaultAction: 'Deny'
       bypass: 'AzureServices'
+      ipRules: [
+        for ip in adminIpAddresses: {
+          value: ip
+        }
+      ]
     }
+  }
+}
+
+// Grant SWA managed identity 'Key Vault Secrets User' role on the vault
+// This allows SWA to resolve @Microsoft.KeyVault(...) references in app settings.
+// Role ID: 4633458b-17de-408a-b874-0445c86b69e6 = Key Vault Secrets User
+resource swaKeyVaultAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(swaPrincipalId)) {
+  name: guid(keyVault.id, swaName, '4633458b-17de-408a-b874-0445c86b69e6')
+  scope: keyVault
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
+    principalId: swaPrincipalId
+    principalType: 'ServicePrincipal'
   }
 }
 

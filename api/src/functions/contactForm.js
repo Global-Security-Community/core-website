@@ -2,6 +2,7 @@ const { app } = require('@azure/functions');
 const { sendMessage } = require('../helpers/discordBot');
 const { stripHtml } = require('../helpers/sanitise');
 const { storeContactSubmission } = require('../helpers/tableStorage');
+const { verifyTurnstileToken } = require('../helpers/turnstile');
 
 // Simple in-memory rate limiting (IP-based)
 // In production, consider using Azure Cache for Redis
@@ -74,7 +75,7 @@ module.exports = async function (request, context) {
         body: JSON.stringify({ error: 'Invalid JSON in request body' })
       };
     }
-    const { name, email, subject, message } = body;
+    const { name, email, subject, message, turnstileToken } = body;
 
     // Validate required fields
     if (!name || !email || !subject || !message) {
@@ -82,6 +83,16 @@ module.exports = async function (request, context) {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'Missing required fields' })
+      };
+    }
+
+    // Verify Turnstile token
+    const turnstileValid = await verifyTurnstileToken(turnstileToken, clientIP, context);
+    if (!turnstileValid) {
+      return {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Bot verification failed. Please try again.' })
       };
     }
 

@@ -39,6 +39,9 @@ document.getElementById('chapter-apply-form').addEventListener('submit', async f
       website: document.getElementById('website').value
     };
 
+    var turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
+    formData.turnstileToken = turnstileResponse ? turnstileResponse.value : '';
+
     var response = await fetch('/api/chapterApplication', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -53,6 +56,7 @@ document.getElementById('chapter-apply-form').addEventListener('submit', async f
       formMessage.style.borderLeft = '4px solid #28a745';
       formMessage.textContent = data.message || 'Application submitted successfully!';
       document.getElementById('chapter-apply-form').reset();
+      if (typeof turnstile !== 'undefined') turnstile.reset();
       document.querySelectorAll('.char-count').forEach(function(c) {
         var f = document.getElementById(c.getAttribute('data-for'));
         c.textContent = '0 / ' + f.maxLength;

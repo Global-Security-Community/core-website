@@ -4,6 +4,7 @@ const { generateApprovalToken } = require('../helpers/tokenHelper');
 const { sendMessage } = require('../helpers/discordBot');
 const { sanitiseFields } = require('../helpers/sanitise');
 const { checkRateLimit, getClientIP } = require('../helpers/rateLimiter');
+const { verifyTurnstileToken } = require('../helpers/turnstile');
 
 const MAX_REQUESTS_PER_WINDOW = parseInt(process.env.MAX_CHAPTER_REQUESTS_PER_WINDOW || '3');
 
@@ -32,7 +33,7 @@ module.exports = async function (request, context) {
     }
 
     const { fullName, email, city, country, linkedIn, github, whyLead, existingCommunity, website,
-            secondLeadName, secondLeadEmail, secondLeadLinkedIn, secondLeadGitHub } = body;
+            secondLeadName, secondLeadEmail, secondLeadLinkedIn, secondLeadGitHub, turnstileToken } = body;
 
     // Honeypot check — 'website' field should be empty (hidden from real users)
     if (website) {
@@ -41,6 +42,16 @@ module.exports = async function (request, context) {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ success: true, message: 'Your application has been received. We will review it shortly!' })
+      };
+    }
+
+    // Verify Turnstile token
+    const turnstileValid = await verifyTurnstileToken(turnstileToken, clientIP, context);
+    if (!turnstileValid) {
+      return {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Bot verification failed. Please try again.' })
       };
     }
 
@@ -178,7 +189,8 @@ module.exports = async function (request, context) {
       };
 
       try {
-        await sendMessage(discordChannelId, discordMessage, context);
+        const sent = await sendMessage(discordChannelId, discordMessage, context);
+        if (!sent) context.log('Discord chapter application notification was not delivered');
       } catch (discordError) {
         context.log(`Discord notification failed: ${discordError.message}`);
       }

@@ -96,6 +96,10 @@ title: Register for Event
         </label>
       </div>
 
+      <div class="form-group">
+        <div class="cf-turnstile" data-sitekey="{{ turnstileSiteKey }}"></div>
+      </div>
+
       <button type="submit">Register</button>
     </form>
   </div>

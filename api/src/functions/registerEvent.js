@@ -4,6 +4,7 @@ const { getEventBySlug, storeRegistration, storeDemographics, countRegistrations
 const { sanitiseFields } = require('../helpers/sanitise');
 const { sendTicketEmail } = require('../helpers/emailService');
 const { checkRateLimit, getClientIP } = require('../helpers/rateLimiter');
+const { verifyTurnstileToken } = require('../helpers/turnstile');
 
 /**
  * POST /api/registerEvent
@@ -29,11 +30,18 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Invalid JSON' }) };
     }
 
-    const { eventSlug, fullName, email, company, employmentStatus, industry, jobTitle, companySize, experienceLevel, volunteerInterest } = body;
+    const { eventSlug, fullName, email, company, employmentStatus, industry, jobTitle, companySize, experienceLevel, volunteerInterest, turnstileToken } = body;
 
     if (!eventSlug || !fullName || !email) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Missing required fields: eventSlug, fullName, email' }) };
+    }
+
+    // Verify Turnstile token
+    const turnstileValid = await verifyTurnstileToken(turnstileToken, clientIP, context);
+    if (!turnstileValid) {
+      return { status: 403, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Bot verification failed. Please try again.' }) };
     }
 
     const safe = sanitiseFields({ fullName, jobTitle: jobTitle || '', company: company || '' }, ['fullName', 'jobTitle', 'company']);

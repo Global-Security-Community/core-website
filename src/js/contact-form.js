@@ -31,6 +31,9 @@ document.getElementById('contact-form').addEventListener('submit', async functio
   if (subject.length > 200) { showError('Subject must be 200 characters or less.'); return; }
   if (message.length > 5000) { showError('Message must be 5000 characters or less.'); return; }
 
+  var turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
+  var turnstileToken = turnstileResponse ? turnstileResponse.value : '';
+
   try {
     button.disabled = true;
     button.textContent = 'Sending...';
@@ -38,7 +41,7 @@ document.getElementById('contact-form').addEventListener('submit', async functio
     var response = await fetch('/api/contactForm', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name, email: email, subject: subject, message: message })
+      body: JSON.stringify({ name: name, email: email, subject: subject, message: message, turnstileToken: turnstileToken })
     });
     
     var data = await response.json();
@@ -49,6 +52,7 @@ document.getElementById('contact-form').addEventListener('submit', async functio
       formMessage.style.borderLeft = '4px solid #28a745';
       formMessage.textContent = data.message || 'Message sent successfully!';
       document.getElementById('contact-form').reset();
+      if (typeof turnstile !== 'undefined') turnstile.reset();
     } else {
       showError(data.error || 'Error sending message. Please try again.');
     }

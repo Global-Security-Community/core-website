@@ -148,19 +148,20 @@ module.exports = async function (request, context) {
     const notifChannel = process.env.DISCORD_NOTIFICATIONS_CHANNEL_ID;
     if (notifChannel) {
       try {
-        await sendMessage(notifChannel, {
+        const sent = await sendMessage(notifChannel, {
           embeds: [{
             title: '📅 New Event Created',
             color: 0xffa500,
             fields: [
               { name: 'Event', value: safe.title, inline: true },
               { name: 'Date', value: date, inline: true },
-              { name: 'Location', value: safe.location, inline: true },
+              { name: 'Location', value: location, inline: true },
               { name: 'Chapter', value: chapterSlug, inline: true }
             ],
             timestamp: new Date().toISOString()
           }]
         }, context);
+        if (!sent) context.log('Discord event notification was not delivered');
       } catch (discErr) {
         context.log(`Discord notification failed: ${discErr.message}`);
       }

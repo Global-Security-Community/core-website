@@ -327,6 +327,39 @@ To get these values: Azure Portal → `gsc-corewebsite-swa` → Configuration �
 
 ---
 
+## Cache Busting (CDN)
+
+The site sits behind Cloudflare CDN. To prevent stale JS/CSS after deployments, a build-time cache-busting system is in place:
+
+### How It Works
+- `.eleventy.js` defines a global `cacheBust` variable (`Date.now().toString(36)`) that changes every build
+- All `<script src>` and `<link rel="stylesheet" href>` tags append `?v={{ cacheBust }}` (e.g. `dashboard.js?v=mmyt5rh2`)
+- Each deployment generates unique URLs, forcing CDN cache misses
+- `staticwebapp.config.json` sets JS/CSS `Cache-Control: public, max-age=300` (5 minutes)
+
+### Files Involved
+- `.eleventy.js` — `addGlobalData("cacheBust", ...)` (line ~17)
+- `src/_includes/layouts/base.njk` — `style.css?v={{ cacheBust }}`, `auth-nav.js?v={{ cacheBust }}`
+- All `.md` and `.njk` templates — `?v={{ cacheBust }}` on every `<script>` tag
+- `staticwebapp.config.json` — `/js/*` and `/css/*` route cache headers
+
+### To Revert (Increase Cache Duration for Production)
+Once development stabilises and deploys are less frequent:
+1. In `staticwebapp.config.json`, increase JS/CSS max-age back to longer values:
+   ```json
+   { "route": "/js/*", "headers": { "Cache-Control": "public, max-age=86400, must-revalidate" } }
+   { "route": "/css/*", "headers": { "Cache-Control": "public, max-age=86400, must-revalidate" } }
+   ```
+2. The `?v={{ cacheBust }}` query strings can stay — they ensure new deploys always bust the cache regardless of `max-age`. No harm in keeping them permanently.
+3. If you want to remove the query strings entirely:
+   - Remove `eleventyConfig.addGlobalData("cacheBust", ...)` from `.eleventy.js`
+   - Find/replace `?v={{ cacheBust }}` with empty string across all templates:
+     ```bash
+     find src -type f \( -name "*.md" -o -name "*.njk" \) -exec sed -i '' 's/?v={{ cacheBust }}//g' {} +
+     ```
+
+---
+
 ## Testing
 
 - **API tests:** Jest — run with `cd api && npm test`
@@ -350,7 +383,7 @@ To get these values: Azure Portal → `gsc-corewebsite-swa` → Configuration �
 
 1. **New functions not discovered** — forgot to register in `api/src/app.js` (the most common mistake)
 2. **API returning HTML instead of JSON** — SWA's 404 override rewrites to `index.html`; never return 404 from API functions
-3. **Stale content after deploy** — service worker or browser cache; hard refresh (Cmd+Shift+R) if needed
+3. **Stale content after deploy** — Cloudflare CDN caches JS/CSS files. A cache-busting system is in place (see below). If you still see stale content, do a hard refresh (Cmd+Shift+R)
 4. **Table Storage booleans** — `false` can come back as `"false"` (truthy in JS); always compare strictly
 5. **Workflow push failures** — generation workflows need `git pull --rebase` before push
 6. **CSP blocking resources** — update CSP in `staticwebapp.config.json` when adding external URLs
