@@ -453,7 +453,7 @@ async function getSubscriptionsByChapter(chapterSlug) {
   await ensureSubscriptionTable();
   const client = getTableClient('ChapterSubscriptions');
   const subs = [];
-  const iter = client.listEntities({ queryOptions: { filter: `PartitionKey eq '${chapterSlug.toLowerCase()}'` } });
+  const iter = client.listEntities({ queryOptions: { filter: `PartitionKey eq '${chapterSlug.toLowerCase().replace(/'/g, "''")}'` } });
   for await (const entity of iter) {
     subs.push({ email: entity.rowKey, subscribedAt: entity.subscribedAt });
   }
@@ -510,7 +510,7 @@ async function getPartnersByEvent(eventId) {
   await ensurePartnerTable();
   const client = getTableClient('CommunityPartners');
   const partners = [];
-  const iter = client.listEntities({ queryOptions: { filter: `PartitionKey eq '${eventId}'` } });
+  const iter = client.listEntities({ queryOptions: { filter: `PartitionKey eq '${eventId.replace(/'/g, "''")}'` } });
   for await (const entity of iter) {
     partners.push({
       id: entity.rowKey,
