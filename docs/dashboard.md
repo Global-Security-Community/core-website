@@ -50,7 +50,10 @@ Requires the **admin** role. Only approved chapter leads are automatically assig
 - **Issue Badges** — After an event, generate and email digital badges to:
   - Attendees (who checked in)
   - Speakers
+  - Sponsors
   - Organisers / Volunteers
+
+> **Note:** AI-generated badge background images are currently disabled. Badges use a gradient fallback. See [Badges](badges.md) for details.
 
 ## Event Creation Flow
 
@@ -59,6 +62,7 @@ Requires the **admin** role. Only approved chapter leads are automatically assig
 3. The system:
    - Stores the event in the database
    - Triggers a GitHub Action to generate a dedicated event page
+   - Sends notification emails to chapter subscribers
    - Posts a notification to the chapter's Discord channel
 4. The event appears on the website within a few minutes
 
