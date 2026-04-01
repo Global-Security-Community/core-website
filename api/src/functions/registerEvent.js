@@ -1,6 +1,6 @@
 const { randomUUID, randomBytes } = require('crypto');
 const { getAuthUser, unauthorised } = require('../helpers/auth');
-const { getEventBySlug, storeRegistration, storeDemographics, countRegistrations, getRegistrationsByEvent, getPartnersByEvent } = require('../helpers/tableStorage');
+const { getEventBySlug, storeRegistration, storeDemographics, countRegistrations, getRegistrationsByEvent, getPartnersByEvent, deleteRegistration } = require('../helpers/tableStorage');
 const { sanitiseFields } = require('../helpers/sanitise');
 const { sendTicketEmail } = require('../helpers/emailService');
 const { checkRateLimit, getClientIP } = require('../helpers/rateLimiter');
@@ -91,6 +91,17 @@ module.exports = async function (request, context) {
     };
 
     await storeRegistration(registration);
+
+    // Post-write capacity check: verify we haven't exceeded cap due to concurrent registrations
+    if (cap > 0) {
+      const postCount = await countRegistrations(eventId);
+      if (postCount > cap) {
+        // Race condition: too many concurrent registrations exceeded the cap
+        try { await deleteRegistration(eventId, registrationId); } catch { /* best effort */ }
+        return { status: 400, headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ error: 'This event has reached capacity' }) };
+      }
+    }
 
     // Store demographics separately (privacy)
     await storeDemographics({
