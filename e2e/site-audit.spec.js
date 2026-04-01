@@ -56,7 +56,8 @@ test.describe('Navigation Links Audit', () => {
     for (const link of navLinks) {
       const href = await link.getAttribute('href');
       const text = (await link.textContent()).trim();
-      if (!href || href.startsWith('#') || href.startsWith('javascript:')) continue;
+      const hrefLower = href ? href.toLowerCase() : '';
+      if (!href || href.startsWith('#') || hrefLower.startsWith('javascript:') || hrefLower.startsWith('vbscript:') || hrefLower.startsWith('data:')) continue;
       const url = href.startsWith('http') ? href : BASE + href;
       // Only test internal links
       if (!url.startsWith(BASE) && !url.startsWith('/')) continue;
@@ -82,7 +83,8 @@ test.describe('Navigation Links Audit', () => {
     const broken = [];
     for (const link of links) {
       const href = await link.getAttribute('href');
-      if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:')) continue;
+      const hrefLower = href ? href.toLowerCase() : '';
+      if (!href || href.startsWith('#') || hrefLower.startsWith('javascript:') || hrefLower.startsWith('vbscript:') || hrefLower.startsWith('data:') || hrefLower.startsWith('mailto:')) continue;
       const url = href.startsWith('http') ? href : BASE + href;
       if (!url.startsWith(BASE)) continue; // skip external
       if (checked.has(url)) continue;

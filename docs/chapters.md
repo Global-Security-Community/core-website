@@ -8,10 +8,13 @@ The Chapters page lists all active GSC chapters around the world.
 
 ## Features
 
-- **Chapter listing** — Displays all approved chapters with their city and country
+- **Chapter listing** — Displays all approved chapters with their city and country, using the GSC shield logo
 - **Chapter detail pages** — Each chapter has a dedicated page at `/chapters/{city-slug}/` showing:
+  - Chapter banner image (AI-generated, when available)
   - Chapter leads with profile photos (via Gravatar)
   - Upcoming events hosted by the chapter
+  - Chapter event notification subscription
+  - Community partners across all chapter events
   - Link to the chapter's Discord channel
 - **Apply to lead** — Call-to-action for community members to apply to start a new chapter
 

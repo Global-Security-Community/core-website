@@ -1,0 +1,11 @@
+# Global Security Community — Security Policy
+# https://globalsecurity.community
+#
+# If you discover a security vulnerability, please report it responsibly
+# using the contact method below.
+
+Contact: https://globalsecurity.community/contact/
+Expires: 2027-04-01T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://globalsecurity.community/.well-known/security.txt
+Policy: https://globalsecurity.community/about/
