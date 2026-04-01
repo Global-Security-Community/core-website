@@ -43,7 +43,7 @@
     var locationStr = (e.location || '').split('\n').join(', ');
     var btnText = isPast ? 'View Event' : 'View Event \u2192';
     var opacity = isPast ? ' style="opacity:0.8;"' : '';
-    return '<div class="event-card"' + opacity + '>' +
+    return '<a href="/events/' + e.slug + '/" class="event-card"' + opacity + '>' +
       '<div class="event-card-header">' +
         '<div class="event-card-date">\ud83d\udcc5 ' + dateStr + endStr + '</div>' +
         (isPast ? '<span class="status-badge status-badge--completed" style="font-size:0.7rem;margin-left:0.5rem;">Completed</span>' : '') +
@@ -53,8 +53,8 @@
         '<div class="event-card-location">\ud83d\udccd ' + locationStr + '</div>' +
       '</div>' +
       '<div class="event-card-footer">' +
-        '<a href="/events/' + e.slug + '/" class="event-card-btn">' + btnText + '</a>' +
+        '<span class="event-card-btn">' + btnText + '</span>' +
       '</div>' +
-    '</div>';
+    '</a>';
   }
 })();

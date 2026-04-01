@@ -1367,6 +1367,15 @@ thead tr:hover {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
+a.event-card {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+}
+
+a.event-card:hover { color: inherit; }
+
 .event-card-header {
   background: linear-gradient(135deg, var(--color-primary-navy), #1a3a5c);
   color: #fff;
