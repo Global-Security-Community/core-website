@@ -79,7 +79,10 @@ async function verifyChapterAccess(user, targetChapterSlug, context) {
   const target = (targetChapterSlug || '').toLowerCase();
   const hasAccess = slugs.includes(target);
   if (!hasAccess && context) {
-    context.log(`Chapter access denied: ${email} tried to access chapter '${target}', but only leads [${slugs.join(', ')}]`);
+    const { logSecurityEvent } = require('./securityLogger');
+    logSecurityEvent(context, 'chapter_access_denied', {
+      email, targetChapter: target, userChapters: slugs
+    });
   }
   return hasAccess;
 }
