@@ -15,69 +15,84 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Generate chapter page
+        env:
+          CITY: ${{ github.event.client_payload.chapter_city }}
+          COUNTRY: ${{ github.event.client_payload.chapter_country }}
+          SLUG: ${{ github.event.client_payload.chapter_slug }}
+          LEAD_NAME: ${{ github.event.client_payload.lead_name }}
+          LEAD_LINKEDIN: ${{ github.event.client_payload.lead_linkedin }}
+          LEAD_GITHUB: ${{ github.event.client_payload.lead_github }}
+          DISCORD_CHANNEL_ID: ${{ github.event.client_payload.discord_channel_id }}
+          DISCORD_GUILD_ID: ${{ vars.DISCORD_GUILD_ID }}
+          SECOND_LEAD_JSON: ${{ github.event.client_payload.second_lead }}
+          LEAD_EMAIL: ${{ github.event.client_payload.lead_email }}
         run: |
-          CITY="${{ github.event.client_payload.chapter_city }}"
-          COUNTRY="${{ github.event.client_payload.chapter_country }}"
-          SLUG="${{ github.event.client_payload.chapter_slug }}"
-          LEAD_NAME="${{ github.event.client_payload.lead_name }}"
-          LEAD_LINKEDIN="${{ github.event.client_payload.lead_linkedin }}"
-          LEAD_GITHUB="${{ github.event.client_payload.lead_github }}"
-          DISCORD_CHANNEL_ID="${{ github.event.client_payload.discord_channel_id }}"
-          DISCORD_GUILD_ID="${{ vars.DISCORD_GUILD_ID }}"
+          # Validate slug format (alphanumeric and hyphens only)
+          if ! [[ "$SLUG" =~ ^[a-z0-9][a-z0-9-]{0,60}[a-z0-9]$ ]]; then
+            echo "::error::Invalid chapter slug format: must be lowercase alphanumeric with hyphens"
+            exit 1
+          fi
 
-          # Parse second lead from JSON string
-          SECOND_LEAD_JSON='${{ github.event.client_payload.second_lead }}'
+          # Verify resolved path stays within expected directory
+          TARGET_DIR="src/chapters/${SLUG}"
+          RESOLVED=$(realpath -m "$TARGET_DIR")
+          EXPECTED_PREFIX=$(realpath "src/chapters")
+          if [[ "$RESOLVED" != "$EXPECTED_PREFIX"/* ]]; then
+            echo "::error::Path traversal detected in slug"
+            exit 1
+          fi
+
+          # Parse second lead from JSON string safely via env var
           SECOND_LEAD_NAME=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('name',''))" 2>/dev/null || echo "")
           SECOND_LEAD_EMAIL=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('email',''))" 2>/dev/null || echo "")
           SECOND_LEAD_LINKEDIN=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('linkedin',''))" 2>/dev/null || echo "")
           SECOND_LEAD_GITHUB=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('github',''))" 2>/dev/null || echo "")
 
-          mkdir -p "src/chapters/${SLUG}"
+          mkdir -p "$TARGET_DIR"
 
           # Build the YAML leads list with Gravatar email hashes
-          LEAD_EMAIL="${{ github.event.client_payload.lead_email }}"
           LEAD_HASH=$(echo -n "${LEAD_EMAIL}" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | md5sum | cut -d' ' -f1)
 
-          # Build chapter page with proper YAML indentation
+          # Build chapter page with proper YAML indentation using printf for safety
           {
             echo "---"
             echo "layout: chapter.njk"
-            echo "title: \"Global Security Community ${CITY}\""
-            echo "city: \"${CITY}\""
-            echo "country: \"${COUNTRY}\""
+            printf 'title: "Global Security Community %s"\n' "${CITY}"
+            printf 'city: "%s"\n' "${CITY}"
+            printf 'country: "%s"\n' "${COUNTRY}"
             echo "tags: chapter"
-            echo "discord_channel_id: \"${DISCORD_CHANNEL_ID}\""
-            echo "discord_guild_id: \"${DISCORD_GUILD_ID}\""
+            printf 'discord_channel_id: "%s"\n' "${DISCORD_CHANNEL_ID}"
+            printf 'discord_guild_id: "%s"\n' "${DISCORD_GUILD_ID}"
             echo "leads:"
-            echo "  - name: \"${LEAD_NAME}\""
-            echo "    email_hash: \"${LEAD_HASH}\""
+            printf '  - name: "%s"\n' "${LEAD_NAME}"
+            printf '    email_hash: "%s"\n' "${LEAD_HASH}"
             if [ -n "${LEAD_GITHUB}" ]; then
-              echo "    github: \"${LEAD_GITHUB}\""
+              printf '    github: "%s"\n' "${LEAD_GITHUB}"
             fi
             if [ -n "${LEAD_LINKEDIN}" ]; then
-              echo "    linkedin: \"${LEAD_LINKEDIN}\""
+              printf '    linkedin: "%s"\n' "${LEAD_LINKEDIN}"
             fi
             if [ -n "${SECOND_LEAD_NAME}" ]; then
               SECOND_HASH=$(echo -n "${SECOND_LEAD_EMAIL}" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | md5sum | cut -d' ' -f1)
-              echo "  - name: \"${SECOND_LEAD_NAME}\""
-              echo "    email_hash: \"${SECOND_HASH}\""
+              printf '  - name: "%s"\n' "${SECOND_LEAD_NAME}"
+              printf '    email_hash: "%s"\n' "${SECOND_HASH}"
               if [ -n "${SECOND_LEAD_GITHUB}" ]; then
-                echo "    github: \"${SECOND_LEAD_GITHUB}\""
+                printf '    github: "%s"\n' "${SECOND_LEAD_GITHUB}"
               fi
               if [ -n "${SECOND_LEAD_LINKEDIN}" ]; then
-                echo "    linkedin: \"${SECOND_LEAD_LINKEDIN}\""
+                printf '    linkedin: "%s"\n' "${SECOND_LEAD_LINKEDIN}"
               fi
             fi
             echo "---"
-          } > "src/chapters/${SLUG}/index.md"
+          } > "${TARGET_DIR}/index.md"
 
-          echo "Generated chapter page at src/chapters/${SLUG}/index.md"
+          echo "Generated chapter page at ${TARGET_DIR}/index.md"
 
       - name: Commit and push
+        env:
+          CITY: ${{ github.event.client_payload.chapter_city }}
+          SLUG: ${{ github.event.client_payload.chapter_slug }}
         run: |
-          CITY="${{ github.event.client_payload.chapter_city }}"
-          SLUG="${{ github.event.client_payload.chapter_slug }}"
-
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "src/chapters/${SLUG}/index.md"
