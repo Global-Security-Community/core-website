@@ -42,4 +42,17 @@ GSC.showMessage = function(el, type, text) {
   el.textContent = text;
 };
 
+/**
+ * Validate a URL and return it only if it uses a safe scheme (http/https).
+ * Returns empty string for javascript:, data:, or other dangerous schemes.
+ */
+GSC.safeUrl = function(url) {
+  if (!url) return '';
+  try {
+    var u = new URL(url);
+    if (u.protocol === 'http:' || u.protocol === 'https:') return url;
+  } catch (e) { /* invalid URL */ }
+  return '';
+};
+
 window.GSC = GSC;

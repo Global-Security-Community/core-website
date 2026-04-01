@@ -80,6 +80,17 @@ module.exports = async function (request, context) {
     const safeName = stripHtml(name).substring(0, 100);
     const safeTier = stripHtml(tier || '').substring(0, 50);
 
+    // Validate website URL scheme (only allow http/https)
+    let safeWebsite = '';
+    if (website) {
+      try {
+        const parsed = new URL(website);
+        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+          safeWebsite = website.substring(0, 300);
+        }
+      } catch { /* invalid URL — discard */ }
+    }
+
     const id = partnerId || randomUUID();
 
     await storePartner({
@@ -89,7 +100,7 @@ module.exports = async function (request, context) {
       tier: safeTier,
       logoBase64,
       logoContentType: logoContentType || 'image/png',
-      website: (website || '').substring(0, 300),
+      website: safeWebsite,
       displayOrder: body.displayOrder || 0
     });
 
