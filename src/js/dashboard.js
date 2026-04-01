@@ -6,10 +6,25 @@
 
   function showSection(s) {
     currentSection = s;
+    history.replaceState(null, '', '#' + s);
     ['events','create','detail','edit-event','chapter'].forEach(function(id) {
       document.getElementById('section-' + id).style.display = id === s ? 'block' : 'none';
     });
   }
+
+  // Restore section from URL hash
+  var validSections = ['events','create','detail','edit-event','chapter'];
+  var initialHash = location.hash.replace('#', '');
+  if (validSections.indexOf(initialHash) !== -1) {
+    showSection(initialHash);
+  }
+
+  window.addEventListener('popstate', function() {
+    var section = location.hash.replace('#', '') || 'events';
+    if (validSections.indexOf(section) !== -1) {
+      showSection(section);
+    }
+  });
 
   // Wire up navigation buttons
   document.getElementById('btn-events').addEventListener('click', function() { showSection('events'); });

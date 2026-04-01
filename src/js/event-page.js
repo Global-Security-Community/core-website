@@ -64,7 +64,10 @@
         // Load community partners
         if (data.id) { loadPartners(data.id); }
       })
-      .catch(function() {});
+      .catch(function() {
+        var el = document.getElementById('reg-count');
+        if (el) el.textContent = '—';
+      });
   }
 
   function loadPartners(eventId) {

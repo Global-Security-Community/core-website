@@ -46,7 +46,11 @@ layout: base.njk
 
   <h2>Events</h2>
   <div id="chapter-events" data-chapter-slug="{{ city | lower | replace(" ", "-") }}">
-    <p>Loading events...</p>
+    <div class="skeleton-grid">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
   </div>
 
   <script src="/js/chapter-events.js?v={{ cacheBust }}"></script>

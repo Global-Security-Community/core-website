@@ -1774,3 +1774,50 @@ a.event-card:hover { color: inherit; }
   border-radius: 4px;
   margin-bottom: 1rem;
 }
+
+/* ─── Stats Bar (homepage social proof) ─── */
+
+.stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 4rem;
+  padding: 3rem 0;
+  margin: 2rem 0;
+  background: var(--color-light-gray);
+  border-radius: 12px;
+}
+.stat-item { text-align: center; }
+.stat-value {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-primary-navy);
+}
+.stat-desc { font-size: 0.9rem; color: #666; }
+
+@media (max-width: 600px) {
+  .stats-bar { flex-direction: column; gap: 1.5rem; }
+}
+
+/* ─── Loading Skeletons ─── */
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+.skeleton-text { height: 1rem; margin-bottom: 0.5rem; }
+.skeleton-card { height: 200px; border-radius: 12px; }
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+@keyframes skeleton-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (max-width: 900px) { .skeleton-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .skeleton-grid { grid-template-columns: 1fr; } }
