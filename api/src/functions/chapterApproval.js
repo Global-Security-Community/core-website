@@ -1,7 +1,8 @@
 const { verifyApprovalToken } = require('../helpers/tokenHelper');
 const { getApplication, updateApplicationStatus } = require('../helpers/tableStorage');
 const { createChapterChannel } = require('../helpers/discordBot');
-const { generateChapterBanner, generateChapterShield } = require('../helpers/imageGenerator');
+// AI image generation disabled for now — use dashboard to regenerate when ready
+// const { generateChapterBanner, generateChapterShield } = require('../helpers/imageGenerator');
 const { Octokit } = require('@octokit/rest');
 const { createAppAuth } = require('@octokit/auth-app');
 
@@ -123,24 +124,19 @@ module.exports = async function (request, context) {
       context.log(`GitHub dispatch failed (non-critical): ${err.message}`);
     }
 
-    // 3. Generate chapter shield badge (non-critical, ~30s)
-    var imagesGenerated = false;
-    try {
-      const { TableClient } = require('@azure/data-tables');
-      const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
-      const client = TableClient.fromConnectionString(connStr, 'ChapterApplications');
-
-      // Generate shield (the primary asset — used everywhere)
-      const shieldUrl = await generateChapterShield(application.city, application.country, context);
-      if (shieldUrl) {
-        await client.updateEntity({ partitionKey: application.partitionKey || 'chapter', rowKey: application.rowKey || applicationId, shieldImageUrl: shieldUrl }, 'Merge');
-        imagesGenerated = true;
-      }
-
-      // Banner generated separately via dashboard (rate limit prevents doing both here)
-    } catch (imgErr) {
-      context.log(`Image generation failed (non-critical): ${imgErr.message}`);
-    }
+    // 3. AI image generation disabled — use dashboard "Regenerate" to create shield/banner
+    // To re-enable: uncomment the imageGenerator import and the block below
+    // try {
+    //   const { TableClient } = require('@azure/data-tables');
+    //   const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    //   const client = TableClient.fromConnectionString(connStr, 'ChapterApplications');
+    //   const shieldUrl = await generateChapterShield(application.city, application.country, context);
+    //   if (shieldUrl) {
+    //     await client.updateEntity({ partitionKey: application.partitionKey || 'chapter', rowKey: application.rowKey || applicationId, shieldImageUrl: shieldUrl }, 'Merge');
+    //   }
+    // } catch (imgErr) {
+    //   context.log(`Image generation failed (non-critical): ${imgErr.message}`);
+    // }
 
     // 4. Update status to approved (this is the critical step)
     await updateApplicationStatus(applicationId, 'approved');
@@ -157,11 +153,7 @@ module.exports = async function (request, context) {
     } else {
       details.push('⚠️ Chapter page could not be auto-generated — create manually');
     }
-    if (imagesGenerated) {
-      details.push('✅ AI chapter shield generated (use dashboard for banner)');
-    } else {
-      details.push('⚠️ Shield could not be generated — use dashboard to regenerate');
-    }
+    details.push('ℹ️ Use the dashboard to generate chapter shield and banner images');
 
     return htmlResponse(200, '✅ Chapter Approved',
       details.join('<br>'));

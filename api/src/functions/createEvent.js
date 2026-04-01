@@ -4,7 +4,8 @@ const { storeEvent, listEvents, getSubscriptionsByChapter, updateEvent } = requi
 const { sanitiseFields } = require('../helpers/sanitise');
 const { sendMessage } = require('../helpers/discordBot');
 const { sendEventNotificationEmail } = require('../helpers/emailService');
-const { generateEventBadgeBackground } = require('../helpers/imageGenerator');
+// AI image generation disabled until reliable workflow is established
+// const { generateEventBadgeBackground } = require('../helpers/imageGenerator');
 const { Octokit } = require('@octokit/rest');
 const { createAppAuth } = require('@octokit/auth-app');
 
@@ -95,17 +96,18 @@ module.exports = async function (request, context) {
 
     await storeEvent(event);
 
-    // Generate AI badge background (non-blocking)
-    try {
-      const city = safe.locationCity || safe.legacyLocation || '';
-      const badgeImageUrl = await generateEventBadgeBackground(safe.title, city, slug, context);
-      if (badgeImageUrl) {
-        await updateEvent(chapterSlug.toLowerCase().trim(), eventId, { badgeImageUrl });
-        context.log(`Badge background generated: ${badgeImageUrl}`);
-      }
-    } catch (imgErr) {
-      context.log(`Badge background generation failed (non-critical): ${imgErr.message}`);
-    }
+    // AI image generation disabled until reliable workflow is established
+    // To re-enable: uncomment the imageGenerator import and the block below
+    // try {
+    //   const city = safe.locationCity || safe.legacyLocation || '';
+    //   const badgeImageUrl = await generateEventBadgeBackground(safe.title, city, slug, context);
+    //   if (badgeImageUrl) {
+    //     await updateEvent(chapterSlug.toLowerCase().trim(), eventId, { badgeImageUrl });
+    //     context.log(`Badge background generated: ${badgeImageUrl}`);
+    //   }
+    // } catch (imgErr) {
+    //   context.log(`Badge background generation failed (non-critical): ${imgErr.message}`);
+    // }
 
     // Trigger GitHub Action to generate event page
     const appId = process.env.GITHUB_APP_ID;
