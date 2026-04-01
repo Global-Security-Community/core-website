@@ -36,6 +36,11 @@ describe('sanitise helper', () => {
     test('handles multiple tags', () => {
       expect(stripHtml('<h1>Title</h1><p>Body <a href="#">link</a></p>')).toBe('TitleBody link');
     });
+
+    test('strips nested/obfuscated tags like <sc<script>ript>', () => {
+      expect(stripHtml('<sc<script>ript>alert("xss")</sc</script>ript>')).toBe('ript>alert("xss")ript>');
+      expect(stripHtml('<<b>script>alert(1)<</b>/script>')).toBe('script>alert(1)/script>');
+    });
   });
 
   describe('sanitiseFields', () => {

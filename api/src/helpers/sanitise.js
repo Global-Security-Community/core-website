@@ -5,7 +5,13 @@
  */
 function stripHtml(input) {
   if (!input || typeof input !== 'string') return '';
-  return input.replace(/<[^>]*>/g, '');
+  let result = input;
+  let prev;
+  do {
+    prev = result;
+    result = result.replace(/<[^>]*>/g, '');
+  } while (result !== prev);
+  return result;
 }
 
 /**
