@@ -40,14 +40,14 @@
   function renderEventCard(e, isPast) {
     var dateStr = new Date(e.date).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     var endStr = e.endDate ? ' \u2013 ' + new Date(e.endDate).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
-    var locationStr = (e.location || '').split('\n').join(', ');
+    var locationStr = GSC.esc((e.location || '').split('\n').join(', '));
     var btnText = isPast ? 'View Event' : 'View Event \u2192';
     var opacity = isPast ? ' style="opacity:0.8;"' : '';
-    return '<a href="/events/' + e.slug + '/" class="event-card"' + opacity + '>' +
+    return '<a href="/events/' + encodeURI(e.slug) + '/" class="event-card"' + opacity + '>' +
       '<div class="event-card-header">' +
         '<div class="event-card-date"><span class="icon" aria-hidden="true">' + GSCIcons.calendar + '</span> ' + dateStr + endStr + '</div>' +
         (isPast ? '<span class="status-badge status-badge--completed" style="font-size:0.7rem;margin-left:0.5rem;">Completed</span>' : '') +
-        '<h3 class="event-card-title">' + e.title + '</h3>' +
+        '<h3 class="event-card-title">' + GSC.esc(e.title) + '</h3>' +
       '</div>' +
       '<div class="event-card-body">' +
         '<div class="event-card-location"><span class="icon" aria-hidden="true">' + GSCIcons.mapPin + '</span> ' + locationStr + '</div>' +
