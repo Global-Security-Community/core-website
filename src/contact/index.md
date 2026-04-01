@@ -9,8 +9,8 @@ description: "Get in touch with the Global Security Community. Ask questions, su
 
   <p>Have questions, want to start a chapter, or interested in partnering with us? We'd love to hear from you.</p>
 
-  <div style="max-width: 600px;">
-    <div id="form-message" role="alert" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 4px;"></div>
+  <div class="narrow-content">
+    <div id="form-message" role="alert" class="form-message is-hidden"></div>
     <form id="contact-form">
       <div class="form-group">
         <label for="name">Name *</label>

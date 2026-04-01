@@ -10,7 +10,11 @@ description: "Browse upcoming and past Global Security Community events — work
   <p>Join us at upcoming events where security professionals gather to learn, network, and share insights.</p>
 
   <div id="events-list">
-    <p>Loading events...</p>
+    <div class="skeleton-grid">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
   </div>
 
   <h2>Host an Event</h2>

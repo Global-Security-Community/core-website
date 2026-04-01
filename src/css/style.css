@@ -1706,3 +1706,123 @@ a.event-card:hover { color: inherit; }
   cursor: help;
   font-size: 0.85em;
 }
+
+/* ─── Utility Classes ─── */
+
+.is-hidden { display: none; }
+
+.text-semibold { margin: 0; font-weight: 600; }
+.text-muted-sm { color: #666; font-size: 0.9rem; margin: 0; }
+.help-text { font-size: 0.85em; color: #666; }
+.help-text-block { display: block; color: #666; margin-bottom: 0.25rem; font-size: 0.85rem; }
+.subtitle-muted { margin: -0.5rem 0 1rem 0; color: #666; }
+
+.mt-0 { margin-top: 0; }
+.mt-section { margin-top: 1.5rem; }
+.mb-section { margin-bottom: 2rem; }
+
+.narrow-content { max-width: 600px; }
+.two-col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+/* ─── Component: Breadcrumb ─── */
+
+.breadcrumb-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+.breadcrumb-divider { color: #ccc; }
+
+/* ─── Component: Info Cards (event page 3-col) ─── */
+
+.cards--info { grid-template-columns: 1fr 1fr 1fr; margin-bottom: 2rem; }
+.card--centered { text-align: center; }
+.icon-xl { font-size: 2rem; margin: 0; }
+
+@media (max-width: 600px) {
+  .cards--info { grid-template-columns: 1fr; }
+}
+
+/* ─── Component: Form Messages ─── */
+
+.form-message--success {
+  display: block;
+  background-color: #d4edda;
+  color: #155724;
+  border-left: 4px solid #28a745;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+.form-message--error {
+  display: block;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-left: 4px solid #f5c6cb;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+.form-message--warning {
+  display: block;
+  background-color: #fff3cd;
+  color: #856404;
+  border-left: 4px solid #ffc107;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+/* ─── Stats Bar (homepage social proof) ─── */
+
+.stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 4rem;
+  padding: 3rem 0;
+  margin: 2rem 0;
+  background: var(--color-light-gray);
+  border-radius: 12px;
+}
+.stat-item { text-align: center; }
+.stat-value {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-primary-navy);
+}
+.stat-desc { font-size: 0.9rem; color: #666; }
+
+@media (max-width: 600px) {
+  .stats-bar { flex-direction: column; gap: 1.5rem; }
+}
+
+/* ─── Loading Skeletons ─── */
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+.skeleton-text { height: 1rem; margin-bottom: 0.5rem; }
+.skeleton-card { height: 200px; border-radius: 12px; }
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+@keyframes skeleton-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (max-width: 900px) { .skeleton-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .skeleton-grid { grid-template-columns: 1fr; } }
+
+/* ─── Inline SVG Icons ─── */
+.icon { display: inline-flex; vertical-align: middle; align-items: center; }
+.icon svg { width: 1em; height: 1em; }
+.icon--lg svg { width: 2rem; height: 2rem; }

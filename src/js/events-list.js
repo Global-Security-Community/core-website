@@ -45,12 +45,12 @@
     var opacity = isPast ? ' style="opacity:0.8;"' : '';
     return '<a href="/events/' + e.slug + '/" class="event-card"' + opacity + '>' +
       '<div class="event-card-header">' +
-        '<div class="event-card-date">\ud83d\udcc5 ' + dateStr + endStr + '</div>' +
+        '<div class="event-card-date"><span class="icon" aria-hidden="true">' + GSCIcons.calendar + '</span> ' + dateStr + endStr + '</div>' +
         (isPast ? '<span class="status-badge status-badge--completed" style="font-size:0.7rem;margin-left:0.5rem;">Completed</span>' : '') +
         '<h3 class="event-card-title">' + e.title + '</h3>' +
       '</div>' +
       '<div class="event-card-body">' +
-        '<div class="event-card-location">\ud83d\udccd ' + locationStr + '</div>' +
+        '<div class="event-card-location"><span class="icon" aria-hidden="true">' + GSCIcons.mapPin + '</span> ' + locationStr + '</div>' +
       '</div>' +
       '<div class="event-card-footer">' +
         '<span class="event-card-btn">' + btnText + '</span>' +

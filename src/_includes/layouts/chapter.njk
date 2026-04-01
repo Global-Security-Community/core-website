@@ -3,7 +3,7 @@ layout: base.njk
 ---
 
 <div class="container">
-  <div id="chapter-banner" data-chapter-slug="{{ city | lower | replace(" ", "-") }}" style="display:none;margin-bottom:1.5rem;border-radius:12px;overflow:hidden;max-height:200px;">
+  <div id="chapter-banner" data-chapter-slug="{{ city | lower | replace(" ", "-") }}" class="is-hidden" style="margin-bottom:1.5rem;border-radius:12px;overflow:hidden;max-height:200px;">
     <img id="chapter-banner-img" alt="{{ city }} Chapter Banner" style="width:100%;height:200px;object-fit:cover;display:block;">
   </div>
   <h1>Global Security Community {{ city }}</h1>
@@ -46,24 +46,28 @@ layout: base.njk
 
   <h2>Events</h2>
   <div id="chapter-events" data-chapter-slug="{{ city | lower | replace(" ", "-") }}">
-    <p>Loading events...</p>
+    <div class="skeleton-grid">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
   </div>
 
   <script src="/js/chapter-events.js?v={{ cacheBust }}"></script>
 
   <h2>Get Involved</h2>
-  <div class="card" style="margin-bottom:1rem;" id="subscribe-card" data-chapter-slug="{{ city | lower | replace(" ", "-") }}">
-    <h3>📬 Chapter Event Notifications</h3>
+  <div class="card" id="subscribe-card" data-chapter-slug="{{ city | lower | replace(" ", "-") }}">
+    <h3><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z"/><path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10"/></svg></span> Chapter Event Notifications</h3>
     <p id="subscribe-msg" style="margin:0 0 0.75rem 0;">Get an email when new events are announced for this chapter.</p>
-    <button id="btn-subscribe" style="display:none;">Subscribe</button>
-    <p id="subscribe-login-hint" style="color:#666;font-size:0.9rem;margin:0;">
+    <button id="btn-subscribe" class="is-hidden">Subscribe</button>
+    <p id="subscribe-login-hint" class="text-muted-sm">
       <a href="/.auth/login/ciam?post_login_redirect_uri={{ page.url }}">Log in</a> to subscribe to event notifications.
     </p>
   </div>
   <script src="/js/chapter-subscribe.js?v={{ cacheBust }}"></script>
   {% if discord_channel_id and discord_guild_id %}
   <div class="card discord-card">
-    <span class="discord-icon">💬</span>
+    <span class="discord-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></span></span>
     <div>
       <h3>Join Us on Discord</h3>
       <p>Connect with the {{ city }} chapter on our Discord server.</p>
@@ -73,7 +77,7 @@ layout: base.njk
   {% endif %}
   <p>Interested in joining the {{ city }} chapter? Stay tuned for upcoming events and opportunities to connect with the local security community.</p>
 
-  <div id="chapter-partners" class="partners-section" style="display:none;">
+  <div id="chapter-partners" class="partners-section is-hidden">
     <h2>Community Partners</h2>
     <div id="chapter-partners-content"></div>
   </div>

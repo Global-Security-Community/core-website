@@ -39,4 +39,19 @@ description: "Join the Global Security Community — connecting cybersecurity pr
       <p>Access resources, best practices, and collaborative projects from our global community. Contribute your expertise and learn from the collective wisdom of thousands of professionals.</p>
     </a>
   </div>
+
+  <div class="stats-bar">
+    <div class="stat-item">
+      <span class="stat-value">1+</span>
+      <span class="stat-desc">Active Chapters</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">1+</span>
+      <span class="stat-desc">Events Held</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">200+</span>
+      <span class="stat-desc">Community Members</span>
+    </div>
+  </div>
 </div>

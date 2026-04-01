@@ -9,13 +9,13 @@
       }
       var html = '';
       data.tickets.forEach(function(t) {
-        html += '<div class="ticket" id="ticket-' + esc(t.registrationId) + '">' +
+        html += '<div class="ticket" id="ticket-' + GSC.esc(t.registrationId) + '">' +
           '<div class="ticket-header">' +
             '<div>' +
-              '<div class="ticket-event-name">' + esc(t.eventTitle || 'Event') + '</div>' +
-              '<div class="ticket-event-date">\ud83d\udcc5 ' + formatDate(t.eventDate) +
-                (t.eventEndDate ? ' \u2013 ' + formatDate(t.eventEndDate) : '') + '</div>' +
-              '<div class="ticket-event-location">' + formatLocation(t.eventLocation) + '</div>' +
+              '<div class="ticket-event-name">' + GSC.esc(t.eventTitle || 'Event') + '</div>' +
+              '<div class="ticket-event-date"><span class="icon" aria-hidden="true">' + GSCIcons.calendar + '</span> ' + GSC.formatDate(t.eventDate) +
+                (t.eventEndDate ? ' \u2013 ' + GSC.formatDate(t.eventEndDate) : '') + '</div>' +
+              '<div class="ticket-event-location">' + GSC.formatLocation(t.eventLocation) + '</div>' +
             '</div>' +
             '<img src="/assets/GSC-Shield-Transparent.png" alt="" class="ticket-header-logo">' +
           '</div>' +
@@ -23,16 +23,16 @@
             '<div class="ticket-qr">' +
               (t.qrDataUrl && t.qrDataUrl.indexOf('data:image/') === 0 ? '<img src="' + t.qrDataUrl + '" alt="QR Code">' : '') +
             '</div>' +
-            '<div class="ticket-code">' + esc(t.ticketCode) + '</div>' +
-            '<div class="ticket-type"><span class="role-badge role-badge--' + esc(t.role || 'attendee') + '">' + esc((t.role || 'attendee').toUpperCase()) + '</span></div>' +
-            '<div class="ticket-name">' + esc(t.fullName) + (t.company ? ' \u2013 ' + esc(t.company) : '') + '</div>' +
+            '<div class="ticket-code">' + GSC.esc(t.ticketCode) + '</div>' +
+            '<div class="ticket-type"><span class="role-badge role-badge--' + GSC.esc(t.role || 'attendee') + '">' + GSC.esc((t.role || 'attendee').toUpperCase()) + '</span></div>' +
+            '<div class="ticket-name">' + GSC.esc(t.fullName) + (t.company ? ' \u2013 ' + GSC.esc(t.company) : '') + '</div>' +
           '</div>' +
           '<div class="ticket-footer">' +
             (t.checkedIn
-              ? '<span class="ticket-status ticket-status--checked">\u2705 Checked In</span>'
+              ? '<span class="ticket-status ticket-status--checked"><span class="icon" aria-hidden="true">' + GSCIcons.checkCircle + '</span> Checked In</span>'
               : '<span class="ticket-status ticket-status--pending">Awaiting Check-in</span>') +
-            (t.eventSlug ? '<a href="/events/' + esc(t.eventSlug) + '/" class="ticket-event-link">View Event</a>' : '') +
-            (!t.checkedIn ? '<button class="ticket-cancel-btn" data-reg-id="' + esc(t.registrationId) + '" data-event="' + esc(t.eventTitle) + '">Cancel Registration</button>' : '') +
+            (t.eventSlug ? '<a href="/events/' + GSC.esc(t.eventSlug) + '/" class="ticket-event-link">View Event</a>' : '') +
+            (!t.checkedIn ? '<button class="ticket-cancel-btn" data-reg-id="' + GSC.esc(t.registrationId) + '" data-event="' + GSC.esc(t.eventTitle) + '">Cancel Registration</button>' : '') +
           '</div>' +
         '</div>';
       });
@@ -64,7 +64,7 @@
               var ticketEl = document.getElementById('ticket-' + regId);
               if (ticketEl) {
                 ticketEl.style.opacity = '0.5';
-                ticketEl.innerHTML = '<div style="padding:2rem;text-align:center;"><p>\u2705 Registration cancelled.</p><p style="font-size:0.85em;color:#666;">\ud83d\udce7 A cancellation confirmation has been sent. Check your junk folder if you don\'t see it.</p></div>';
+                ticketEl.innerHTML = '<div style="padding:2rem;text-align:center;"><p><span class="icon" aria-hidden="true">' + GSCIcons.checkCircle + '</span> Registration cancelled.</p><p style="font-size:0.85em;color:#666;"><span class="icon" aria-hidden="true">' + GSCIcons.mail + '</span> A cancellation confirmation has been sent. Check your junk folder if you don\'t see it.</p></div>';
                 setTimeout(function() { ticketEl.remove(); }, 2000);
               }
             } else {
@@ -84,21 +84,4 @@
     .catch(function() {
       document.getElementById('tickets-list').innerHTML = '<p>Error loading tickets. Please try again.</p>';
     });
-
-  function esc(str) {
-    if (!str) return '';
-    var d = document.createElement('span');
-    d.textContent = str;
-    return d.innerHTML;
-  }
-
-  function formatDate(dateStr) {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  }
-
-  function formatLocation(loc) {
-    if (!loc) return '';
-    return loc.split('\n').map(function(line) { return esc(line.trim()); }).filter(Boolean).join('<br>');
-  }
 })();

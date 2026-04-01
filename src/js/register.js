@@ -17,10 +17,10 @@
       }
       document.getElementById('event-info').innerHTML =
         '<div class="card" style="max-width:600px;">' +
-        '<h2 style="margin-top:0;">' + esc(ev.title) + '</h2>' +
-        '<p>📅 ' + esc(ev.date) + (ev.endDate ? ' – ' + esc(ev.endDate) : '') + '</p>' +
-        '<p>📍 ' + esc(ev.location) + '</p>' +
-        '<p>🎟️ ' + ev.registrationCount + (ev.registrationCap > 0 ? ' / ' + ev.registrationCap : '') + ' registered</p>' +
+        '<h2 style="margin-top:0;">' + GSC.esc(ev.title) + '</h2>' +
+        '<p><span class="icon" aria-hidden="true">' + GSCIcons.calendar + '</span> ' + GSC.esc(ev.date) + (ev.endDate ? ' – ' + GSC.esc(ev.endDate) : '') + '</p>' +
+        '<p><span class="icon" aria-hidden="true">' + GSCIcons.mapPin + '</span> ' + GSC.esc(ev.location) + '</p>' +
+        '<p><span class="icon" aria-hidden="true">' + GSCIcons.ticket + '</span> ' + ev.registrationCount + (ev.registrationCap > 0 ? ' / ' + ev.registrationCap : '') + ' registered</p>' +
         '</div>';
 
       if (ev.status === 'closed' || ev.status === 'completed') {
@@ -105,9 +105,9 @@
         var ticketHtml = '<div class="ticket">' +
           '<div class="ticket-header">' +
             '<div>' +
-              '<div class="ticket-event-name">' + esc(r.eventTitle) + '</div>' +
-              '<div class="ticket-event-date">\ud83d\udcc5 ' + formatDate(r.eventDate) + '</div>' +
-              '<div class="ticket-event-location">' + formatLocation(r.eventLocation) + '</div>' +
+              '<div class="ticket-event-name">' + GSC.esc(r.eventTitle) + '</div>' +
+              '<div class="ticket-event-date"><span class="icon" aria-hidden="true">' + GSCIcons.calendar + '</span> ' + GSC.formatDate(r.eventDate) + '</div>' +
+              '<div class="ticket-event-location">' + GSC.formatLocation(r.eventLocation) + '</div>' +
             '</div>' +
             '<img src="/assets/GSC-Shield-Transparent.png" alt="" class="ticket-header-logo">' +
           '</div>' +
@@ -115,9 +115,9 @@
             '<div class="ticket-qr">' +
               (r.qrDataUrl && r.qrDataUrl.indexOf('data:image/') === 0 ? '<img src="' + r.qrDataUrl + '" alt="Ticket QR Code">' : '') +
             '</div>' +
-            '<div class="ticket-code">' + esc(r.ticketCode) + '</div>' +
+            '<div class="ticket-code">' + GSC.esc(r.ticketCode) + '</div>' +
             '<div class="ticket-type">ATTENDEE</div>' +
-            '<div class="ticket-name">' + esc(r.fullName) + (r.company ? ' \u2013 ' + esc(r.company) : '') + '</div>' +
+            '<div class="ticket-name">' + GSC.esc(r.fullName) + (r.company ? ' \u2013 ' + GSC.esc(r.company) : '') + '</div>' +
           '</div>' +
         '</div>';
         document.getElementById('success-qr').innerHTML = ticketHtml;
@@ -142,21 +142,4 @@
       btn.textContent = 'Register';
     });
   });
-
-  function esc(str) {
-    if (!str) return '';
-    var d = document.createElement('span');
-    d.textContent = str;
-    return d.innerHTML;
-  }
-
-  function formatDate(dateStr) {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  }
-
-  function formatLocation(loc) {
-    if (!loc) return '';
-    return loc.split('\n').map(function(line) { return esc(line.trim()); }).filter(Boolean).join('<br>');
-  }
 })();
