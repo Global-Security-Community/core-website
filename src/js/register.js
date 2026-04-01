@@ -74,6 +74,9 @@
     var volunteerInterest = document.getElementById('reg-volunteer-interest').checked &&
                             document.getElementById('reg-volunteer-confirm').checked;
 
+    var turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
+    var turnstileToken = turnstileResponse ? turnstileResponse.value : '';
+
     var payload = {
       eventSlug: eventSlug,
       fullName: document.getElementById('reg-name').value,
@@ -84,7 +87,8 @@
       jobTitle: document.getElementById('reg-jobtitle').value,
       companySize: document.getElementById('reg-company-size').value,
       experienceLevel: document.getElementById('reg-experience').value,
-      volunteerInterest: volunteerInterest
+      volunteerInterest: volunteerInterest,
+      turnstileToken: turnstileToken
     };
 
     fetch('/api/registerEvent', {

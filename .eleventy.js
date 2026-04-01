@@ -17,6 +17,9 @@ module.exports = function(eleventyConfig) {
   // Cache-busting version string (changes each build)
   eleventyConfig.addGlobalData("cacheBust", Date.now().toString(36));
 
+  // Cloudflare Turnstile site key (public — safe to embed in HTML)
+  eleventyConfig.addGlobalData("turnstileSiteKey", "0x4AAAAAACy7v5xPWzocdnb-");
+
   return {
     dir: {
       input: "src",
