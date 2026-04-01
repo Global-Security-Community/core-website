@@ -147,7 +147,7 @@
     speakers.forEach(function(s) {
       var sessionName = (s.sessions && s.sessions.length) ? s.sessions[0].name : '';
       html += '<div class="speaker-card-wrap">';
-      html += '<div class="speaker-card">';
+      html += '<div class="speaker-card" tabindex="0" role="button" aria-label="' + esc(s.fullName) + ' — click to see bio">';
       // Front
       html += '<div class="speaker-card-front">';
       if (s.profilePicture && s.profilePicture.indexOf('https://') === 0) {
@@ -156,6 +156,7 @@
       html += '<h4>' + esc(s.fullName) + '</h4>';
       if (s.tagLine) html += '<p class="speaker-tagline">' + esc(s.tagLine) + '</p>';
       if (sessionName) html += '<p class="speaker-session">' + esc(sessionName) + '</p>';
+      html += '<p class="speaker-flip-hint">Flip card to see bio</p>';
       html += '</div>';
       // Back
       html += '<div class="speaker-card-back">';
@@ -168,10 +169,16 @@
     speakersEl.className = 'speakers-grid';
     speakersEl.innerHTML = html;
 
-    // Add click handlers for flip (CSP blocks inline onclick)
+    // Add click and keyboard handlers for flip (CSP blocks inline onclick)
     var cards = speakersEl.querySelectorAll('.speaker-card');
     for (var i = 0; i < cards.length; i++) {
       cards[i].addEventListener('click', function() { this.classList.toggle('flipped'); });
+      cards[i].addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.classList.toggle('flipped');
+        }
+      });
     }
   }
 

@@ -167,5 +167,6 @@ title: Apply to Lead a Chapter
     </form>
   </div>
 
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="/js/chapter-apply-form.js?v={{ cacheBust }}"></script>
 </div>

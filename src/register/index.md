@@ -115,4 +115,5 @@ title: Register for Event
   </div>
 </div>
 
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="/js/register.js?v={{ cacheBust }}"></script>
