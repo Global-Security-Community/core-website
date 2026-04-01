@@ -152,25 +152,39 @@ module.exports = async function (request, context) {
   }
 };
 
+/**
+ * Escapes a string for safe use inside double-quoted YAML values.
+ * Handles: backslash, double quote, newlines, tabs.
+ */
+function escapeYamlString(str) {
+  if (!str) return '';
+  return str
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
+}
+
 function buildChapterMarkdown({ city, country, discordChannelId, discordGuildId, leads }) {
   let yaml = '---\n';
   yaml += 'layout: chapter.njk\n';
-  yaml += `title: "Global Security Community ${city}"\n`;
-  yaml += `city: "${city}"\n`;
-  yaml += `country: "${country}"\n`;
+  yaml += `title: "${escapeYamlString('Global Security Community ' + city)}"\n`;
+  yaml += `city: "${escapeYamlString(city)}"\n`;
+  yaml += `country: "${escapeYamlString(country)}"\n`;
   yaml += 'tags: chapter\n';
-  yaml += `discord_channel_id: "${discordChannelId}"\n`;
-  yaml += `discord_guild_id: "${discordGuildId}"\n`;
+  yaml += `discord_channel_id: "${escapeYamlString(discordChannelId)}"\n`;
+  yaml += `discord_guild_id: "${escapeYamlString(discordGuildId)}"\n`;
   yaml += 'leads:\n';
 
   for (const lead of leads) {
     const emailHash = crypto.createHash('md5').update(lead.email.toLowerCase().trim()).digest('hex');
-    yaml += `  - name: "${lead.name}"\n`;
+    yaml += `  - name: "${escapeYamlString(lead.name)}"\n`;
     yaml += `    email_hash: "${emailHash}"\n`;
-    if (lead.github) yaml += `    github: "${lead.github}"\n`;
-    if (lead.linkedin) yaml += `    linkedin: "${lead.linkedin}"\n`;
-    if (lead.twitter) yaml += `    twitter: "${lead.twitter}"\n`;
-    if (lead.website) yaml += `    website: "${lead.website}"\n`;
+    if (lead.github) yaml += `    github: "${escapeYamlString(lead.github)}"\n`;
+    if (lead.linkedin) yaml += `    linkedin: "${escapeYamlString(lead.linkedin)}"\n`;
+    if (lead.twitter) yaml += `    twitter: "${escapeYamlString(lead.twitter)}"\n`;
+    if (lead.website) yaml += `    website: "${escapeYamlString(lead.website)}"\n`;
   }
 
   yaml += '---\n';
