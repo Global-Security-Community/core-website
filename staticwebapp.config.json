@@ -133,7 +133,8 @@
       "/assets/*",
       "/api/*",
       "/manifest.json",
-      "/sw.js"
+      "/sw.js",
+      "/.well-known/*"
     ]
   },
   "responseOverrides": {
