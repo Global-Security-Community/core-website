@@ -6,6 +6,9 @@ param location string = resourceGroup().location
 @description('Principal ID of the SWA system-assigned managed identity. Enable with: az staticwebapp identity assign --name gsc-corewebsite-swa --resource-group gsc-corewebsite-rg')
 param swaPrincipalId string = ''
 
+@description('IP addresses allowed to manage Key Vault secrets (e.g. admin home/office IPs)')
+param adminIpAddresses array = []
+
 var storageAccountName = 'gsccoresa'
 var keyVaultName = 'gsc-core-kv'
 var logAnalyticsName = 'gsc-core-law'
@@ -99,8 +102,9 @@ resource communityPartnersTable 'Microsoft.Storage/storageAccounts/tableServices
 }
 
 // Key Vault for GSC secrets
-// Network ACLs set to Allow — RBAC authorization is the primary access control.
-// SWA managed identity is granted Key Vault Secrets User below.
+// Network: deny by default, bypass for trusted Azure services (ARM, SWA Key Vault refs).
+// Admin IPs are allowlisted for CLI management (az keyvault secret set, etc.)
+// RBAC authorization is the primary access control.
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName
   location: location
@@ -115,8 +119,13 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     enablePurgeProtection: true
     softDeleteRetentionInDays: 7
     networkAcls: {
-      defaultAction: 'Allow'
+      defaultAction: 'Deny'
       bypass: 'AzureServices'
+      ipRules: [
+        for ip in adminIpAddresses: {
+          value: ip
+        }
+      ]
     }
   }
 }

@@ -45,5 +45,7 @@ jobs:
         with:
           resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP }}
           template: ./infra/main.bicep
-          parameters: swaPrincipalId=${{ steps.swa-identity.outputs.principal_id }}
+          parameters: >-
+            swaPrincipalId=${{ steps.swa-identity.outputs.principal_id }}
+            adminIpAddresses=${{ secrets.KEYVAULT_ADMIN_IPS || '[]' }}
           failOnStdErr: false
