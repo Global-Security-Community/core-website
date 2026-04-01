@@ -1,7 +1,7 @@
 :root {
-  --color-primary-teal: #20b2aa;
+  --color-primary-teal: #0e8c84;
   --color-primary-navy: #001f3f;
-  --color-accent-orange: #ffa500;
+  --color-accent-orange: #c47600;
   --color-light-gray: #f5f5f5;
   --color-dark-gray: #333;
   --color-text: #333;
@@ -83,6 +83,12 @@ body {
 
 .nav-link:hover {
   color: var(--color-primary-teal);
+}
+
+.nav-link--active {
+  color: var(--color-primary-teal);
+  border-bottom: 2px solid var(--color-primary-teal);
+  padding-bottom: 2px;
 }
 
 /* Main Content */
@@ -480,14 +486,14 @@ textarea:focus {
 .char-hint {
   font-weight: 400;
   font-size: 0.85em;
-  color: #888;
+  color: #666;
 }
 
 .char-count {
   display: block;
   text-align: right;
   font-size: 0.8rem;
-  color: #888;
+  color: #666;
   margin-top: 0.25rem;
 }
 
@@ -728,7 +734,7 @@ td {
 .status-badge--published { background-color: var(--color-primary-teal); }
 .status-badge--closed { background-color: var(--color-accent-orange); }
 .status-badge--completed { background-color: #666; }
-.status-badge--default { background-color: #999; }
+.status-badge--default { background-color: #767676; }
 
 /* Role badges */
 .role-badge {
@@ -1111,7 +1117,7 @@ thead tr:hover {
 }
 
 .agenda-row-service .agenda-session-title {
-  color: #888;
+  color: #666;
   font-style: italic;
   font-weight: 400;
 }
@@ -1241,7 +1247,7 @@ thead tr:hover {
   margin-top: auto;
   padding-top: 0.5rem;
   font-size: 0.75rem;
-  color: #888;
+  color: #666;
   font-weight: 500;
   font-style: italic;
 }
@@ -1271,7 +1277,7 @@ thead tr:hover {
 .speaker-card-back .speaker-flip-hint {
   text-align: center;
   font-size: 0.7rem;
-  color: #999;
+  color: #767676;
   margin-top: 0.5rem;
 }
 
@@ -1359,7 +1365,7 @@ thead tr:hover {
 
 .chapter-partner-card .partner-event {
   font-size: 0.7rem;
-  color: #999;
+  color: #767676;
 }
 
 /* Event Cards */
@@ -1461,7 +1467,7 @@ a.event-card:hover { color: inherit; }
 }
 
 .event-card-btn:hover {
-  background-color: #178a84;
+  background-color: var(--color-primary-navy);
   color: #fff;
 }
 
@@ -1574,7 +1580,7 @@ a.event-card:hover { color: inherit; }
 }
 
 .ticket-status--checked { color: var(--color-primary-teal); }
-.ticket-status--pending { color: #999; }
+.ticket-status--pending { color: #767676; }
 
 .ticket-event-link {
   font-size: 0.85rem;

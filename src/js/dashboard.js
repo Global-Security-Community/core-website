@@ -143,7 +143,7 @@
                   document.getElementById('sessionize-status').innerHTML =
                     '✅ Cached <strong>' + result.speakers + '</strong> speakers, <strong>' + result.agenda + '</strong> agenda items. Last refreshed: ' + esc(ts);
                   if (result.speakerNames && result.speakerNames.length > 0) {
-                    var listHtml = '<p style="font-size:0.8rem;color:#888;margin:0 0 0.25rem 0;">Speakers:</p>';
+                    var listHtml = '<p style="font-size:0.8rem;color:#666;margin:0 0 0.25rem 0;">Speakers:</p>';
                     listHtml += '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;">';
                     result.speakerNames.forEach(function(name) {
                       listHtml += '<span style="background:#e9ecef;padding:2px 8px;border-radius:12px;font-size:0.8rem;">' + esc(name) + '</span>';
@@ -343,7 +343,7 @@
           html += '<div style="display:flex;align-items:center;gap:0.5rem;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;padding:0.4rem 0.6rem;">';
           if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" style="max-width:40px;max-height:20px;object-fit:contain;">';
           html += '<span style="font-size:0.85rem;">' + esc(p.name) + '</span>';
-          if (p.tierName) html += '<span style="font-size:0.7rem;color:#888;">(' + esc(p.tierName) + ')</span>';
+          if (p.tierName) html += '<span style="font-size:0.7rem;color:#666;">(' + esc(p.tierName) + ')</span>';
           html += '<button class="cp-delete" data-id="' + esc(p.id) + '" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:0.9rem;padding:0 0.25rem;" title="Remove">✕</button>';
           html += '</div>';
         });

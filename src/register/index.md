@@ -8,7 +8,7 @@ title: Register for Event
   <div id="event-info"><p>Loading event details...</p></div>
 
   <div id="reg-form-wrap" class="reg-form-wrap" style="display:none;">
-    <div id="reg-message" class="form-message" style="display:none;"></div>
+    <div id="reg-message" class="form-message" role="alert" style="display:none;"></div>
     <form id="reg-form">
       <h2>Your Details</h2>
       <div class="form-group">

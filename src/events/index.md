@@ -1,6 +1,7 @@
 ---
 layout: base.njk
 title: Events
+description: "Browse upcoming and past Global Security Community events — workshops, bootcamps, and networking for cybersecurity professionals."
 ---
 
 <div class="container">

@@ -1,6 +1,7 @@
 ---
 layout: base.njk
 title: Chapters
+description: "Find your local Global Security Community chapter. Connect with cybersecurity professionals in your city."
 ---
 
 <div class="container">

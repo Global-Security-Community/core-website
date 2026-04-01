@@ -1,6 +1,7 @@
 ---
 layout: base.njk
 title: About Us
+description: "Learn about the Global Security Community, our mission, values, and how we unite security professionals across borders."
 ---
 
 <div class="container">

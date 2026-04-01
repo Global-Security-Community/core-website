@@ -1,6 +1,7 @@
 ---
 layout: base.njk
 title: Home
+description: "Join the Global Security Community — connecting cybersecurity professionals worldwide through local chapters, events, and knowledge sharing."
 ---
 
 <div class="container">
@@ -9,6 +10,7 @@ title: Home
       <img src="/assets/GSC-Hero-Logo.png" alt="Global Security Community Logo">
     </div>
     <div class="hero-content">
+      <h1>Connecting Cybersecurity Professionals Worldwide</h1>
       <p>Building a worldwide network of cybersecurity professionals committed to advancing global security practices and knowledge sharing.</p>
       <div class="hero-actions">
         <a href="/events/" class="hero-btn hero-btn-primary">View Events</a>

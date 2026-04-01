@@ -34,7 +34,7 @@
           var btn = document.getElementById('register-btn');
           if (btn) {
             btn.textContent = 'Registration Closed';
-            btn.style.backgroundColor = '#999';
+            btn.style.backgroundColor = '#767676';
             btn.style.pointerEvents = 'none';
           }
         }
@@ -42,7 +42,7 @@
           var btn = document.getElementById('register-btn');
           if (btn) {
             btn.textContent = 'Event Full';
-            btn.style.backgroundColor = '#999';
+            btn.style.backgroundColor = '#767676';
             btn.style.pointerEvents = 'none';
           }
         }

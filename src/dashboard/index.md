@@ -22,7 +22,7 @@ title: Dashboard
   <!-- Create Event Form -->
   <div id="section-create" style="display:none;">
     <h2>Create New Event</h2>
-    <div id="create-message" class="form-message" style="display:none;"></div>
+    <div id="create-message" class="form-message" role="alert" style="display:none;"></div>
     <div id="create-form-wrap" class="reg-form-wrap">
       <div class="form-group">
         <label for="ev-title">Event Title *</label>
@@ -144,7 +144,7 @@ title: Dashboard
       <button id="btn-back-detail" class="btn-outline">&larr; Back to Event</button>
     </div>
     <h2>Edit Event</h2>
-    <div id="edit-event-message" class="form-message" style="display:none;"></div>
+    <div id="edit-event-message" class="form-message" role="alert" style="display:none;"></div>
     <div id="edit-event-form" class="reg-form-wrap">
       <div class="form-group">
         <label for="edit-title">Event Title *</label>
@@ -199,7 +199,7 @@ title: Dashboard
   <!-- Edit Chapter -->
   <div id="section-chapter" style="display:none;">
     <h2>Edit Chapter</h2>
-    <div id="chapter-edit-message" class="form-message" style="display:none;"></div>
+    <div id="chapter-edit-message" class="form-message" role="alert" style="display:none;"></div>
     <div id="chapter-edit-form" class="reg-form-wrap">
       <p>Loading chapter data...</p>
     </div>
