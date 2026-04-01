@@ -62,7 +62,10 @@ module.exports = async function (request, context) {
       );
     }
 
-    // --- Approve flow: run side effects BEFORE updating status ---
+    // --- Approve flow: update status FIRST to prevent concurrent replays ---
+
+    // Atomically mark as approved before running side effects
+    await updateApplicationStatus(applicationId, 'approved');
 
     // 1. Create Discord channel (non-critical — continue if it fails)
     var discordChannel = null;
@@ -137,9 +140,6 @@ module.exports = async function (request, context) {
     // } catch (imgErr) {
     //   context.log(`Image generation failed (non-critical): ${imgErr.message}`);
     // }
-
-    // 4. Update status to approved (this is the critical step)
-    await updateApplicationStatus(applicationId, 'approved');
 
     // Build success message with details about what happened
     var details = [`The chapter in <strong>${application.city}, ${application.country}</strong> has been approved!`];
