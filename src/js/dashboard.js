@@ -167,7 +167,7 @@
                     document.getElementById('sessionize-speakers-list').innerHTML = listHtml;
                   }
                 } else {
-                  document.getElementById('sessionize-status').innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.alertTriangle + '</span> ' + (result.message || result.error || 'Failed to refresh');
+                  document.getElementById('sessionize-status').innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.alertTriangle + '</span> ' + GSC.esc(result.message || result.error || 'Failed to refresh');
                 }
               })
               .catch(function() {
