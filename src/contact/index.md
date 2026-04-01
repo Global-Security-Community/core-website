@@ -39,5 +39,6 @@ title: Contact Us
     </form>
   </div>
 
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="/js/contact-form.js?v={{ cacheBust }}"></script>
 </div>
