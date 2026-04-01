@@ -1706,3 +1706,71 @@ a.event-card:hover { color: inherit; }
   cursor: help;
   font-size: 0.85em;
 }
+
+/* ─── Utility Classes ─── */
+
+.is-hidden { display: none; }
+
+.text-semibold { margin: 0; font-weight: 600; }
+.text-muted-sm { color: #666; font-size: 0.9rem; margin: 0; }
+.help-text { font-size: 0.85em; color: #666; }
+.help-text-block { display: block; color: #666; margin-bottom: 0.25rem; font-size: 0.85rem; }
+.subtitle-muted { margin: -0.5rem 0 1rem 0; color: #666; }
+
+.mt-0 { margin-top: 0; }
+.mt-section { margin-top: 1.5rem; }
+.mb-section { margin-bottom: 2rem; }
+
+.narrow-content { max-width: 600px; }
+.two-col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+/* ─── Component: Breadcrumb ─── */
+
+.breadcrumb-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+.breadcrumb-divider { color: #ccc; }
+
+/* ─── Component: Info Cards (event page 3-col) ─── */
+
+.cards--info { grid-template-columns: 1fr 1fr 1fr; margin-bottom: 2rem; }
+.card--centered { text-align: center; }
+.icon-xl { font-size: 2rem; margin: 0; }
+
+@media (max-width: 600px) {
+  .cards--info { grid-template-columns: 1fr; }
+}
+
+/* ─── Component: Form Messages ─── */
+
+.form-message--success {
+  display: block;
+  background-color: #d4edda;
+  color: #155724;
+  border-left: 4px solid #28a745;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+.form-message--error {
+  display: block;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-left: 4px solid #f5c6cb;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+.form-message--warning {
+  display: block;
+  background-color: #fff3cd;
+  color: #856404;
+  border-left: 4px solid #ffc107;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}

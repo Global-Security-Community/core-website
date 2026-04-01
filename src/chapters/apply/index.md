@@ -9,10 +9,10 @@ description: "Apply to lead a Global Security Community chapter in your city. We
 
   <p>Passionate about building a security community in your city? We'd love to hear from you. Fill out the form below and our team will review your application.</p>
 
-  <div style="max-width: 600px;">
-    <div id="form-message" role="alert" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 4px;"></div>
+  <div class="narrow-content">
+    <div id="form-message" role="alert" class="form-message is-hidden"></div>
     <form id="chapter-apply-form">
-      <h2 style="margin-top: 0;">Primary Chapter Lead</h2>
+      <h2 class="mt-0">Primary Chapter Lead</h2>
 
       <div class="form-group">
         <label for="fullName">Full Name *</label>
@@ -21,7 +21,7 @@ description: "Apply to lead a Global Security Community chapter in your city. We
 
       <div class="form-group">
         <label for="email">Email *</label>
-        <small style="display: block; color: #666; margin-bottom: 0.25rem;">This must be the email address you use to log in to the Global Security Community website.</small>
+        <small class="help-text-block">This must be the email address you use to log in to the Global Security Community website.</small>
         <input type="email" id="email" name="email" required>
       </div>
 
@@ -35,7 +35,7 @@ description: "Apply to lead a Global Security Community chapter in your city. We
         <input type="url" id="github" name="github" placeholder="https://github.com/yourprofile">
       </div>
 
-      <h2>Second Chapter Lead <span style="font-weight: normal; font-size: 0.8em; color: #666;">(Optional)</span></h2>
+      <h2>Second Chapter Lead <span class="help-text">(Optional)</span></h2>
 
       <div class="form-group">
         <label for="secondLeadName">Full Name</label>
@@ -44,7 +44,7 @@ description: "Apply to lead a Global Security Community chapter in your city. We
 
       <div class="form-group">
         <label for="secondLeadEmail">Email</label>
-        <small style="display: block; color: #666; margin-bottom: 0.25rem;">Must match the email they use to log in to the website.</small>
+        <small class="help-text-block">Must match the email they use to log in to the website.</small>
         <input type="email" id="secondLeadEmail" name="secondLeadEmail">
       </div>
 
@@ -67,7 +67,7 @@ description: "Apply to lead a Global Security Community chapter in your city. We
 
       <div class="form-group">
         <label for="country">Country *</label>
-        <select id="country" name="country" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 4px; font-family: var(--font-sans); font-size: 1rem; background-color: #fff;">
+        <select id="country" name="country" required>
           <option value="">Select your country</option>
           <option value="Afghanistan">Afghanistan</option>
           <option value="Albania">Albania</option>

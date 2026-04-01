@@ -3,7 +3,7 @@ layout: base.njk
 ---
 
 <div class="container">
-  <div id="chapter-banner" data-chapter-slug="{{ city | lower | replace(" ", "-") }}" style="display:none;margin-bottom:1.5rem;border-radius:12px;overflow:hidden;max-height:200px;">
+  <div id="chapter-banner" data-chapter-slug="{{ city | lower | replace(" ", "-") }}" class="is-hidden" style="margin-bottom:1.5rem;border-radius:12px;overflow:hidden;max-height:200px;">
     <img id="chapter-banner-img" alt="{{ city }} Chapter Banner" style="width:100%;height:200px;object-fit:cover;display:block;">
   </div>
   <h1>Global Security Community {{ city }}</h1>
@@ -52,11 +52,11 @@ layout: base.njk
   <script src="/js/chapter-events.js?v={{ cacheBust }}"></script>
 
   <h2>Get Involved</h2>
-  <div class="card" style="margin-bottom:1rem;" id="subscribe-card" data-chapter-slug="{{ city | lower | replace(" ", "-") }}">
+  <div class="card" id="subscribe-card" data-chapter-slug="{{ city | lower | replace(" ", "-") }}">
     <h3>📬 Chapter Event Notifications</h3>
     <p id="subscribe-msg" style="margin:0 0 0.75rem 0;">Get an email when new events are announced for this chapter.</p>
-    <button id="btn-subscribe" style="display:none;">Subscribe</button>
-    <p id="subscribe-login-hint" style="color:#666;font-size:0.9rem;margin:0;">
+    <button id="btn-subscribe" class="is-hidden">Subscribe</button>
+    <p id="subscribe-login-hint" class="text-muted-sm">
       <a href="/.auth/login/ciam?post_login_redirect_uri={{ page.url }}">Log in</a> to subscribe to event notifications.
     </p>
   </div>
@@ -73,7 +73,7 @@ layout: base.njk
   {% endif %}
   <p>Interested in joining the {{ city }} chapter? Stay tuned for upcoming events and opportunities to connect with the local security community.</p>
 
-  <div id="chapter-partners" class="partners-section" style="display:none;">
+  <div id="chapter-partners" class="partners-section is-hidden">
     <h2>Community Partners</h2>
     <div id="chapter-partners-content"></div>
   </div>

@@ -34,7 +34,7 @@ description: "Find your local Global Security Community chapter. Connect with cy
 
   <h2>Interested in Starting a Chapter?</h2>
   <p>If you're passionate about building a security community in your city, we'd love to hear from you. We provide resources, guidance, and support to help your chapter thrive.</p>
-  <p style="margin-top: 1.5rem;">
+  <p class="mt-section">
     <a href="/chapters/apply/" class="btn-cta">Apply to Lead a Chapter</a>
   </p>
 </div>

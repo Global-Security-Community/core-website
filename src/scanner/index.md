@@ -12,7 +12,7 @@ title: Check-in Scanner
     <button id="start-scanner-btn" type="button" class="btn-start-scanner">Start Scanner</button>
   </div>
 
-  <div id="scanner-wrap" style="display:none;">
+  <div id="scanner-wrap" class="is-hidden">
     <div class="stat-cards">
       <div class="card stat-card">
         <p class="stat-number" id="scan-total">0</p>
@@ -24,7 +24,7 @@ title: Check-in Scanner
       </div>
     </div>
 
-    <div id="scan-result" class="scan-result" style="display:none;" aria-live="polite"></div>
+    <div id="scan-result" class="scan-result is-hidden" aria-live="polite"></div>
 
     <div id="reader" class="qr-reader" aria-label="QR code scanner viewfinder"></div>
 

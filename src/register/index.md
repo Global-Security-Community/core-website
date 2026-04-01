@@ -7,8 +7,8 @@ title: Register for Event
   <h1>Register for Event</h1>
   <div id="event-info"><p>Loading event details...</p></div>
 
-  <div id="reg-form-wrap" class="reg-form-wrap" style="display:none;">
-    <div id="reg-message" class="form-message" role="alert" style="display:none;"></div>
+  <div id="reg-form-wrap" class="reg-form-wrap is-hidden">
+    <div id="reg-message" class="form-message is-hidden" role="alert"></div>
     <form id="reg-form">
       <h2>Your Details</h2>
       <div class="form-group">
@@ -80,14 +80,14 @@ title: Register for Event
         </select>
       </div>
 
-      <div class="form-group" style="margin-top:1.5rem;">
+      <div class="form-group mt-section">
         <label class="checkbox-label">
           <input type="checkbox" id="reg-volunteer-interest">
           I'd like to volunteer at this event
         </label>
       </div>
 
-      <div id="volunteer-confirm" class="volunteer-confirm-box" style="display:none;">
+      <div id="volunteer-confirm" class="volunteer-confirm-box is-hidden">
         <p class="volunteer-thanks">🙏 Thank you for offering to help — our events wouldn't be possible without volunteers like you!</p>
         <p class="volunteer-note">Please note that volunteer places are limited and not all who apply can be selected. If you're unsure whether volunteering is right for you, please speak to a chapter lead before committing.</p>
         <label class="checkbox-label">
@@ -105,12 +105,12 @@ title: Register for Event
   </div>
 
   <!-- Success state -->
-  <div id="reg-success" class="reg-success" style="display:none;">
+  <div id="reg-success" class="reg-success is-hidden">
     <h2 class="success-title">You're Registered! 🎉</h2>
     <p id="success-details"></p>
     <div id="success-qr" class="success-qr"></div>
     <p>A confirmation email with your ticket has been sent.</p>
-    <p style="font-size:0.85em;color:#666;">📧 Can't find it? Please check your junk or spam folder.</p>
+    <p class="help-text">📧 Can't find it? Please check your junk or spam folder.</p>
     <p><a href="/my-tickets/">View My Tickets</a></p>
   </div>
 </div>

@@ -3,38 +3,38 @@ layout: base.njk
 ---
 
 <div class="container" data-event-slug="{{ slug }}"{% if sessionizeApiId %} data-sessionize-id="{{ sessionizeApiId }}"{% endif %}{% if attendeeCount %} data-attendee-count="{{ attendeeCount }}"{% endif %}>
-  <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:1rem;">
-    <a href="/events/" style="font-size:0.9rem;">&larr; All Events</a>
-    <span style="color:#ccc;">|</span>
-    <a href="/chapters/{{ chapterSlug }}/" style="font-size:0.9rem;">{{ chapterSlug | capitalize }} Chapter</a>
+  <div class="breadcrumb-row">
+    <a href="/events/">&larr; All Events</a>
+    <span class="breadcrumb-divider">|</span>
+    <a href="/chapters/{{ chapterSlug }}/">{{ chapterSlug | capitalize }} Chapter</a>
   </div>
 
   <h1>{{ title }}</h1>
 
-  <div class="cards" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom: 2rem;">
-    <div class="card" style="text-align:center;">
-      <p style="font-size:2rem; margin:0;">📅</p>
-      <p style="margin:0; font-weight:600;">{{ date }}{% if endDate %} – {{ endDate }}{% endif %}</p>
+  <div class="cards cards--info">
+    <div class="card card--centered">
+      <p class="icon-xl">📅</p>
+      <p class="text-semibold">{{ date }}{% if endDate %} – {{ endDate }}{% endif %}</p>
     </div>
-    <div class="card" style="text-align:center;">
-      <p style="font-size:2rem; margin:0;">📍</p>
-      <p style="margin:0; font-weight:600;">{{ location }}</p>
+    <div class="card card--centered">
+      <p class="icon-xl">📍</p>
+      <p class="text-semibold">{{ location }}</p>
     </div>
-    <div class="card" style="text-align:center;">
-      <p style="font-size:2rem; margin:0;">🎟️</p>
-      <p style="margin:0; font-weight:600;" id="reg-count">Loading...</p>
+    <div class="card card--centered">
+      <p class="icon-xl">🎟️</p>
+      <p class="text-semibold" id="reg-count">Loading...</p>
     </div>
   </div>
 
-  <div style="margin-bottom:2rem;">
-    <a href="/register/?event={{ slug }}" style="display:inline-block; background-color:var(--color-primary-teal); color:white; padding:0.75rem 2rem; border-radius:4px; font-weight:600; text-decoration:none; font-size:1.1rem;" id="register-btn">Register Now</a>
+  <div class="mb-section">
+    <a href="/register/?event={{ slug }}" class="btn-cta" id="register-btn">Register Now</a>
   </div>
 
   <h2>About This Event</h2>
   <p>{{ description }}</p>
 
-  <div id="volunteer-cards" class="volunteer-cards" style="display:none;">
-    <h3 style="width:100%;margin-bottom:0.5rem;">Event Volunteers</h3>
+  <div id="volunteer-cards" class="volunteer-cards is-hidden">
+    <h3>Event Volunteers</h3>
   </div>
 
   {% if sessionizeApiId %}
@@ -45,7 +45,7 @@ layout: base.njk
   <div id="sessionize-speakers"><p>Loading speakers...</p></div>
   {% endif %}
 
-  <div id="community-partners" class="partners-section" style="display:none;">
+  <div id="community-partners" class="partners-section is-hidden">
     <h2>Community Partners</h2>
     <div id="partners-content"></div>
   </div>
