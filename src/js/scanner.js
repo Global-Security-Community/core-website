@@ -26,7 +26,7 @@
         function() {} // ignore per-frame scan misses
       ).catch(function(err) {
         document.getElementById('reader').innerHTML =
-          '<p style="color:#856404;background:#fff3cd;padding:1rem;border-radius:6px;">📷 Camera not available: ' + esc(String(err)) + '<br>Use manual entry below.</p>';
+          '<p style="color:#856404;background:#fff3cd;padding:1rem;border-radius:6px;">📷 Camera not available: ' + GSC.esc(String(err)) + '<br>Use manual entry below.</p>';
       });
     } catch (err) {
       document.getElementById('reader').innerHTML =
@@ -72,12 +72,12 @@
 
       if (data.status === 'checked_in') {
         resultEl.style.backgroundColor = '#d4edda'; resultEl.style.color = '#155724';
-        resultEl.innerHTML = '✅ <strong>' + esc(data.attendeeName) + '</strong> checked in!';
+        resultEl.innerHTML = '✅ <strong>' + GSC.esc(data.attendeeName) + '</strong> checked in!';
         totalCheckedIn++;
         document.getElementById('scan-total').textContent = totalCheckedIn;
       } else if (data.status === 'already_checked_in') {
         resultEl.style.backgroundColor = '#fff3cd'; resultEl.style.color = '#856404';
-        resultEl.innerHTML = '⚠️ <strong>' + esc(data.attendeeName) + '</strong> already checked in at ' + esc(data.checkedInAt);
+        resultEl.innerHTML = '⚠️ <strong>' + GSC.esc(data.attendeeName) + '</strong> already checked in at ' + GSC.esc(data.checkedInAt);
       } else {
         resultEl.style.backgroundColor = '#f8d7da'; resultEl.style.color = '#721c24';
         resultEl.innerHTML = '❌ Invalid ticket code';
@@ -110,15 +110,8 @@
     var html = '';
     scanLog.slice(0, 20).forEach(function(s) {
       var icon = s.result === 'checked_in' ? '✅' : s.result === 'already_checked_in' ? '⚠️' : '❌';
-      html += '<p style="margin:0.25rem 0;">' + icon + ' <strong>' + esc(s.name || s.code) + '</strong> <span style="color:#767676;font-size:0.8rem;">' + new Date(s.time).toLocaleTimeString() + '</span></p>';
+      html += '<p style="margin:0.25rem 0;">' + icon + ' <strong>' + GSC.esc(s.name || s.code) + '</strong> <span style="color:#767676;font-size:0.8rem;">' + new Date(s.time).toLocaleTimeString() + '</span></p>';
     });
     document.getElementById('scan-log').innerHTML = html;
-  }
-
-  function esc(str) {
-    if (!str) return '';
-    var d = document.createElement('span');
-    d.textContent = str;
-    return d.innerHTML;
   }
 })();

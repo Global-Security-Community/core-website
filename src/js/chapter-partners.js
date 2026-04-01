@@ -19,14 +19,14 @@
       var html = '';
       tierNames.forEach(function(tierName) {
         html += '<div class="partners-tier">';
-        html += '<h3>' + esc(tierName) + '</h3>';
+        html += '<h3>' + GSC.esc(tierName) + '</h3>';
         html += '<div class="partners-grid">';
         tiers[tierName].forEach(function(p) {
           html += '<div class="chapter-partner-card">';
-          if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" alt="' + esc(p.name) + '">';
-          html += '<div><strong>' + esc(p.name) + '</strong></div>';
-          if (p.eventTitle) html += '<div class="partner-event">' + esc(p.eventTitle) + '</div>';
-          if (p.website) html += '<a href="' + esc(p.website) + '" target="_blank" rel="noopener noreferrer" style="font-size:0.75rem;color:var(--color-primary-teal);">Website →</a>';
+          if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" alt="' + GSC.esc(p.name) + '">';
+          html += '<div><strong>' + GSC.esc(p.name) + '</strong></div>';
+          if (p.eventTitle) html += '<div class="partner-event">' + GSC.esc(p.eventTitle) + '</div>';
+          if (p.website) html += '<a href="' + GSC.esc(p.website) + '" target="_blank" rel="noopener noreferrer" style="font-size:0.75rem;color:var(--color-primary-teal);">Website →</a>';
           html += '</div>';
         });
         html += '</div></div>';
@@ -36,11 +36,4 @@
       section.style.display = 'block';
     })
     .catch(function() {});
-
-  function esc(str) {
-    if (!str) return '';
-    var d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-  }
 })();

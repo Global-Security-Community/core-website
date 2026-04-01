@@ -53,8 +53,8 @@
             var html = '';
             data.volunteers.forEach(function(v) {
               html += '<div class="volunteer-card">';
-              html += '<div class="volunteer-name">' + esc(v.name) + '</div>';
-              if (v.company) html += '<div class="volunteer-company">' + esc(v.company) + '</div>';
+              html += '<div class="volunteer-name">' + GSC.esc(v.name) + '</div>';
+              if (v.company) html += '<div class="volunteer-company">' + GSC.esc(v.company) + '</div>';
               html += '</div>';
             });
             volEl.innerHTML = html;
@@ -82,14 +82,14 @@
         var html = '';
         tierNames.forEach(function(tierName) {
           html += '<div class="partners-tier">';
-          html += '<h3>' + esc(tierName) + '</h3>';
+          html += '<h3>' + GSC.esc(tierName) + '</h3>';
           html += '<div class="partners-grid">';
           tiers[tierName].forEach(function(p) {
             var tag = p.website ? 'a' : 'div';
-            var href = p.website ? ' href="' + esc(p.website) + '" target="_blank" rel="noopener noreferrer"' : '';
+            var href = p.website ? ' href="' + GSC.esc(p.website) + '" target="_blank" rel="noopener noreferrer"' : '';
             html += '<' + tag + ' class="partner-logo"' + href + '>';
-            if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" alt="' + esc(p.name) + '">';
-            html += '<span class="partner-name">' + esc(p.name) + '</span>';
+            if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" alt="' + GSC.esc(p.name) + '">';
+            html += '<span class="partner-name">' + GSC.esc(p.name) + '</span>';
             html += '</' + tag + '>';
           });
           html += '</div></div>';
@@ -147,21 +147,21 @@
     speakers.forEach(function(s) {
       var sessionName = (s.sessions && s.sessions.length) ? s.sessions[0].name : '';
       html += '<div class="speaker-card-wrap">';
-      html += '<div class="speaker-card" tabindex="0" role="button" aria-label="' + esc(s.fullName) + ' — click to see bio">';
+      html += '<div class="speaker-card" tabindex="0" role="button" aria-label="' + GSC.esc(s.fullName) + ' — click to see bio">';
       // Front
       html += '<div class="speaker-card-front">';
       if (s.profilePicture && s.profilePicture.indexOf('https://') === 0) {
-        html += '<img src="' + esc(s.profilePicture) + '" alt="' + esc(s.fullName) + '" class="speaker-photo">';
+        html += '<img src="' + GSC.esc(s.profilePicture) + '" alt="' + GSC.esc(s.fullName) + '" class="speaker-photo">';
       }
-      html += '<h4>' + esc(s.fullName) + '</h4>';
-      if (s.tagLine) html += '<p class="speaker-tagline">' + esc(s.tagLine) + '</p>';
-      if (sessionName) html += '<p class="speaker-session">' + esc(sessionName) + '</p>';
+      html += '<h4>' + GSC.esc(s.fullName) + '</h4>';
+      if (s.tagLine) html += '<p class="speaker-tagline">' + GSC.esc(s.tagLine) + '</p>';
+      if (sessionName) html += '<p class="speaker-session">' + GSC.esc(sessionName) + '</p>';
       html += '<p class="speaker-flip-hint">Flip card to see bio</p>';
       html += '</div>';
       // Back
       html += '<div class="speaker-card-back">';
-      html += '<h4>' + esc(s.fullName) + '</h4>';
-      html += '<p class="speaker-bio">' + esc(s.bio || 'No bio available.') + '</p>';
+      html += '<h4>' + GSC.esc(s.fullName) + '</h4>';
+      html += '<p class="speaker-bio">' + GSC.esc(s.bio || 'No bio available.') + '</p>';
       html += '<p class="speaker-flip-hint">Tap to flip back</p>';
       html += '</div>';
       html += '</div></div>';
@@ -211,7 +211,7 @@
               if (multiRoom) {
                 html += '<thead><tr><th class="agenda-time-col">Time</th>';
                 roomNames.forEach(function(room) {
-                  html += '<th>' + esc(room.name) + '</th>';
+                  html += '<th>' + GSC.esc(room.name) + '</th>';
                 });
                 html += '</tr></thead>';
               }
@@ -228,7 +228,7 @@
                 var isPlenum = firstSession && firstSession.isPlenumSession;
 
                 html += '<tr class="' + (firstSession && firstSession.isServiceSession ? 'agenda-row-service' : 'agenda-row-session') + '">';
-                html += '<td class="agenda-time-col">' + esc(time) + '</td>';
+                html += '<td class="agenda-time-col">' + GSC.esc(time) + '</td>';
 
                 if (isPlenum || !multiRoom) {
                   var s = firstSession;
@@ -257,9 +257,9 @@
   function renderSession(s) {
     if (!s) return '';
     var h = '<div class="agenda-session">';
-    h += '<div class="agenda-session-title">' + esc(s.title) + '</div>';
+    h += '<div class="agenda-session-title">' + GSC.esc(s.title) + '</div>';
     if (s.speakers && s.speakers.length) {
-      h += '<div class="agenda-session-speakers">' + s.speakers.map(function(sp) { return esc(sp.name); }).join(', ') + '</div>';
+      h += '<div class="agenda-session-speakers">' + s.speakers.map(function(sp) { return GSC.esc(sp.name); }).join(', ') + '</div>';
     }
     h += '</div>';
     return h;
@@ -273,12 +273,5 @@
     var ampm = h >= 12 ? 'PM' : 'AM';
     var h12 = h % 12 || 12;
     return h12 + ':' + m + ' ' + ampm;
-  }
-
-  function esc(str) {
-    if (!str) return '';
-    var d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
   }
 })();

@@ -12,10 +12,7 @@ document.getElementById('contact-form').addEventListener('submit', async functio
   var message = document.getElementById('message').value.trim();
 
   function showError(msg) {
-    formMessage.style.backgroundColor = '#f8d7da';
-    formMessage.style.color = '#721c24';
-    formMessage.style.borderLeft = '4px solid #f5c6cb';
-    formMessage.textContent = msg;
+    GSC.showMessage(formMessage, 'error', msg);
     formMessage.style.display = 'block';
   }
 
@@ -47,10 +44,7 @@ document.getElementById('contact-form').addEventListener('submit', async functio
     var data = await response.json();
     
     if (response.ok) {
-      formMessage.style.backgroundColor = '#d4edda';
-      formMessage.style.color = '#155724';
-      formMessage.style.borderLeft = '4px solid #28a745';
-      formMessage.textContent = data.message || 'Message sent successfully!';
+      GSC.showMessage(formMessage, 'success', data.message || 'Message sent successfully!');
       document.getElementById('contact-form').reset();
       if (typeof turnstile !== 'undefined') turnstile.reset();
     } else {

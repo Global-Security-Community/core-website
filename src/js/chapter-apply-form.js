@@ -51,10 +51,7 @@ document.getElementById('chapter-apply-form').addEventListener('submit', async f
     var data = await response.json();
 
     if (response.ok) {
-      formMessage.style.backgroundColor = '#d4edda';
-      formMessage.style.color = '#155724';
-      formMessage.style.borderLeft = '4px solid #28a745';
-      formMessage.textContent = data.message || 'Application submitted successfully!';
+      GSC.showMessage(formMessage, 'success', data.message || 'Application submitted successfully!');
       document.getElementById('chapter-apply-form').reset();
       if (typeof turnstile !== 'undefined') turnstile.reset();
       document.querySelectorAll('.char-count').forEach(function(c) {
@@ -63,18 +60,12 @@ document.getElementById('chapter-apply-form').addEventListener('submit', async f
         c.classList.remove('near-limit', 'at-limit');
       });
     } else {
-      formMessage.style.backgroundColor = '#f8d7da';
-      formMessage.style.color = '#721c24';
-      formMessage.style.borderLeft = '4px solid #f5c6cb';
-      formMessage.textContent = data.error || 'Error submitting application. Please try again.';
+      GSC.showMessage(formMessage, 'error', data.error || 'Error submitting application. Please try again.');
     }
 
     formMessage.style.display = 'block';
   } catch (error) {
-    formMessage.style.backgroundColor = '#f8d7da';
-    formMessage.style.color = '#721c24';
-    formMessage.style.borderLeft = '4px solid #f5c6cb';
-    formMessage.textContent = 'Error submitting application. Please try again later.';
+    GSC.showMessage(formMessage, 'error', 'Error submitting application. Please try again later.');
     formMessage.style.display = 'block';
   } finally {
     button.disabled = false;

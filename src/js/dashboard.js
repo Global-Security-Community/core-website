@@ -46,11 +46,11 @@
         }
         var html = '<div class="cards">';
         data.events.forEach(function(ev) {
-          html += '<div class="card event-card" data-event-id="' + esc(ev.id) + '" data-chapter-slug="' + esc(ev.chapterSlug) + '" data-event-title="' + esc(ev.title) + '" data-sessionize-id="' + esc(ev.sessionizeApiId || '') + '">';
-          html += '<h3>' + esc(ev.title) + '</h3>';
-          html += '<p>📅 ' + esc(ev.date) + ' &nbsp; 📍 ' + esc(ev.location) + '</p>';
+          html += '<div class="card event-card" data-event-id="' + GSC.esc(ev.id) + '" data-chapter-slug="' + GSC.esc(ev.chapterSlug) + '" data-event-title="' + GSC.esc(ev.title) + '" data-sessionize-id="' + GSC.esc(ev.sessionizeApiId || '') + '">';
+          html += '<h3>' + GSC.esc(ev.title) + '</h3>';
+          html += '<p>📅 ' + GSC.esc(ev.date) + ' &nbsp; 📍 ' + GSC.esc(ev.location) + '</p>';
           html += '<p>🎟️ ' + ev.registrationCount + (ev.registrationCap > 0 ? ' / ' + ev.registrationCap : '') + ' registered</p>';
-          html += '<span class="status-badge status-badge--' + esc(ev.status || 'default') + '">' + esc(ev.status) + '</span>';
+          html += '<span class="status-badge status-badge--' + GSC.esc(ev.status || 'default') + '">' + GSC.esc(ev.status) + '</span>';
           html += '</div>';
         });
         html += '</div>';
@@ -81,7 +81,7 @@
       .then(function(data) {
         // Event code with copy
         var subtitleEl = document.getElementById('detail-subtitle');
-        subtitleEl.innerHTML = 'Event Code: <code style="cursor:pointer;background:#e9ecef;padding:2px 8px;border-radius:4px;font-size:0.85em;" title="Click to copy">' + esc(data.eventId) + '</code>';
+        subtitleEl.innerHTML = 'Event Code: <code style="cursor:pointer;background:#e9ecef;padding:2px 8px;border-radius:4px;font-size:0.85em;" title="Click to copy">' + GSC.esc(data.eventId) + '</code>';
         subtitleEl.querySelector('code').addEventListener('click', function() {
           navigator.clipboard.writeText(data.eventId).then(function() {
             var el = document.getElementById('detail-subtitle').querySelector('code');
@@ -141,12 +141,12 @@
                 if (result.success) {
                   var ts = result.lastRefreshed ? new Date(result.lastRefreshed).toLocaleString() : 'just now';
                   document.getElementById('sessionize-status').innerHTML =
-                    '✅ Cached <strong>' + result.speakers + '</strong> speakers, <strong>' + result.agenda + '</strong> agenda items. Last refreshed: ' + esc(ts);
+                    '✅ Cached <strong>' + result.speakers + '</strong> speakers, <strong>' + result.agenda + '</strong> agenda items. Last refreshed: ' + GSC.esc(ts);
                   if (result.speakerNames && result.speakerNames.length > 0) {
                     var listHtml = '<p style="font-size:0.8rem;color:#666;margin:0 0 0.25rem 0;">Speakers:</p>';
                     listHtml += '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;">';
                     result.speakerNames.forEach(function(name) {
-                      listHtml += '<span style="background:#e9ecef;padding:2px 8px;border-radius:12px;font-size:0.8rem;">' + esc(name) + '</span>';
+                      listHtml += '<span style="background:#e9ecef;padding:2px 8px;border-radius:12px;font-size:0.8rem;">' + GSC.esc(name) + '</span>';
                     });
                     listHtml += '</div>';
                     document.getElementById('sessionize-speakers-list').innerHTML = listHtml;
@@ -289,12 +289,12 @@
           var role = a.role || 'attendee';
           var volIcon = a.volunteerInterest ? ' <span title="Volunteer interest" class="vol-interest-icon">🙋</span>' : '';
           html += '<tr>';
-          html += '<td><input type="checkbox" class="attendee-check" data-reg-id="' + esc(a.id) + '"></td>';
-          html += '<td>' + esc(a.name) + volIcon + '</td>';
-          html += '<td>' + esc(a.email) + '</td>';
-          html += '<td><span class="role-badge role-badge--' + esc(role) + '">' + esc(role) + '</span></td>';
-          html += '<td style="font-family:monospace;">' + esc(a.ticketCode) + '</td>';
-          html += '<td>' + (a.checkedIn ? '✅ ' + esc(a.checkedInAt) : '—') + '</td>';
+          html += '<td><input type="checkbox" class="attendee-check" data-reg-id="' + GSC.esc(a.id) + '"></td>';
+          html += '<td>' + GSC.esc(a.name) + volIcon + '</td>';
+          html += '<td>' + GSC.esc(a.email) + '</td>';
+          html += '<td><span class="role-badge role-badge--' + GSC.esc(role) + '">' + GSC.esc(role) + '</span></td>';
+          html += '<td style="font-family:monospace;">' + GSC.esc(a.ticketCode) + '</td>';
+          html += '<td>' + (a.checkedIn ? '✅ ' + GSC.esc(a.checkedInAt) : '—') + '</td>';
           html += '</tr>';
         });
         html += '</tbody></table>';
@@ -342,9 +342,9 @@
         allPartners.forEach(function(p) {
           html += '<div style="display:flex;align-items:center;gap:0.5rem;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;padding:0.4rem 0.6rem;">';
           if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" style="max-width:40px;max-height:20px;object-fit:contain;">';
-          html += '<span style="font-size:0.85rem;">' + esc(p.name) + '</span>';
-          if (p.tierName) html += '<span style="font-size:0.7rem;color:#666;">(' + esc(p.tierName) + ')</span>';
-          html += '<button class="cp-delete" data-id="' + esc(p.id) + '" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:0.9rem;padding:0 0.25rem;" title="Remove">✕</button>';
+          html += '<span style="font-size:0.85rem;">' + GSC.esc(p.name) + '</span>';
+          if (p.tierName) html += '<span style="font-size:0.7rem;color:#666;">(' + GSC.esc(p.tierName) + ')</span>';
+          html += '<button class="cp-delete" data-id="' + GSC.esc(p.id) + '" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:0.9rem;padding:0 0.25rem;" title="Remove">✕</button>';
           html += '</div>';
         });
         html += '</div>';
@@ -618,13 +618,6 @@
     .catch(function() { alert('Network error.'); });
   }
 
-  function esc(str) {
-    if (!str) return '';
-    var d = document.createElement('span');
-    d.textContent = str;
-    return d.innerHTML;
-  }
-
   // ─── Edit Event ───
 
   var editEventData = null;
@@ -762,7 +755,7 @@
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.error) {
-          document.getElementById('chapter-edit-form').innerHTML = '<p>' + esc(data.error) + '</p>';
+          document.getElementById('chapter-edit-form').innerHTML = '<p>' + GSC.esc(data.error) + '</p>';
           return;
         }
         if (data.slug) currentChapterSlug = data.slug;
@@ -779,7 +772,7 @@
     // Ensure at least 1 lead row
     if (leads.length === 0) leads = [{ name: '', email: '', github: '', linkedin: '', twitter: '', website: '' }];
 
-    var html = '<p class="text-muted">Edit chapter leads and social links for <strong>' + esc(city) + ', ' + esc(country) + '</strong>. Up to 4 leads.</p>';
+    var html = '<p class="text-muted">Edit chapter leads and social links for <strong>' + GSC.esc(city) + ', ' + GSC.esc(country) + '</strong>. Up to 4 leads.</p>';
     html += '<div id="leads-container">';
 
     leads.forEach(function(lead, i) {
@@ -818,16 +811,16 @@
     return '<div class="lead-edit-row card" style="padding:1rem;margin-bottom:1rem;">' +
       '<h4 style="margin:0 0 0.75rem 0;">Lead ' + (index + 1) + '</h4>' +
       '<div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">' +
-        '<div><label>Name *</label><input type="text" class="lead-name" value="' + esc(lead.name) + '" maxlength="100" placeholder="Full name"></div>' +
-        '<div><label>Email *</label><input type="email" class="lead-email" value="' + esc(lead.email) + '" maxlength="200" placeholder="Email address"></div>' +
+        '<div><label>Name *</label><input type="text" class="lead-name" value="' + GSC.esc(lead.name) + '" maxlength="100" placeholder="Full name"></div>' +
+        '<div><label>Email *</label><input type="email" class="lead-email" value="' + GSC.esc(lead.email) + '" maxlength="200" placeholder="Email address"></div>' +
       '</div>' +
       '<div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">' +
-        '<div><label>GitHub</label><input type="url" class="lead-github" value="' + esc(lead.github) + '" maxlength="200" placeholder="https://github.com/..."></div>' +
-        '<div><label>LinkedIn</label><input type="url" class="lead-linkedin" value="' + esc(lead.linkedin) + '" maxlength="200" placeholder="https://linkedin.com/in/..."></div>' +
+        '<div><label>GitHub</label><input type="url" class="lead-github" value="' + GSC.esc(lead.github) + '" maxlength="200" placeholder="https://github.com/..."></div>' +
+        '<div><label>LinkedIn</label><input type="url" class="lead-linkedin" value="' + GSC.esc(lead.linkedin) + '" maxlength="200" placeholder="https://linkedin.com/in/..."></div>' +
       '</div>' +
       '<div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">' +
-        '<div><label>X / Twitter</label><input type="url" class="lead-twitter" value="' + esc(lead.twitter) + '" maxlength="200" placeholder="https://x.com/..."></div>' +
-        '<div><label>Website</label><input type="url" class="lead-website" value="' + esc(lead.website) + '" maxlength="200" placeholder="https://..."></div>' +
+        '<div><label>X / Twitter</label><input type="url" class="lead-twitter" value="' + GSC.esc(lead.twitter) + '" maxlength="200" placeholder="https://x.com/..."></div>' +
+        '<div><label>Website</label><input type="url" class="lead-website" value="' + GSC.esc(lead.website) + '" maxlength="200" placeholder="https://..."></div>' +
       '</div>' +
     '</div>';
   }
