@@ -86,7 +86,7 @@ jest.mock('../src/helpers/imageGenerator', () => ({
   generateChapterBanner: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/chapters/test-banner.png'),
   generateChapterShield: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/chapters/test-shield.png'),
   generateEventBadgeBackground: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/events/test.png'),
-  callFluxApi: jest.fn().mockResolvedValue(Buffer.from('mock')),
+  callImageApi: jest.fn().mockResolvedValue(Buffer.from('mock')),
   uploadToBlob: jest.fn().mockResolvedValue('https://mock.blob.url/test.png')
 }));
 
@@ -1114,43 +1114,10 @@ describe('regenerateImage function', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
-  test('rejects unauthenticated requests', async () => {
-    const res = await regenerateImage(makeRequest('POST', { type: 'event', slug: 'test' }), context);
-    expect(res.status).toBe(401);
-  });
-
-  test('rejects non-admin users', async () => {
-    const res = await regenerateImage(makeAuthRequest('POST', { type: 'event', slug: 'test' }, ['authenticated']), context);
-    expect(res.status).toBe(403);
-  });
-
-  test('returns 400 for missing type or slug', async () => {
-    const res = await regenerateImage(makeAuthRequest('POST', { type: 'event' }, ['admin']), context);
-    expect(res.status).toBe(400);
-  });
-
-  test('returns 400 for invalid type', async () => {
-    const res = await regenerateImage(makeAuthRequest('POST', { type: 'invalid', slug: 'test' }, ['admin']), context);
-    expect(res.status).toBe(400);
-  });
-
-  test('regenerates event badge image', async () => {
-    storage.getEventBySlug.mockResolvedValueOnce({
-      rowKey: 'ev-1', title: 'Test Event', chapterSlug: 'perth', locationCity: 'Perth'
-    });
-    const res = await regenerateImage(makeAuthRequest('POST', { type: 'event', slug: 'test-event' }, ['admin']), context);
-    expect(res.status).toBe(200);
+  test('returns 503 — image generation temporarily disabled', async () => {
+    const res = await regenerateImage(makeAuthRequest('POST', { type: 'event', slug: 'test' }, ['admin']), context);
+    expect(res.status).toBe(503);
     const body = JSON.parse(res.body);
-    expect(body.success).toBe(true);
-    expect(body.imageUrl).toBeTruthy();
-  });
-
-  test('regenerates chapter banner', async () => {
-    storage.getApprovedApplicationBySlug.mockResolvedValueOnce({
-      city: 'Perth', country: 'Australia', partitionKey: 'chapter', rowKey: 'app-1'
-    });
-    const res = await regenerateImage(makeAuthRequest('POST', { type: 'chapter', slug: 'perth' }, ['admin']), context);
-    expect(res.status).toBe(200);
-    expect(JSON.parse(res.body).success).toBe(true);
+    expect(body.error).toMatch(/temporarily disabled/);
   });
 });

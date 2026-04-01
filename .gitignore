@@ -39,3 +39,5 @@ e2e/test-results/
 e2e/screenshots/
 playwright-report/
 e2e/audit-screenshots/
+test-perth-images.js
+perth-*.png

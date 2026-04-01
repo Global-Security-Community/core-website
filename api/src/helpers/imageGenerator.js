@@ -1,10 +1,7 @@
 const { BlobServiceClient } = require('@azure/storage-blob');
 const sharp = require('sharp');
+const { getProvider, isConfigured } = require('./aiProvider');
 
-const AI_ENDPOINT = process.env.AZURE_AI_ENDPOINT || '';
-const AI_KEY = process.env.AZURE_AI_KEY || '';
-const AI_DEPLOYMENT = process.env.AZURE_AI_DEPLOYMENT || 'flux-pro';
-const AI_GPT_DEPLOYMENT = process.env.AZURE_AI_GPT_DEPLOYMENT || 'gpt-nano';
 const STORAGE_CONN = process.env.AZURE_STORAGE_CONNECTION_STRING || '';
 const CONTAINER_NAME = 'generated-images';
 
@@ -20,73 +17,33 @@ async function ensureContainer() {
   } catch (e) { containerReady = true; }
 }
 
-// ─── Landmark Lookup via GPT ───
+// ─── Landmark Lookup via AI Chat ───
 
 async function lookupLandmarks(city, country, context) {
-  if (!AI_ENDPOINT || !AI_KEY) return '';
-
-  const url = `${AI_ENDPOINT}openai/deployments/${AI_GPT_DEPLOYMENT}/chat/completions?api-version=2024-06-01`;
+  if (!isConfigured()) return '';
 
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'api-key': AI_KEY },
-      body: JSON.stringify({
-        messages: [
-          { role: 'system', content: 'You describe city landmarks for an AI image generator that will draw them as line art. Focus on distinctive SHAPES and SILHOUETTES only — no colours, no materials, no surroundings. The image generator needs to know what outline to draw.' },
-          { role: 'user', content: `Name the 2-3 most visually distinctive and recognisable man-made landmarks of ${city}, ${country}. For each, describe ONLY its unique silhouette/shape in under 15 words. Format: "Name: shape description". One per line. Pick landmarks with the most distinctive outlines that cannot be confused with generic buildings.` }
-        ],
-        max_tokens: 250,
-        temperature: 0.3
-      })
-    });
+    const provider = getProvider();
+    const messages = [
+      { role: 'system', content: 'You describe city landmarks for an AI image generator that will draw them as line art. Focus on distinctive SHAPES and SILHOUETTES only — no colours, no materials, no surroundings. The image generator needs to know what outline to draw.' },
+      { role: 'user', content: `Name the 2-3 most visually distinctive and recognisable man-made landmarks of ${city}, ${country}. For each, describe ONLY its unique silhouette/shape in under 15 words. Format: "Name: shape description". One per line. Pick landmarks with the most distinctive outlines that cannot be confused with generic buildings.` }
+    ];
 
-    if (!response.ok) {
-      if (context) context.log(`GPT landmark lookup failed: ${response.status}`);
-      return '';
-    }
-
-    const result = await response.json();
-    const landmarks = result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content;
+    const landmarks = await provider.chatCompletion(messages, { maxTokens: 250, temperature: 0.3 });
     if (context) context.log(`Landmarks for ${city}: ${landmarks}`);
-    return (landmarks || '').trim();
+    return landmarks || '';
   } catch (err) {
     if (context) context.log(`Landmark lookup error: ${err.message}`);
     return '';
   }
 }
 
-// ─── FLUX Image Generation ───
+// ─── AI Image Generation ───
 
-async function callFluxApi(prompt, size, context) {
-  if (!AI_ENDPOINT || !AI_KEY) {
-    throw new Error('Azure AI Foundry credentials not configured');
-  }
-
-  const url = `${AI_ENDPOINT}openai/deployments/${AI_DEPLOYMENT}/images/generations?api-version=2024-06-01`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'api-key': AI_KEY },
-    body: JSON.stringify({
-      prompt,
-      n: 1,
-      size: size || '1024x1024',
-      response_format: 'b64_json'
-    })
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    if (context) context.log(`FLUX API error: ${response.status} ${errText}`);
-    throw new Error(`Image generation failed: ${response.status}`);
-  }
-
-  const result = await response.json();
-  const b64 = result.data && result.data[0] && result.data[0].b64_json;
-  if (!b64) throw new Error('No image data in response');
-
-  return Buffer.from(b64, 'base64');
+async function callImageApi(prompt, size, context) {
+  const provider = getProvider();
+  if (context) context.log(`Generating image via ${provider.name} provider...`);
+  return await provider.generateImage(prompt, { size: size || '1024x1024' });
 }
 
 // ─── Blob Storage ───
@@ -154,7 +111,7 @@ async function generateChapterShield(city, country, context) {
     `CRITICAL: Absolutely no text, no words, no letters, no numbers, no writing of any kind. No watermarks.`;
 
   if (context) context.log(`Generating shield for ${city}...`);
-  const buffer = await callFluxApi(prompt, '1024x1024', context);
+  const buffer = await callImageApi(prompt, '1024x1024', context);
   const shielded = await applyShieldMask(buffer, context);
   const slug = city.toLowerCase().replace(/[^a-z0-9]/g, '-');
   const blobPath = `chapters/${slug}-shield.png`;
@@ -175,7 +132,7 @@ async function generateChapterBanner(city, country, context) {
     `Absolutely no text, no words, no letters, no watermarks.`;
 
   if (context) context.log(`Generating banner for ${city}...`);
-  const buffer = await callFluxApi(prompt, '1440x1024', context);
+  const buffer = await callImageApi(prompt, '1440x1024', context);
   const slug = city.toLowerCase().replace(/[^a-z0-9]/g, '-');
   const blobPath = `chapters/${slug}-banner.png`;
   return await uploadToBlob(buffer, blobPath, context);
@@ -196,7 +153,7 @@ async function generateEventBadgeBackground(eventTitle, city, slug, context) {
     `Absolutely no text, no words, no letters, no watermarks.`;
 
   if (context) context.log(`Generating event badge for ${eventTitle}...`);
-  const buffer = await callFluxApi(prompt, '1024x1024', context);
+  const buffer = await callImageApi(prompt, '1024x1024', context);
   const blobPath = `events/${slug || 'event'}.png`;
   return await uploadToBlob(buffer, blobPath, context);
 }
@@ -207,6 +164,6 @@ module.exports = {
   generateChapterBanner,
   generateEventBadgeBackground,
   applyShieldMask,
-  callFluxApi,
+  callImageApi,
   uploadToBlob
 };
