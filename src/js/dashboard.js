@@ -46,7 +46,7 @@
     });
 
   function loadEvents() {
-    return fetch('/api/eventAttendance?action=list')
+    return GSC.fetch('/api/eventAttendance?action=list')
       .then(function(r) { return r.json(); })
       .then(function(data) {
         var el = document.getElementById('events-list');
@@ -91,7 +91,7 @@
     document.getElementById('detail-subtitle').textContent = '';
     document.getElementById('detail-attendees').innerHTML = '<p>Loading...</p>';
 
-    fetch('/api/eventAttendance?eventId=' + encodeURIComponent(eventId))
+    GSC.fetch('/api/eventAttendance?eventId=' + encodeURIComponent(eventId))
       .then(function(r) { return r.json(); })
       .then(function(data) {
         // Event code with copy
@@ -144,7 +144,7 @@
             btn.disabled = true;
             btn.textContent = 'Refreshing...';
             document.getElementById('sessionize-status').textContent = 'Fetching from Sessionize...';
-            fetch('/api/refreshSessionize', {
+            GSC.fetch('/api/refreshSessionize', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug, sessionizeApiId: sessionizeApiId })
@@ -259,7 +259,7 @@
           function sendPartner(base64, contentType) {
             var raw = base64.replace(/^data:[^;]+;base64,/, '');
             btn.disabled = true; btn.textContent = 'Adding...';
-            fetch('/api/communityPartner', {
+            GSC.fetch('/api/communityPartner', {
               method: 'POST', headers: {'Content-Type':'application/json'},
               body: JSON.stringify({ eventId: eventId, name: name, tier: tier, logoBase64: raw, logoContentType: contentType, website: website })
             }).then(function(r) { return r.json(); }).then(function(d) {
@@ -341,7 +341,7 @@
   function loadEventPartners(eventId) {
     var listEl = document.getElementById('partner-list');
     if (!listEl) return;
-    fetch('/api/getCommunityPartners?eventId=' + encodeURIComponent(eventId))
+    GSC.fetch('/api/getCommunityPartners?eventId=' + encodeURIComponent(eventId))
       .then(function(r) { return r.ok ? r.json() : { partners: {} }; })
       .then(function(data) {
         var tiers = data.partners || {};
@@ -367,7 +367,7 @@
         listEl.querySelectorAll('.cp-delete').forEach(function(btn) {
           btn.addEventListener('click', function() {
             if (!confirm('Remove this community partner?')) return;
-            fetch('/api/communityPartner', {
+            GSC.fetch('/api/communityPartner', {
               method: 'POST', headers: {'Content-Type':'application/json'},
               body: JSON.stringify({ eventId: eventId, partnerId: btn.dataset.id, action: 'delete' })
             }).then(function() { loadEventPartners(eventId); });
@@ -379,7 +379,7 @@
 
   function closeReg(eventId, chapterSlug) {
     if (!confirm('Close registration for this event?')) return;
-    fetch('/api/eventAttendance', {
+    GSC.fetch('/api/eventAttendance', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug, status: 'closed' })
     })
@@ -392,11 +392,11 @@
 
   function completeEvent(eventId, chapterSlug) {
     if (!confirm('Are you sure you want to mark this event as complete?\n\nBadges will be automatically issued to all checked-in attendees.')) return;
-    fetch('/api/eventAttendance', {
+    GSC.fetch('/api/eventAttendance', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug, status: 'completed' })
     }).then(function() {
-      return fetch('/api/issueBadges', {
+      return GSC.fetch('/api/issueBadges', {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug })
       });
@@ -460,7 +460,7 @@
       chapterSlug: chapterSlug
     };
 
-    fetch('/api/createEvent', {
+    GSC.fetch('/api/createEvent', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify(payload)
     })
@@ -592,7 +592,7 @@
     selected.forEach(function(cb) { ids.push(cb.dataset.regId); });
     if (ids.length === 0) return;
     if (!confirm('Set ' + ids.length + ' attendee(s) to "' + role + '"?')) return;
-    fetch('/api/updateRegistrationRole', {
+    GSC.fetch('/api/updateRegistrationRole', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ eventId: eventId, registrationIds: ids, role: role })
     })
@@ -616,7 +616,7 @@
     var email = emailEl.value.trim();
     var role = roleEl.value;
     if (!name || !email) { alert('Please enter name and email.'); return; }
-    fetch('/api/manualRegister', {
+    GSC.fetch('/api/manualRegister', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ eventId: eventId, name: name, email: email, role: role })
     })
@@ -652,7 +652,7 @@
     msg.style.display = 'none';
     document.getElementById('edit-event-form').style.display = 'none';
 
-    fetch('/api/getEvent?id=' + encodeURIComponent(currentEventId) + '&chapterSlug=' + encodeURIComponent(currentChapterSlug))
+    GSC.fetch('/api/getEvent?id=' + encodeURIComponent(currentEventId) + '&chapterSlug=' + encodeURIComponent(currentChapterSlug))
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.error) {
@@ -724,7 +724,7 @@
       registrationCap: document.getElementById('edit-cap').value
     };
 
-    fetch('/api/updateEvent', {
+    GSC.fetch('/api/updateEvent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -873,7 +873,7 @@
     btn.disabled = true;
     btn.textContent = 'Saving...';
 
-    fetch('/api/updateChapter', {
+    GSC.fetch('/api/updateChapter', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chapterSlug: currentChapterSlug, leads: leads })
     })

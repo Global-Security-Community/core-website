@@ -1,4 +1,4 @@
-const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
+const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess, verifyCsrfHeader } = require('../helpers/auth');
 const { getRegistrationsByEvent, countRegistrations, getEvent, getEventById, listEvents, updateEvent, getApprovedApplicationByEmail } = require('../helpers/tableStorage');
 
 /**
@@ -20,6 +20,10 @@ module.exports = async function (request, context) {
     const url = new URL(request.url);
 
     if (request.method === 'POST') {
+      // Verify CSRF header on POST requests
+      const csrfError = verifyCsrfHeader(request);
+      if (csrfError) return csrfError;
+
       // Update event status
       let body;
       try { body = await request.json(); } catch {

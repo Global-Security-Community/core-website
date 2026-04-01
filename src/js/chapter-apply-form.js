@@ -42,7 +42,7 @@ document.getElementById('chapter-apply-form').addEventListener('submit', async f
     var turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
     formData.turnstileToken = turnstileResponse ? turnstileResponse.value : '';
 
-    var response = await fetch('/api/chapterApplication', {
+    var response = await GSC.fetch('/api/chapterApplication', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData)

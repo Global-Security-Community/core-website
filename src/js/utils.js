@@ -55,4 +55,21 @@ GSC.safeUrl = function(url) {
   return '';
 };
 
+/**
+ * CSRF-protected fetch wrapper for API calls.
+ * Adds X-Requested-With header to all requests to /api/ endpoints.
+ */
+GSC.fetch = function(url, options) {
+  options = options || {};
+  if (typeof url === 'string' && url.indexOf('/api/') !== -1) {
+    options.headers = options.headers || {};
+    if (options.headers instanceof Headers) {
+      options.headers.set('X-Requested-With', 'fetch');
+    } else {
+      options.headers['X-Requested-With'] = 'fetch';
+    }
+  }
+  return fetch(url, options);
+};
+
 window.GSC = GSC;

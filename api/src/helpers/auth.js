@@ -106,4 +106,21 @@ function forbidden(message) {
   };
 }
 
-module.exports = { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess, getAdminChapterSlugs, isSuperAdmin, cityToSlug };
+/**
+ * Verifies the presence of a custom CSRF header on POST requests.
+ * Requests from the app's own fetch() calls include X-Requested-With.
+ * SWA roles endpoint and other platform calls are excluded.
+ * Returns null if OK, or a 403 response object if the check fails.
+ */
+function verifyCsrfHeader(request) {
+  if (request.method !== 'POST') return null;
+  const xrw = request.headers.get('x-requested-with');
+  if (xrw === 'fetch') return null;
+  return {
+    status: 403,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ error: 'Missing CSRF header' })
+  };
+}
+
+module.exports = { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess, getAdminChapterSlugs, isSuperAdmin, cityToSlug, verifyCsrfHeader };

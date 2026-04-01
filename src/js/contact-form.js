@@ -35,7 +35,7 @@ document.getElementById('contact-form').addEventListener('submit', async functio
     button.disabled = true;
     button.textContent = 'Sending...';
     
-    var response = await fetch('/api/contactForm', {
+    var response = await GSC.fetch('/api/contactForm', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: name, email: email, subject: subject, message: message, turnstileToken: turnstileToken })

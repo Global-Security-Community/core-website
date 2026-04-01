@@ -19,7 +19,7 @@
       btn.style.display = 'inline-block';
 
       // Check current subscription status
-      fetch('/api/chapterSubscribe', {
+      GSC.fetch('/api/chapterSubscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chapterSlug: chapterSlug, action: 'status' })
@@ -53,7 +53,7 @@
     btn.disabled = true;
     btn.textContent = isSubscribed ? 'Unsubscribing...' : 'Subscribing...';
 
-    fetch('/api/chapterSubscribe', {
+    GSC.fetch('/api/chapterSubscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chapterSlug: chapterSlug, action: action })
