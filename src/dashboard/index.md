@@ -80,15 +80,15 @@ title: Dashboard
       <h3 id="create-progress-title"></h3>
       <ul class="pipeline-steps">
         <li id="step-stored" class="pipeline-step pending">
-          <span class="step-icon">⏳</span>
+          <span class="step-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg></span></span>
           <span class="step-label">Event saved to database</span>
         </li>
         <li id="step-page" class="pipeline-step pending">
-          <span class="step-icon">⏳</span>
+          <span class="step-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg></span></span>
           <span class="step-label">Event page generation triggered</span>
         </li>
         <li id="step-live" class="pipeline-step pending">
-          <span class="step-icon">⏳</span>
+          <span class="step-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg></span></span>
           <span class="step-label">Event page deployed &amp; live</span>
         </li>
       </ul>
@@ -102,7 +102,7 @@ title: Dashboard
   <div id="section-detail" class="is-hidden">
     <div class="detail-actions">
       <button id="btn-back-events" class="btn-outline">&larr; Back to Events</button>
-      <button id="btn-edit-event" class="btn-outline" style="margin-left:0.5rem;">✏️ Edit Event</button>
+      <button id="btn-edit-event" class="btn-outline" style="margin-left:0.5rem;"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span> Edit Event</button>
     </div>
     <h2 id="detail-title">Event Details</h2>
     <p id="detail-subtitle" class="subtitle-muted"></p>

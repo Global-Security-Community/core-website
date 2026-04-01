@@ -1821,3 +1821,8 @@ a.event-card:hover { color: inherit; }
 }
 @media (max-width: 900px) { .skeleton-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px) { .skeleton-grid { grid-template-columns: 1fr; } }
+
+/* ─── Inline SVG Icons ─── */
+.icon { display: inline-flex; vertical-align: middle; align-items: center; }
+.icon svg { width: 1em; height: 1em; }
+.icon--lg svg { width: 2rem; height: 2rem; }

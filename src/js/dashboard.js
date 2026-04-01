@@ -63,8 +63,8 @@
         data.events.forEach(function(ev) {
           html += '<div class="card event-card" data-event-id="' + GSC.esc(ev.id) + '" data-chapter-slug="' + GSC.esc(ev.chapterSlug) + '" data-event-title="' + GSC.esc(ev.title) + '" data-sessionize-id="' + GSC.esc(ev.sessionizeApiId || '') + '">';
           html += '<h3>' + GSC.esc(ev.title) + '</h3>';
-          html += '<p>📅 ' + GSC.esc(ev.date) + ' &nbsp; 📍 ' + GSC.esc(ev.location) + '</p>';
-          html += '<p>🎟️ ' + ev.registrationCount + (ev.registrationCap > 0 ? ' / ' + ev.registrationCap : '') + ' registered</p>';
+          html += '<p><span class="icon" aria-hidden="true">' + GSCIcons.calendar + '</span> ' + GSC.esc(ev.date) + ' &nbsp; <span class="icon" aria-hidden="true">' + GSCIcons.mapPin + '</span> ' + GSC.esc(ev.location) + '</p>';
+          html += '<p><span class="icon" aria-hidden="true">' + GSCIcons.ticket + '</span> ' + ev.registrationCount + (ev.registrationCap > 0 ? ' / ' + ev.registrationCap : '') + ' registered</p>';
           html += '<span class="status-badge status-badge--' + GSC.esc(ev.status || 'default') + '">' + GSC.esc(ev.status) + '</span>';
           html += '</div>';
         });
@@ -133,7 +133,7 @@
           refreshCard.className = 'card';
           refreshCard.style.cssText = 'margin-top:1rem;padding:1rem;';
           refreshCard.innerHTML =
-            '<h4 style="margin:0 0 0.5rem 0;">🎤 Sessionize Speakers</h4>' +
+            '<h4 style="margin:0 0 0.5rem 0;"><span class="icon" aria-hidden="true">' + GSCIcons.mic + '</span> Sessionize Speakers</h4>' +
             '<p id="sessionize-status" style="font-size:0.85rem;color:#666;margin:0 0 0.5rem 0;">Click refresh to cache speaker data from Sessionize.</p>' +
             '<button id="btn-refresh-speakers" style="width:100%">Refresh Speakers</button>' +
             '<div id="sessionize-speakers-list" style="margin-top:0.75rem;"></div>';
@@ -156,7 +156,7 @@
                 if (result.success) {
                   var ts = result.lastRefreshed ? new Date(result.lastRefreshed).toLocaleString() : 'just now';
                   document.getElementById('sessionize-status').innerHTML =
-                    '✅ Cached <strong>' + result.speakers + '</strong> speakers, <strong>' + result.agenda + '</strong> agenda items. Last refreshed: ' + GSC.esc(ts);
+                    '<span class="icon" aria-hidden="true">' + GSCIcons.checkCircle + '</span> Cached <strong>' + result.speakers + '</strong> speakers, <strong>' + result.agenda + '</strong> agenda items. Last refreshed: ' + GSC.esc(ts);
                   if (result.speakerNames && result.speakerNames.length > 0) {
                     var listHtml = '<p style="font-size:0.8rem;color:#666;margin:0 0 0.25rem 0;">Speakers:</p>';
                     listHtml += '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;">';
@@ -167,13 +167,13 @@
                     document.getElementById('sessionize-speakers-list').innerHTML = listHtml;
                   }
                 } else {
-                  document.getElementById('sessionize-status').textContent = '⚠️ ' + (result.message || result.error || 'Failed to refresh');
+                  document.getElementById('sessionize-status').innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.alertTriangle + '</span> ' + (result.message || result.error || 'Failed to refresh');
                 }
               })
               .catch(function() {
                 btn.disabled = false;
                 btn.textContent = 'Refresh Speakers';
-                document.getElementById('sessionize-status').textContent = '❌ Failed to refresh. Please try again.';
+                document.getElementById('sessionize-status').innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.xCircle + '</span> Failed to refresh. Please try again.';
               });
           });
         }
@@ -183,7 +183,7 @@
         regenCard.className = 'card';
         regenCard.style.cssText = 'margin-top:1rem;padding:1rem;';
         regenCard.innerHTML =
-          '<h4 style="margin:0 0 0.5rem 0;">🎨 Event Badge Image</h4>' +
+          '<h4 style="margin:0 0 0.5rem 0;"><span class="icon" aria-hidden="true">' + GSCIcons.image + '</span> Event Badge Image</h4>' +
           '<p style="font-size:0.85rem;color:#666;margin:0;">Image generation is temporarily disabled while we improve the workflow.</p>';
         var actionsParent2 = document.getElementById('detail-actions').parentNode;
         actionsParent2.insertBefore(regenCard, document.getElementById('detail-attendees'));
@@ -193,7 +193,7 @@
         partnerSection.className = 'card';
         partnerSection.style.cssText = 'margin-top:1rem;padding:1rem;';
         partnerSection.innerHTML =
-          '<h4 style="margin:0 0 0.75rem 0;">🤝 Community Partners</h4>' +
+          '<h4 style="margin:0 0 0.75rem 0;"><span class="icon" aria-hidden="true">' + GSCIcons.handshake + '</span> Community Partners</h4>' +
           '<div id="partner-list" style="margin-bottom:0.75rem;"></div>' +
           '<details><summary style="cursor:pointer;color:var(--color-primary-teal);font-weight:600;">Add Partner</summary>' +
           '<div style="margin-top:0.75rem;">' +
@@ -265,18 +265,18 @@
             }).then(function(r) { return r.json(); }).then(function(d) {
               btn.disabled = false; btn.textContent = 'Add Community Partner';
               if (d.success) {
-                msg.textContent = '✅ ' + name + ' added!'; msg.style.color = '#155724'; msg.style.display = 'block';
+                msg.innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.checkCircle + '</span> ' + GSC.esc(name) + ' added!'; msg.style.color = '#155724'; msg.style.display = 'block';
                 document.getElementById('cp-name').value = '';
                 document.getElementById('cp-tier').value = '';
                 document.getElementById('cp-website').value = '';
                 fileInput.value = ''; preview.innerHTML = ''; delete preview.dataset.logoData;
                 loadEventPartners(eventId);
               } else {
-                msg.textContent = '❌ ' + (d.error || 'Failed'); msg.style.color = '#721c24'; msg.style.display = 'block';
+                msg.innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.xCircle + '</span> ' + GSC.esc(d.error || 'Failed'); msg.style.color = '#721c24'; msg.style.display = 'block';
               }
             }).catch(function() {
               btn.disabled = false; btn.textContent = 'Add Community Partner';
-              msg.textContent = '❌ Network error'; msg.style.color = '#721c24'; msg.style.display = 'block';
+              msg.innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.xCircle + '</span> Network error'; msg.style.color = '#721c24'; msg.style.display = 'block';
             });
           }
 
@@ -302,14 +302,14 @@
         var html = '<table><thead><tr><th style="width:30px;"><input type="checkbox" id="select-all"></th><th>Name</th><th>Email</th><th>Role</th><th>Ticket</th><th>Checked In</th></tr></thead><tbody>';
         data.attendees.forEach(function(a) {
           var role = a.role || 'attendee';
-          var volIcon = a.volunteerInterest ? ' <span title="Volunteer interest" class="vol-interest-icon">🙋</span>' : '';
+          var volIcon = a.volunteerInterest ? ' <span title="Volunteer interest" class="vol-interest-icon"><span class="icon" aria-hidden="true">' + GSCIcons.handRaised + '</span></span>' : '';
           html += '<tr>';
           html += '<td><input type="checkbox" class="attendee-check" data-reg-id="' + GSC.esc(a.id) + '"></td>';
           html += '<td>' + GSC.esc(a.name) + volIcon + '</td>';
           html += '<td>' + GSC.esc(a.email) + '</td>';
           html += '<td><span class="role-badge role-badge--' + GSC.esc(role) + '">' + GSC.esc(role) + '</span></td>';
           html += '<td style="font-family:monospace;">' + GSC.esc(a.ticketCode) + '</td>';
-          html += '<td>' + (a.checkedIn ? '✅ ' + GSC.esc(a.checkedInAt) : '—') + '</td>';
+          html += '<td>' + (a.checkedIn ? '<span class="icon" aria-hidden="true">' + GSCIcons.checkCircle + '</span> ' + GSC.esc(a.checkedInAt) : '—') + '</td>';
           html += '</tr>';
         });
         html += '</tbody></table>';
@@ -359,7 +359,7 @@
           if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" style="max-width:40px;max-height:20px;object-fit:contain;">';
           html += '<span style="font-size:0.85rem;">' + GSC.esc(p.name) + '</span>';
           if (p.tierName) html += '<span style="font-size:0.7rem;color:#666;">(' + GSC.esc(p.tierName) + ')</span>';
-          html += '<button class="cp-delete" data-id="' + GSC.esc(p.id) + '" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:0.9rem;padding:0 0.25rem;" title="Remove">✕</button>';
+          html += '<button class="cp-delete" data-id="' + GSC.esc(p.id) + '" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:0.9rem;padding:0 0.25rem;" title="Remove"><span class="icon" aria-hidden="true">' + GSCIcons.x + '</span></button>';
           html += '</div>';
         });
         html += '</div>';
@@ -490,10 +490,10 @@
     var el = document.getElementById(stepId);
     el.className = 'pipeline-step ' + state;
     var icon = el.querySelector('.step-icon');
-    if (state === 'done') icon.textContent = '✅';
-    else if (state === 'active') icon.textContent = '🔄';
-    else if (state === 'error') icon.textContent = '❌';
-    else icon.textContent = '⏳';
+    if (state === 'done') icon.innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.checkCircle + '</span>';
+    else if (state === 'active') icon.innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.refreshCw + '</span>';
+    else if (state === 'error') icon.innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.xCircle + '</span>';
+    else icon.innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.hourglass + '</span>';
   }
 
   function showCreateProgress(event) {

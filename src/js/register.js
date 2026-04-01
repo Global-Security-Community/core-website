@@ -18,9 +18,9 @@
       document.getElementById('event-info').innerHTML =
         '<div class="card" style="max-width:600px;">' +
         '<h2 style="margin-top:0;">' + GSC.esc(ev.title) + '</h2>' +
-        '<p>📅 ' + GSC.esc(ev.date) + (ev.endDate ? ' – ' + GSC.esc(ev.endDate) : '') + '</p>' +
-        '<p>📍 ' + GSC.esc(ev.location) + '</p>' +
-        '<p>🎟️ ' + ev.registrationCount + (ev.registrationCap > 0 ? ' / ' + ev.registrationCap : '') + ' registered</p>' +
+        '<p><span class="icon" aria-hidden="true">' + GSCIcons.calendar + '</span> ' + GSC.esc(ev.date) + (ev.endDate ? ' – ' + GSC.esc(ev.endDate) : '') + '</p>' +
+        '<p><span class="icon" aria-hidden="true">' + GSCIcons.mapPin + '</span> ' + GSC.esc(ev.location) + '</p>' +
+        '<p><span class="icon" aria-hidden="true">' + GSCIcons.ticket + '</span> ' + ev.registrationCount + (ev.registrationCap > 0 ? ' / ' + ev.registrationCap : '') + ' registered</p>' +
         '</div>';
 
       if (ev.status === 'closed' || ev.status === 'completed') {
@@ -106,7 +106,7 @@
           '<div class="ticket-header">' +
             '<div>' +
               '<div class="ticket-event-name">' + GSC.esc(r.eventTitle) + '</div>' +
-              '<div class="ticket-event-date">\ud83d\udcc5 ' + GSC.formatDate(r.eventDate) + '</div>' +
+              '<div class="ticket-event-date"><span class="icon" aria-hidden="true">' + GSCIcons.calendar + '</span> ' + GSC.formatDate(r.eventDate) + '</div>' +
               '<div class="ticket-event-location">' + GSC.formatLocation(r.eventLocation) + '</div>' +
             '</div>' +
             '<img src="/assets/GSC-Shield-Transparent.png" alt="" class="ticket-header-logo">' +

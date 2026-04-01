@@ -34,11 +34,13 @@
 
   function updateButton(subscribed) {
     if (subscribed) {
-      btn.textContent = '✅ Subscribed — Unsubscribe';
+      btn.textContent = '';
+      btn.innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.checkCircle + '</span> Subscribed — Unsubscribe';
       btn.className = 'btn-secondary';
       msg.textContent = 'You will be notified when new events are announced.';
     } else {
-      btn.textContent = '🔔 Subscribe to Event Notifications';
+      btn.textContent = '';
+      btn.innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.bell + '</span> Subscribe to Event Notifications';
       btn.className = '';
       msg.textContent = 'Get an email when new events are announced for this chapter.';
     }
@@ -62,12 +64,14 @@
         if (res.success !== undefined) {
           updateButton(res.subscribed);
         } else {
-          btn.textContent = '❌ Error — try again';
+          btn.textContent = '';
+          btn.innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.xCircle + '</span> Error — try again';
         }
       })
       .catch(function() {
         btn.disabled = false;
-        btn.textContent = '❌ Error — try again';
+        btn.textContent = '';
+        btn.innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.xCircle + '</span> Error — try again';
       });
   });
 })();

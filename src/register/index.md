@@ -88,7 +88,7 @@ title: Register for Event
       </div>
 
       <div id="volunteer-confirm" class="volunteer-confirm-box is-hidden">
-        <p class="volunteer-thanks">🙏 Thank you for offering to help — our events wouldn't be possible without volunteers like you!</p>
+        <p class="volunteer-thanks"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></span> Thank you for offering to help — our events wouldn't be possible without volunteers like you!</p>
         <p class="volunteer-note">Please note that volunteer places are limited and not all who apply can be selected. If you're unsure whether volunteering is right for you, please speak to a chapter lead before committing.</p>
         <label class="checkbox-label">
           <input type="checkbox" id="reg-volunteer-confirm">
@@ -106,11 +106,11 @@ title: Register for Event
 
   <!-- Success state -->
   <div id="reg-success" class="reg-success is-hidden">
-    <h2 class="success-title">You're Registered! 🎉</h2>
+    <h2 class="success-title">You're Registered! <span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12v0c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11v0c-.11.7-.72 1.22-1.43 1.22H17"/><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98v0C9.52 4.9 9 5.52 9 6.23V7"/><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/></svg></span></h2>
     <p id="success-details"></p>
     <div id="success-qr" class="success-qr"></div>
     <p>A confirmation email with your ticket has been sent.</p>
-    <p class="help-text">📧 Can't find it? Please check your junk or spam folder.</p>
+    <p class="help-text"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span> Can't find it? Please check your junk or spam folder.</p>
     <p><a href="/my-tickets/">View My Tickets</a></p>
   </div>
 </div>
