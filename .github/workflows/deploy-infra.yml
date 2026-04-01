@@ -31,9 +31,19 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Get SWA managed identity principal ID
+        id: swa-identity
+        run: |
+          PRINCIPAL_ID=$(az staticwebapp show \
+            --name gsc-corewebsite-swa \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query "identity.principalId" -o tsv 2>/dev/null || echo "")
+          echo "principal_id=${PRINCIPAL_ID}" >> "$GITHUB_OUTPUT"
+
       - name: Deploy Bicep
         uses: azure/arm-deploy@a1361c2c2cd398621955b16ca32e01c65ea340f5 # v2.0.0
         with:
           resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP }}
           template: ./infra/main.bicep
+          parameters: swaPrincipalId=${{ steps.swa-identity.outputs.principal_id }}
           failOnStdErr: false
