@@ -125,9 +125,14 @@ module.exports = async function (request, context) {
 
     const format = url.searchParams.get('format');
     if (format === 'csv') {
+      // Prefix formula-triggering characters to prevent CSV injection in spreadsheets
+      const csvSafe = (val) => {
+        const s = String(val || '');
+        return /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
+      };
       const header = 'Name,Email,Ticket Code,Role,Volunteer Interest,Checked In,Checked In At,Registered At\n';
       const rows = registrations.map(r =>
-        `"${(r.fullName || '').replace(/"/g, '""')}","${r.email || ''}","${r.ticketCode}","${r.role || 'attendee'}","${r.volunteerInterest === true || r.volunteerInterest === 'true' ? 'Yes' : 'No'}","${r.checkedIn ? 'Yes' : 'No'}","${r.checkedInAt || ''}","${r.registeredAt || ''}"`
+        `"${csvSafe(r.fullName || '').replace(/"/g, '""')}","${csvSafe(r.email || '').replace(/"/g, '""')}","${csvSafe(r.ticketCode)}","${r.role || 'attendee'}","${r.volunteerInterest === true || r.volunteerInterest === 'true' ? 'Yes' : 'No'}","${r.checkedIn ? 'Yes' : 'No'}","${r.checkedInAt || ''}","${r.registeredAt || ''}"`
       ).join('\n');
       return {
         status: 200,
