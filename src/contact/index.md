@@ -1,6 +1,7 @@
 ---
 layout: base.njk
 title: Contact Us
+description: "Get in touch with the Global Security Community. Ask questions, suggest partnerships, or apply to start a chapter."
 ---
 
 <div class="container">
@@ -9,7 +10,7 @@ title: Contact Us
   <p>Have questions, want to start a chapter, or interested in partnering with us? We'd love to hear from you.</p>
 
   <div style="max-width: 600px;">
-    <div id="form-message" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 4px;"></div>
+    <div id="form-message" role="alert" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 4px;"></div>
     <form id="contact-form">
       <div class="form-group">
         <label for="name">Name *</label>

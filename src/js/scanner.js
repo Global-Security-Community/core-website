@@ -110,7 +110,7 @@
     var html = '';
     scanLog.slice(0, 20).forEach(function(s) {
       var icon = s.result === 'checked_in' ? '✅' : s.result === 'already_checked_in' ? '⚠️' : '❌';
-      html += '<p style="margin:0.25rem 0;">' + icon + ' <strong>' + esc(s.name || s.code) + '</strong> <span style="color:#999;font-size:0.8rem;">' + new Date(s.time).toLocaleTimeString() + '</span></p>';
+      html += '<p style="margin:0.25rem 0;">' + icon + ' <strong>' + esc(s.name || s.code) + '</strong> <span style="color:#767676;font-size:0.8rem;">' + new Date(s.time).toLocaleTimeString() + '</span></p>';
     });
     document.getElementById('scan-log').innerHTML = html;
   }

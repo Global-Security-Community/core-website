@@ -1,6 +1,7 @@
 ---
 layout: base.njk
 title: Apply to Lead a Chapter
+description: "Apply to lead a Global Security Community chapter in your city. We provide resources, guidance, and support."
 ---
 
 <div class="container">
@@ -9,7 +10,7 @@ title: Apply to Lead a Chapter
   <p>Passionate about building a security community in your city? We'd love to hear from you. Fill out the form below and our team will review your application.</p>
 
   <div style="max-width: 600px;">
-    <div id="form-message" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 4px;"></div>
+    <div id="form-message" role="alert" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 4px;"></div>
     <form id="chapter-apply-form">
       <h2 style="margin-top: 0;">Primary Chapter Lead</h2>
 

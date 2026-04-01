@@ -27,11 +27,11 @@
         <span class="brand-text">Global Security Community</span>
       </a>
       <ul class="nav-menu" id="nav-menu">
-        <li><a href="/" class="nav-link">Home</a></li>
-        <li><a href="/about/" class="nav-link">About Us</a></li>
-        <li><a href="/chapters/" class="nav-link">Chapters</a></li>
-        <li><a href="/events/" class="nav-link">Events</a></li>
-        <li><a href="/contact/" class="nav-link">Contact</a></li>
+        <li><a href="/" class="nav-link{% if page.url == '/' %} nav-link--active{% endif %}"{% if page.url == '/' %} aria-current="page"{% endif %}>Home</a></li>
+        <li><a href="/about/" class="nav-link{% if page.url == '/about/' %} nav-link--active{% endif %}"{% if page.url == '/about/' %} aria-current="page"{% endif %}>About Us</a></li>
+        <li><a href="/chapters/" class="nav-link{% if '/chapters/' in page.url %} nav-link--active{% endif %}"{% if '/chapters/' in page.url %} aria-current="page"{% endif %}>Chapters</a></li>
+        <li><a href="/events/" class="nav-link{% if '/events/' in page.url %} nav-link--active{% endif %}"{% if '/events/' in page.url %} aria-current="page"{% endif %}>Events</a></li>
+        <li><a href="/contact/" class="nav-link{% if page.url == '/contact/' %} nav-link--active{% endif %}"{% if page.url == '/contact/' %} aria-current="page"{% endif %}>Contact</a></li>
         <li id="nav-auth"></li>
       </ul>
       <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
