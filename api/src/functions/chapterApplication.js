@@ -178,7 +178,8 @@ module.exports = async function (request, context) {
       };
 
       try {
-        await sendMessage(discordChannelId, discordMessage, context);
+        const sent = await sendMessage(discordChannelId, discordMessage, context);
+        if (!sent) context.log('Discord chapter application notification was not delivered');
       } catch (discordError) {
         context.log(`Discord notification failed: ${discordError.message}`);
       }
