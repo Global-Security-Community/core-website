@@ -28,7 +28,12 @@
 
   // Wire up navigation buttons
   document.getElementById('btn-events').addEventListener('click', function() { showSection('events'); });
-  document.getElementById('btn-create').addEventListener('click', function() { showSection('create'); });
+  document.getElementById('btn-create').addEventListener('click', function() {
+    showSection('create');
+    if (currentChapterSlug) {
+      document.getElementById('ev-chapter').value = currentChapterSlug;
+    }
+  });
   document.getElementById('btn-chapter').addEventListener('click', function() { showSection('chapter'); loadChapterEdit(); });
   document.getElementById('btn-back-events').addEventListener('click', function() { showSection('events'); });
 
@@ -54,6 +59,11 @@
           document.getElementById('dash-title').textContent = data.chapterCity + ' Chapter Management';
           // Derive chapter slug from city
           currentChapterSlug = data.chapterCity.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
+          // Auto-fill chapter slug in create form
+          var chapterInput = document.getElementById('ev-chapter');
+          if (chapterInput && !chapterInput.value) {
+            chapterInput.value = currentChapterSlug;
+          }
         }
         if (!data.events || data.events.length === 0) {
           el.innerHTML = '<p>No events yet. Create your first event!</p>';

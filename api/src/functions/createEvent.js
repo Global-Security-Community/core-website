@@ -1,6 +1,6 @@
 const { randomUUID } = require('crypto');
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
-const { storeEvent, listEvents, getSubscriptionsByChapter, updateEvent } = require('../helpers/tableStorage');
+const { storeEvent, listEvents, getSubscriptionsByChapter, updateEvent, getApprovedApplicationBySlug } = require('../helpers/tableStorage');
 const { sanitiseFields } = require('../helpers/sanitise');
 const { sendMessage } = require('../helpers/discordBot');
 const { sendEventNotificationEmail } = require('../helpers/emailService');
@@ -41,6 +41,13 @@ module.exports = async function (request, context) {
     if (!locationAddress1 && !legacyLocation) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Missing required field: address' }) };
+    }
+
+    // Validate that the chapter slug corresponds to an existing approved chapter
+    const chapter = await getApprovedApplicationBySlug(chapterSlug.toLowerCase().trim());
+    if (!chapter) {
+      return { status: 400, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Invalid chapter slug: no approved chapter found' }) };
     }
 
     // Sanitise user inputs

@@ -71,8 +71,9 @@ title: Dashboard
         <input type="number" id="ev-cap" value="0" min="0">
       </div>
       <div class="form-group">
-        <label for="ev-chapter">Chapter Slug *</label>
-        <input type="text" id="ev-chapter" placeholder="e.g. perth">
+        <label for="ev-chapter">Chapter</label>
+        <input type="text" id="ev-chapter" readonly>
+        <span class="help-text">Automatically set to your chapter.</span>
       </div>
       <button id="create-btn" type="button">Create Event</button>
     </div>

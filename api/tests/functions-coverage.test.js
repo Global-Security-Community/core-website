@@ -567,7 +567,11 @@ describe('cancelRegistration function', () => {
 describe('createEvent function', () => {
   const createEvent = require('../src/functions/createEvent');
 
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Default: chapter slug is valid
+    storage.getApprovedApplicationBySlug.mockResolvedValue({ city: 'Perth', country: 'Australia' });
+  });
 
   const validBody = {
     title: 'Test Event', date: '2026-06-01', description: 'A great event',
@@ -604,6 +608,15 @@ describe('createEvent function', () => {
     }, ['admin']), context);
     expect(res.status).toBe(400);
     expect(JSON.parse(res.body).error).toMatch(/length/);
+  });
+
+  test('returns 400 for invalid chapter slug', async () => {
+    storage.getApprovedApplicationBySlug.mockResolvedValueOnce(null);
+    const res = await createEvent(makeAuthRequest('POST', {
+      ...validBody, chapterSlug: 'nonexistent-chapter'
+    }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/chapter/i);
   });
 
   test('returns 201 on successful event creation', async () => {
