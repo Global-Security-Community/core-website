@@ -127,9 +127,12 @@
         document.getElementById('btn-complete').addEventListener('click', function() { completeEvent(eventId, chapterSlug); });
 
         // Sessionize refresh button
+        var existingRefreshCard = document.getElementById('card-sessionize-speakers');
+        if (existingRefreshCard) existingRefreshCard.remove();
         if (sessionizeApiId) {
           var actionsEl = document.getElementById('detail-actions');
           var refreshCard = document.createElement('div');
+          refreshCard.id = 'card-sessionize-speakers';
           refreshCard.className = 'card';
           refreshCard.style.cssText = 'margin-top:1rem;padding:1rem;';
           refreshCard.innerHTML =
@@ -179,7 +182,10 @@
         }
 
         // Regenerate image button — disabled until image generation workflow is finalised
+        var existingRegenCard = document.getElementById('card-event-badge');
+        if (existingRegenCard) existingRegenCard.remove();
         var regenCard = document.createElement('div');
+        regenCard.id = 'card-event-badge';
         regenCard.className = 'card';
         regenCard.style.cssText = 'margin-top:1rem;padding:1rem;';
         regenCard.innerHTML =
@@ -189,7 +195,10 @@
         actionsParent2.insertBefore(regenCard, document.getElementById('detail-attendees'));
 
         // Community Partners management section
+        var existingPartnerSection = document.getElementById('card-community-partners');
+        if (existingPartnerSection) existingPartnerSection.remove();
         var partnerSection = document.createElement('div');
+        partnerSection.id = 'card-community-partners';
         partnerSection.className = 'card';
         partnerSection.style.cssText = 'margin-top:1rem;padding:1rem;';
         partnerSection.innerHTML =
