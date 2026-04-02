@@ -24,6 +24,7 @@ const communityPartnerHandler = require('./functions/communityPartner');
 const getCommunityPartnersHandler = require('./functions/getCommunityPartners');
 const regenerateImageHandler = require('./functions/regenerateImage');
 const updateEventHandler = require('./functions/updateEvent');
+const fixEventChapterHandler = require('./functions/fixEventChapter');
 
 /**
  * Wraps a POST handler with CSRF header verification.
@@ -68,3 +69,4 @@ app.post('refreshSessionize', { authLevel: 'anonymous', handler: withCsrf(refres
 app.post('communityPartner', { authLevel: 'anonymous', handler: withCsrf(communityPartnerHandler) });
 app.post('regenerateImage', { authLevel: 'anonymous', handler: withCsrf(regenerateImageHandler) });
 app.post('updateEvent', { authLevel: 'anonymous', handler: withCsrf(updateEventHandler) });
+app.post('fixEventChapter', { authLevel: 'anonymous', handler: withCsrf(fixEventChapterHandler) });

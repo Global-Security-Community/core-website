@@ -140,6 +140,54 @@ async function updateEvent(chapterSlug, eventId, updates) {
   return entity;
 }
 
+async function moveEventToChapter(oldChapterSlug, eventId, newChapterSlug) {
+  const client = getTableClient('Events');
+
+  let existing;
+  try {
+    existing = await client.getEntity(oldChapterSlug, eventId);
+  } catch (err) {
+    if (err.statusCode === 404) {
+      const e = new Error(`Event '${eventId}' not found under chapter '${oldChapterSlug}'`);
+      e.statusCode = 404;
+      throw e;
+    }
+    throw err;
+  }
+
+  // Check whether an entity already exists at the destination to give a clear error
+  try {
+    await client.getEntity(newChapterSlug, eventId);
+    const e = new Error(`Event '${eventId}' already exists under chapter '${newChapterSlug}'`);
+    e.statusCode = 409;
+    throw e;
+  } catch (err) {
+    if (err.statusCode !== 404) throw err;
+    // 404 is expected — the destination slot is free, continue
+  }
+
+  // Build new entity with corrected partition key and chapterSlug field
+  const newEntity = Object.assign({}, existing, {
+    partitionKey: newChapterSlug,
+    rowKey: eventId,
+    chapterSlug: newChapterSlug,
+    updatedAt: new Date().toISOString()
+  });
+
+  // Azure Table Storage does not support updating partition keys,
+  // so we create under the new key then delete the old one.
+  await client.createEntity(newEntity);
+  try {
+    await client.deleteEntity(oldChapterSlug, eventId);
+  } catch (deleteErr) {
+    // Rollback: remove the newly created entity to avoid duplicates
+    try { await client.deleteEntity(newChapterSlug, eventId); } catch { /* best-effort rollback */ }
+    throw deleteErr;
+  }
+
+  return newEntity;
+}
+
 // ─── Registrations ───
 
 async function storeRegistration(registration) {
@@ -561,7 +609,7 @@ async function storeContactSubmission({ name, email, subject, message }) {
 
 module.exports = {
   storeApplication, getApplication, updateApplicationStatus, getApprovedApplicationBySlug,
-  storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent,
+  storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent, moveEventToChapter,
   storeRegistration, getRegistrationByTicketCode, getRegistrationsByUser,
   getRegistrationsByEvent, countRegistrations, updateRegistration,
   deleteRegistration, deleteDemographics,
