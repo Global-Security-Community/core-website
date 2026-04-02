@@ -1,6 +1,6 @@
 const { randomUUID } = require('crypto');
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
-const { storeEvent, listEvents, getSubscriptionsByChapter, updateEvent, getApprovedApplicationBySlug } = require('../helpers/tableStorage');
+const { storeEvent, getSubscriptionsByChapter, updateEvent, getApprovedApplicationBySlug } = require('../helpers/tableStorage');
 const { sanitiseFields } = require('../helpers/sanitise');
 const { sendMessage } = require('../helpers/discordBot');
 const { sendEventNotificationEmail } = require('../helpers/emailService');
