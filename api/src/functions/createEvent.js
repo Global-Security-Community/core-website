@@ -95,7 +95,7 @@ module.exports = async function (request, context) {
       description: safe.description,
       sessionizeApiId: sessionizeApiId || '',
       registrationCap: parseInt(registrationCap) || 0,
-      status: 'published',
+      status: 'draft',
       createdBy: user.userId
     };
 
@@ -194,7 +194,7 @@ module.exports = async function (request, context) {
     return {
       status: 201,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: true, event: { id: eventId, slug, title: safe.title } })
+      body: JSON.stringify({ success: true, event: { id: eventId, slug, title: safe.title, chapterSlug: chapterSlug.toLowerCase().trim() } })
     };
   } catch (error) {
     context.log(`createEvent error: ${error.message}`);

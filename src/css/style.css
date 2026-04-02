@@ -732,6 +732,7 @@ td {
 }
 
 .status-badge--published { background-color: var(--color-primary-teal); }
+.status-badge--draft { background-color: #767676; }
 .status-badge--closed { background-color: var(--color-accent-orange); }
 .status-badge--completed { background-color: #666; }
 .status-badge--default { background-color: #767676; }
