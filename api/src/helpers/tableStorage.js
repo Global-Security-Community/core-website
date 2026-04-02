@@ -188,6 +188,12 @@ async function moveEventToChapter(oldChapterSlug, eventId, newChapterSlug) {
   return newEntity;
 }
 
+async function deleteEvent(chapterSlug, eventId) {
+  const client = getTableClient('Events');
+  await client.deleteEntity(chapterSlug, eventId);
+}
+}
+
 // ─── Registrations ───
 
 async function storeRegistration(registration) {
@@ -609,7 +615,7 @@ async function storeContactSubmission({ name, email, subject, message }) {
 
 module.exports = {
   storeApplication, getApplication, updateApplicationStatus, getApprovedApplicationBySlug,
-  storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent, moveEventToChapter,
+  storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent, moveEventToChapter, deleteEvent,
   storeRegistration, getRegistrationByTicketCode, getRegistrationsByUser,
   getRegistrationsByEvent, countRegistrations, updateRegistration,
   deleteRegistration, deleteDemographics,

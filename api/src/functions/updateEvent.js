@@ -1,5 +1,5 @@
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
-const { updateEvent, getEvent } = require('../helpers/tableStorage');
+const { updateEvent, getEvent, getEventBySlug } = require('../helpers/tableStorage');
 const { sanitiseFields } = require('../helpers/sanitise');
 
 /**
@@ -52,6 +52,30 @@ module.exports = async function (request, context) {
     if (Object.keys(textFields).length > 0) {
       const safe = sanitiseFields(textFields, Object.keys(textFields));
       Object.assign(updates, safe);
+    }
+
+    // Slug update
+    if (body.slug !== undefined) {
+      const newSlug = String(body.slug)
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .substring(0, 80);
+      if (!newSlug) {
+        return { status: 400, headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ error: 'Slug must contain at least one alphanumeric character' }) };
+      }
+      // Check uniqueness — reject if another event already uses this slug
+      if (newSlug !== existing.slug) {
+        const conflict = await getEventBySlug(newSlug);
+        if (conflict && conflict.rowKey !== eventId) {
+          return { status: 400, headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ error: 'That slug is already in use by another event' }) };
+        }
+      }
+      updates.slug = newSlug;
     }
 
     // Date fields (not sanitised, validated)

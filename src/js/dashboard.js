@@ -663,6 +663,7 @@
         }
         editEventData = data;
         document.getElementById('edit-title').value = data.title || '';
+        document.getElementById('edit-slug').value = data.slug || '';
         document.getElementById('edit-date').value = data.date || '';
         document.getElementById('edit-enddate').value = data.endDate || '';
         document.getElementById('edit-building').value = data.locationBuilding || '';
@@ -687,22 +688,19 @@
     var msg = document.getElementById('edit-event-message');
 
     var title = document.getElementById('edit-title').value.trim();
+    var slug = document.getElementById('edit-slug').value.trim();
     var date = document.getElementById('edit-date').value;
     var description = document.getElementById('edit-description').value.trim();
     var address1 = document.getElementById('edit-address1').value.trim();
 
-    if (!title || !date || !description) {
+    function showErr(text) {
+      GSC.showMessage(msg, 'error', text);
       msg.style.display = 'block';
-      msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
-      msg.textContent = 'Title, date, and description are required.';
-      return;
     }
-    if (!address1) {
-      msg.style.display = 'block';
-      msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
-      msg.textContent = 'Address is required.';
-      return;
-    }
+
+    if (!title || !date || !description) { showErr('Title, date, and description are required.'); return; }
+    if (!address1) { showErr('Address is required.'); return; }
+    if (!slug) { showErr('Slug is required.'); return; }
 
     btn.disabled = true;
     btn.textContent = 'Saving...';
@@ -712,6 +710,7 @@
       eventId: currentEventId,
       chapterSlug: currentChapterSlug,
       title: title,
+      slug: slug,
       date: date,
       endDate: document.getElementById('edit-enddate').value,
       locationBuilding: document.getElementById('edit-building').value,
@@ -734,22 +733,55 @@
         btn.disabled = false;
         btn.textContent = 'Save Changes';
         if (data.success) {
+          GSC.showMessage(msg, 'success', 'Event updated successfully!');
           msg.style.display = 'block';
-          msg.style.backgroundColor = '#d4edda'; msg.style.color = '#155724';
-          msg.textContent = 'Event updated successfully!';
           loadEvents();
         } else {
-          msg.style.display = 'block';
-          msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
-          msg.textContent = data.error || 'Failed to update event.';
+          showErr(data.error || 'Failed to update event.');
         }
       })
       .catch(function() {
         btn.disabled = false;
         btn.textContent = 'Save Changes';
+        showErr('Network error. Please try again.');
+      });
+  });
+
+  document.getElementById('edit-delete-btn').addEventListener('click', function() {
+    var eventTitle = document.getElementById('edit-title').value.trim() || 'this event';
+    if (!confirm('Are you sure you want to permanently delete "' + eventTitle + '"? This cannot be undone.')) {
+      return;
+    }
+
+    var btn = this;
+    var msg = document.getElementById('edit-event-message');
+    btn.disabled = true;
+    btn.textContent = 'Deleting...';
+    msg.style.display = 'none';
+
+    GSC.fetch('/api/deleteEvent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId: currentEventId, chapterSlug: currentChapterSlug })
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          currentEventId = null;
+          loadEvents();
+          showSection('events');
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Delete Event';
+          GSC.showMessage(msg, 'error', data.error || 'Failed to delete event.');
+          msg.style.display = 'block';
+        }
+      })
+      .catch(function() {
+        btn.disabled = false;
+        btn.textContent = 'Delete Event';
+        GSC.showMessage(msg, 'error', 'Network error. Please try again.');
         msg.style.display = 'block';
-        msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';
-        msg.textContent = 'Network error. Please try again.';
       });
   });
 

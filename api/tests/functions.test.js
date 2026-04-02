@@ -40,7 +40,8 @@ jest.mock('../src/helpers/tableStorage', () => ({
   storePartner: jest.fn().mockResolvedValue({}),
   deletePartner: jest.fn().mockResolvedValue({}),
   getPartnersByEvent: jest.fn().mockResolvedValue([]),
-  getPartnersByChapter: jest.fn().mockResolvedValue([])
+  getPartnersByChapter: jest.fn().mockResolvedValue([]),
+  deleteEvent: jest.fn().mockResolvedValue({})
 }));
 
 jest.mock('../src/helpers/discordBot', () => ({
