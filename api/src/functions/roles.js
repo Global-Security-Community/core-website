@@ -1,5 +1,5 @@
 const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
-const { getApprovedApplicationByEmail, isVolunteerForAnyEvent, isVolunteerOrOrganiserByRegistration } = require('../helpers/tableStorage');
+const { getApprovedApplicationByEmail, isVolunteerForAnyEvent, isVolunteerOrOrganiserByRegistration, storeUserEmail } = require('../helpers/tableStorage');
 
 /**
  * POST /api/roles
@@ -44,6 +44,12 @@ module.exports = async function (request, context) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roles: [] })
       };
+    }
+
+    // Cache userId→email mapping so other endpoints can look it up
+    // (SWA does not include claims in x-ms-client-principal for custom OIDC)
+    try { await storeUserEmail(userId, email); } catch (e) {
+      context.log(`Failed to cache user email: ${e.message}`);
     }
 
     const roles = [];

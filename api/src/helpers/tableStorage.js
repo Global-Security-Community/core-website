@@ -612,6 +612,30 @@ async function storeContactSubmission({ name, email, subject, message }) {
   return entity;
 }
 
+// ─── User Email Cache ───
+// SWA custom OIDC does not include claims in x-ms-client-principal header.
+// The roles endpoint (called at login) stores the email so other endpoints can look it up by userId.
+
+async function storeUserEmail(userId, email) {
+  const client = getTableClient('UserEmails');
+  await client.upsertEntity({
+    partitionKey: 'users',
+    rowKey: userId,
+    email: email.toLowerCase()
+  }, 'Replace');
+}
+
+async function getUserEmail(userId) {
+  if (!userId) return '';
+  try {
+    const client = getTableClient('UserEmails');
+    const entity = await client.getEntity('users', userId);
+    return (entity.email || '').toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
 module.exports = {
   storeApplication, getApplication, updateApplicationStatus, getApprovedApplicationBySlug,
   storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent, moveEventToChapter, deleteEvent,
@@ -626,5 +650,6 @@ module.exports = {
   storeSessionizeCache, getSessionizeCache,
   storeSubscription, removeSubscription, getSubscriptionsByChapter, isSubscribed,
   storePartner, deletePartner, getPartnersByEvent, getPartnersByChapter,
-  storeContactSubmission
+  storeContactSubmission,
+  storeUserEmail, getUserEmail
 };

@@ -103,12 +103,27 @@ function extractEmail(user) {
 }
 
 /**
+ * Async version of extractEmail that falls back to the UserEmails table.
+ * SWA custom OIDC does not include claims in x-ms-client-principal header,
+ * so this looks up the cached email stored during role assignment at login.
+ */
+async function resolveEmail(user) {
+  const email = extractEmail(user);
+  if (email) return email;
+  if (user.userId) {
+    const { getUserEmail } = require('./tableStorage');
+    return getUserEmail(user.userId);
+  }
+  return '';
+}
+
+/**
  * Verifies the authenticated admin user has access to a specific chapter.
  * Returns true if: user is a super admin, OR user leads the target chapter.
  * Returns false otherwise.
  */
 async function verifyChapterAccess(user, targetChapterSlug, context) {
-  const email = extractEmail(user);
+  const email = await resolveEmail(user);
   if (isSuperAdmin(email)) {
     return true;
   }
@@ -163,4 +178,4 @@ function verifyCsrfHeader(request) {
   };
 }
 
-module.exports = { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess, getAdminChapterSlugs, isSuperAdmin, cityToSlug, verifyCsrfHeader, extractEmail };
+module.exports = { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess, getAdminChapterSlugs, isSuperAdmin, cityToSlug, verifyCsrfHeader, extractEmail, resolveEmail };
