@@ -181,8 +181,7 @@ output storageAccountName string = storageAccount.name
 output storageAccountId string = storageAccount.id
 output keyVaultName string = keyVault.name
 output keyVaultUri string = keyVault.properties.vaultUri
-output appInsightsConnectionString string = appInsights.properties.ConnectionString
-output appInsightsInstrumentationKey string = appInsights.properties.InstrumentationKey
+// App Insights credentials removed from outputs — retrieve via Key Vault or portal
 output communicationServiceName string = communicationService.name
 
 // Azure Monitor Alert: 5xx error spike (free tier)

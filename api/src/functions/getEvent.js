@@ -110,7 +110,6 @@ module.exports = async function (request, context) {
         endDate: event.endDate || '',
         location: event.location,
         description: event.description,
-        sessionizeApiId: event.sessionizeApiId || '',
         registrationCap: event.registrationCap || 0,
         registrationCount,
         status: event.status,

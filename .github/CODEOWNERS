@@ -1,0 +1,7 @@
+# Security-sensitive files require review from repository owners
+staticwebapp.config.json
+.github/workflows/ @georgecoldham
+api/src/helpers/auth.js @georgecoldham
+api/src/helpers/tokenHelper.js @georgecoldham
+api/src/app.js @georgecoldham
+infra/ @georgecoldham
