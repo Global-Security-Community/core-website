@@ -192,7 +192,6 @@ async function deleteEvent(chapterSlug, eventId) {
   const client = getTableClient('Events');
   await client.deleteEntity(chapterSlug, eventId);
 }
-}
 
 // ─── Registrations ───
 
