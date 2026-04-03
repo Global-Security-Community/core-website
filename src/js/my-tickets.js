@@ -64,7 +64,7 @@
               var ticketEl = document.getElementById('ticket-' + regId);
               if (ticketEl) {
                 ticketEl.style.opacity = '0.5';
-                ticketEl.innerHTML = '<div style="padding:2rem;text-align:center;"><p><span class="icon" aria-hidden="true">' + GSCIcons.checkCircle + '</span> Registration cancelled.</p><p style="font-size:0.85em;color:#666;"><span class="icon" aria-hidden="true">' + GSCIcons.mail + '</span> A cancellation confirmation has been sent. Check your junk folder if you don\'t see it.</p></div>';
+                ticketEl.innerHTML = '<div class="ticket-cancelled"><p><span class="icon" aria-hidden="true">' + GSCIcons.checkCircle + '</span> Registration cancelled.</p><p class="ticket-cancelled-note"><span class="icon" aria-hidden="true">' + GSCIcons.mail + '</span> A cancellation confirmation has been sent. Check your junk folder if you don\'t see it.</p></div>';
                 setTimeout(function() { ticketEl.remove(); }, 2000);
               }
             } else {

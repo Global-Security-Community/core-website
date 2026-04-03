@@ -106,7 +106,7 @@
       .then(function(data) {
         // Event code with copy
         var subtitleEl = document.getElementById('detail-subtitle');
-        subtitleEl.innerHTML = 'Event Code: <code style="cursor:pointer;background:#e9ecef;padding:2px 8px;border-radius:4px;font-size:0.85em;" title="Click to copy">' + GSC.esc(data.eventId) + '</code>';
+        subtitleEl.innerHTML = 'Event Code: <code class="dash-code" title="Click to copy">' + GSC.esc(data.eventId) + '</code>';
         subtitleEl.querySelector('code').addEventListener('click', function() {
           navigator.clipboard.writeText(data.eventId).then(function() {
             var el = document.getElementById('detail-subtitle').querySelector('code');
@@ -121,12 +121,12 @@
           '<div class="card stat-card"><p class="stat-number">' + data.total + '</p><p class="stat-label">Registered</p></div>' +
           '<div class="card stat-card"><p class="stat-number">' + data.checkedIn + '</p><p class="stat-label">Checked In</p></div>' +
           '<div class="action-card card">' +
-            '<button id="btn-export" style="width:100%">Export CSV</button>' +
-            '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" class="btn-link" style="width:100%;text-align:center;display:block;box-sizing:border-box;">Open Scanner</a>' +
+            '<button id="btn-export" class="btn-full">Export CSV</button>' +
+            '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" class="btn-link btn-full">Open Scanner</a>' +
           '</div>' +
           '<div class="action-card card">' +
-            '<button id="btn-close-reg" class="btn-warning" style="width:100%">Close Registration</button>' +
-            '<button id="btn-complete" class="btn-danger" style="width:100%">Mark Complete</button>' +
+            '<button id="btn-close-reg" class="btn-warning btn-full">Close Registration</button>' +
+            '<button id="btn-complete" class="btn-danger btn-full">Mark Complete</button>' +
           '</div>';
 
         var actionsEl = document.getElementById('detail-actions');
@@ -146,10 +146,10 @@
           refreshCard.className = 'card';
           refreshCard.style.cssText = 'margin-top:1rem;padding:1rem;';
           refreshCard.innerHTML =
-            '<h4 style="margin:0 0 0.5rem 0;"><span class="icon" aria-hidden="true">' + GSCIcons.mic + '</span> Sessionize Speakers</h4>' +
-            '<p id="sessionize-status" style="font-size:0.85rem;color:#666;margin:0 0 0.5rem 0;">Click refresh to cache speaker data from Sessionize.</p>' +
-            '<button id="btn-refresh-speakers" style="width:100%">Refresh Speakers</button>' +
-            '<div id="sessionize-speakers-list" style="margin-top:0.75rem;"></div>';
+            '<h4 class="dash-card-title"><span class="icon" aria-hidden="true">' + GSCIcons.mic + '</span> Sessionize Speakers</h4>' +
+            '<p id="sessionize-status" class="dash-card-desc">Click refresh to cache speaker data from Sessionize.</p>' +
+            '<button id="btn-refresh-speakers" class="btn-full">Refresh Speakers</button>' +
+            '<div id="sessionize-speakers-list" class="dash-speakers-list"></div>';
           actionsEl.parentNode.insertBefore(refreshCard, actionsEl.nextSibling);
 
           document.getElementById('btn-refresh-speakers').addEventListener('click', function() {
@@ -171,10 +171,10 @@
                   document.getElementById('sessionize-status').innerHTML =
                     '<span class="icon" aria-hidden="true">' + GSCIcons.checkCircle + '</span> Cached <strong>' + result.speakers + '</strong> speakers, <strong>' + result.agenda + '</strong> agenda items. Last refreshed: ' + GSC.esc(ts);
                   if (result.speakerNames && result.speakerNames.length > 0) {
-                    var listHtml = '<p style="font-size:0.8rem;color:#666;margin:0 0 0.25rem 0;">Speakers:</p>';
-                    listHtml += '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;">';
+                    var listHtml = '<p class="dash-speakers-label">Speakers:</p>';
+                    listHtml += '<div class="dash-tag-list">';
                     result.speakerNames.forEach(function(name) {
-                      listHtml += '<span style="background:#e9ecef;padding:2px 8px;border-radius:12px;font-size:0.8rem;">' + GSC.esc(name) + '</span>';
+                      listHtml += '<span class="speaker-tag">' + GSC.esc(name) + '</span>';
                     });
                     listHtml += '</div>';
                     document.getElementById('sessionize-speakers-list').innerHTML = listHtml;
@@ -199,8 +199,8 @@
         regenCard.className = 'card';
         regenCard.style.cssText = 'margin-top:1rem;padding:1rem;';
         regenCard.innerHTML =
-          '<h4 style="margin:0 0 0.5rem 0;"><span class="icon" aria-hidden="true">' + GSCIcons.image + '</span> Event Badge Image</h4>' +
-          '<p style="font-size:0.85rem;color:#666;margin:0;">Image generation is temporarily disabled while we improve the workflow.</p>';
+          '<h4 class="dash-card-title"><span class="icon" aria-hidden="true">' + GSCIcons.image + '</span> Event Badge Image</h4>' +
+          '<p class="dash-card-info">Image generation is temporarily disabled while we improve the workflow.</p>';
         var actionsParent2 = document.getElementById('detail-actions').parentNode;
         actionsParent2.insertBefore(regenCard, document.getElementById('detail-attendees'));
 
@@ -212,18 +212,18 @@
         partnerSection.className = 'card';
         partnerSection.style.cssText = 'margin-top:1rem;padding:1rem;';
         partnerSection.innerHTML =
-          '<h4 style="margin:0 0 0.75rem 0;"><span class="icon" aria-hidden="true">' + GSCIcons.handshake + '</span> Community Partners</h4>' +
-          '<div id="partner-list" style="margin-bottom:0.75rem;"></div>' +
-          '<details><summary style="cursor:pointer;color:var(--color-primary-teal);font-weight:600;">Add Partner</summary>' +
-          '<div style="margin-top:0.75rem;">' +
-            '<input type="text" id="cp-name" placeholder="Partner name" maxlength="100" style="width:100%;margin-bottom:0.5rem;">' +
-            '<input type="text" id="cp-tier" placeholder="Tier (e.g. Gold, Community)" maxlength="50" style="width:100%;margin-bottom:0.5rem;">' +
-            '<input type="url" id="cp-website" placeholder="Website URL (optional)" maxlength="300" style="width:100%;margin-bottom:0.5rem;">' +
-            '<label style="display:block;margin-bottom:0.25rem;font-size:0.85rem;">Logo (PNG/JPG, recommended 400×200px — auto-resized):</label>' +
-            '<input type="file" id="cp-logo" accept="image/png,image/jpeg,image/svg+xml" style="margin-bottom:0.5rem;">' +
-            '<div id="cp-preview" style="margin-bottom:0.5rem;"></div>' +
-            '<button id="cp-add-btn" style="width:100%;">Add Community Partner</button>' +
-            '<p id="cp-msg" style="display:none;font-size:0.85rem;margin:0.5rem 0 0 0;"></p>' +
+          '<h4 class="dash-section-title"><span class="icon" aria-hidden="true">' + GSCIcons.handshake + '</span> Community Partners</h4>' +
+          '<div id="partner-list" class="dash-partner-list"></div>' +
+          '<details><summary class="dash-summary">Add Partner</summary>' +
+          '<div class="dash-form-content">' +
+            '<input type="text" id="cp-name" placeholder="Partner name" maxlength="100" class="dash-input">' +
+            '<input type="text" id="cp-tier" placeholder="Tier (e.g. Gold, Community)" maxlength="50" class="dash-input">' +
+            '<input type="url" id="cp-website" placeholder="Website URL (optional)" maxlength="300" class="dash-input">' +
+            '<label class="help-text-block">Logo (PNG/JPG, recommended 400×200px — auto-resized):</label>' +
+            '<input type="file" id="cp-logo" accept="image/png,image/jpeg,image/svg+xml" class="dash-field">' +
+            '<div id="cp-preview" class="dash-field"></div>' +
+            '<button id="cp-add-btn" class="btn-full">Add Community Partner</button>' +
+            '<p id="cp-msg" class="dash-form-msg"></p>' +
           '</div></details>';
         var actionsParent = document.getElementById('detail-actions').parentNode;
         actionsParent.insertBefore(partnerSection, document.getElementById('detail-attendees'));
@@ -239,7 +239,7 @@
           if (file.type === 'image/svg+xml') {
             var reader = new FileReader();
             reader.onload = function(ev) {
-              preview.innerHTML = '<img src="' + ev.target.result + '" style="max-width:200px;max-height:100px;">';
+              preview.innerHTML = '<img src="' + ev.target.result + '" class="partner-preview-img">';
             };
             reader.readAsDataURL(file);
             return;
@@ -253,8 +253,8 @@
             canvas.width = w; canvas.height = h;
             canvas.getContext('2d').drawImage(img, 0, 0, w, h);
             var resized = canvas.toDataURL(file.type, 0.85);
-            preview.innerHTML = '<img src="' + resized + '" style="max-width:200px;max-height:100px;">' +
-              '<p style="font-size:0.75rem;color:#666;margin:0.25rem 0 0 0;">Resized to ' + w + '×' + h + 'px</p>';
+            preview.innerHTML = '<img src="' + resized + '" class="partner-preview-img">' +
+              '<p class="partner-resize-info">Resized to ' + w + '×' + h + 'px</p>';
             preview.dataset.logoData = resized;
           };
           img.src = URL.createObjectURL(file);
@@ -318,7 +318,7 @@
           document.getElementById('detail-attendees').innerHTML = '<p>No registrations yet.</p>';
           return;
         }
-        var html = '<table><thead><tr><th style="width:30px;"><input type="checkbox" id="select-all"></th><th>Name</th><th>Email</th><th>Role</th><th>Ticket</th><th>Checked In</th></tr></thead><tbody>';
+        var html = '<table><thead><tr><th class="th-checkbox"><input type="checkbox" id="select-all"></th><th>Name</th><th>Email</th><th>Role</th><th>Ticket</th><th>Checked In</th></tr></thead><tbody>';
         data.attendees.forEach(function(a) {
           var role = a.role || 'attendee';
           var volIcon = a.volunteerInterest ? ' <span title="Volunteer interest" class="vol-interest-icon"><span class="icon" aria-hidden="true">' + GSCIcons.handRaised + '</span></span>' : '';
@@ -327,7 +327,7 @@
           html += '<td>' + GSC.esc(a.name) + volIcon + '</td>';
           html += '<td>' + GSC.esc(a.email) + '</td>';
           html += '<td><span class="role-badge role-badge--' + GSC.esc(role) + '">' + GSC.esc(role) + '</span></td>';
-          html += '<td style="font-family:monospace;">' + GSC.esc(a.ticketCode) + '</td>';
+          html += '<td class="td-mono">' + GSC.esc(a.ticketCode) + '</td>';
           html += '<td>' + (a.checkedIn ? '<span class="icon" aria-hidden="true">' + GSCIcons.checkCircle + '</span> ' + GSC.esc(a.checkedInAt) : '—') + '</td>';
           html += '</tr>';
         });
@@ -369,16 +369,16 @@
           tiers[t].forEach(function(p) { p.tierName = t; allPartners.push(p); });
         });
         if (allPartners.length === 0) {
-          listEl.innerHTML = '<p style="font-size:0.85rem;color:#666;">No community partners yet.</p>';
+          listEl.innerHTML = '<p class="dash-no-partners">No community partners yet.</p>';
           return;
         }
-        var html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;">';
+        var html = '<div class="partner-chip-list">';
         allPartners.forEach(function(p) {
-          html += '<div style="display:flex;align-items:center;gap:0.5rem;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;padding:0.4rem 0.6rem;">';
-          if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" style="max-width:40px;max-height:20px;object-fit:contain;">';
-          html += '<span style="font-size:0.85rem;">' + GSC.esc(p.name) + '</span>';
-          if (p.tierName) html += '<span style="font-size:0.7rem;color:#666;">(' + GSC.esc(p.tierName) + ')</span>';
-          html += '<button class="cp-delete" data-id="' + GSC.esc(p.id) + '" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:0.9rem;padding:0 0.25rem;" title="Remove"><span class="icon" aria-hidden="true">' + GSCIcons.x + '</span></button>';
+          html += '<div class="partner-chip">';
+          if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" class="partner-chip-logo">';
+          html += '<span class="partner-chip-name">' + GSC.esc(p.name) + '</span>';
+          if (p.tierName) html += '<span class="partner-chip-tier">(' + GSC.esc(p.tierName) + ')</span>';
+          html += '<button class="cp-delete btn-icon-delete" data-id="' + GSC.esc(p.id) + '" title="Remove"><span class="icon" aria-hidden="true">' + GSCIcons.x + '</span></button>';
           html += '</div>';
         });
         html += '</div>';
@@ -868,7 +868,7 @@
     html += '</div>';
 
     if (leads.length < maxLeads) {
-      html += '<button id="add-lead-btn" type="button" class="btn-outline" style="margin-bottom:1rem;">+ Add Lead</button>';
+      html += '<button id="add-lead-btn" type="button" class="btn-outline mb-1">+ Add Lead</button>';
     }
 
     html += '<button id="save-chapter-btn" type="button">Save Chapter</button>';
@@ -894,17 +894,17 @@
   }
 
   function buildLeadRow(index, lead) {
-    return '<div class="lead-edit-row card" style="padding:1rem;margin-bottom:1rem;">' +
-      '<h4 style="margin:0 0 0.75rem 0;">Lead ' + (index + 1) + '</h4>' +
-      '<div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">' +
+    return '<div class="lead-edit-row card lead-card">' +
+      '<h4 class="lead-card-title">Lead ' + (index + 1) + '</h4>' +
+      '<div class="form-group form-grid-2col">' +
         '<div><label>Name *</label><input type="text" class="lead-name" value="' + GSC.esc(lead.name) + '" maxlength="100" placeholder="Full name"></div>' +
         '<div><label>Email *</label><input type="email" class="lead-email" value="' + GSC.esc(lead.email) + '" maxlength="200" placeholder="Email address"></div>' +
       '</div>' +
-      '<div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">' +
+      '<div class="form-group form-grid-2col">' +
         '<div><label>GitHub</label><input type="url" class="lead-github" value="' + GSC.esc(lead.github) + '" maxlength="200" placeholder="https://github.com/..."></div>' +
         '<div><label>LinkedIn</label><input type="url" class="lead-linkedin" value="' + GSC.esc(lead.linkedin) + '" maxlength="200" placeholder="https://linkedin.com/in/..."></div>' +
       '</div>' +
-      '<div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">' +
+      '<div class="form-group form-grid-2col">' +
         '<div><label>X / Twitter</label><input type="url" class="lead-twitter" value="' + GSC.esc(lead.twitter) + '" maxlength="200" placeholder="https://x.com/..."></div>' +
         '<div><label>Website</label><input type="url" class="lead-website" value="' + GSC.esc(lead.website) + '" maxlength="200" placeholder="https://..."></div>' +
       '</div>' +

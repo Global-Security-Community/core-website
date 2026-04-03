@@ -43,24 +43,6 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Missing required field: address' }) };
     }
 
-    // Verify the admin is authorised to create events for this chapter
-    const emailClaims = ['preferred_username', 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress', 'email', 'emails'];
-    let adminEmail = '';
-    for (const ct of emailClaims) {
-      const claim = (user.claims || []).find(c => c.typ === ct);
-      if (claim && claim.val && claim.val.includes('@')) { adminEmail = claim.val; break; }
-    }
-    if (!adminEmail) adminEmail = user.userDetails || '';
-
-    const adminApp = await getApprovedApplicationByEmail(adminEmail);
-    if (!adminApp) {
-      return forbidden('No approved chapter found for your account');
-    }
-    const adminChapterSlug = (adminApp.city || '').toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
-    if (adminChapterSlug !== chapterSlug.toLowerCase().trim()) {
-      return forbidden('You are not authorised to create events for this chapter');
-    }
-
     // Validate that the chapter slug corresponds to an existing approved chapter
     const chapter = await getApprovedApplicationBySlug(chapterSlug.toLowerCase().trim());
     if (!chapter) {

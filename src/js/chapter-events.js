@@ -34,14 +34,12 @@
         var eventDate = new Date(e.endDate || e.date);
         var isUpcoming = eventDate >= now && e.status === 'published';
         var badgeText = isUpcoming ? 'Upcoming' : 'Past Event';
-        var badgeStyle = isUpcoming
-          ? 'background:var(--color-primary-teal);color:white;'
-          : 'background:#666;color:white;';
+        var badgeClass = isUpcoming ? 'event-badge event-badge--upcoming' : 'event-badge event-badge--past';
         var dateStr = new Date(e.date).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         var endStr = e.endDate ? ' \u2013 ' + new Date(e.endDate).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
         return '<a href="/events/' + encodeURI(e.slug) + '/" class="event-card">' +
           '<div class="event-card-header">' +
-            '<span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:0.8rem;font-weight:600;margin-bottom:0.5rem;' + badgeStyle + '">' + badgeText + '</span>' +
+            '<span class="' + badgeClass + '">' + badgeText + '</span>' +
             '<div class="event-card-date"><span class="icon" aria-hidden="true">' + GSCIcons.calendar + '</span> ' + dateStr + endStr + '</div>' +
             '<h3 class="event-card-title">' + GSC.esc(e.title) + '</h3>' +
           '</div>' +
@@ -55,7 +53,7 @@
       }).join('') + '</div>';
 
       if (sorted.length > 3) {
-        container.innerHTML += '<p style="text-align:center;margin-top:1rem;"><a href="/events/">View all events \u2192</a></p>';
+        container.innerHTML += '<p class="chapter-events-more"><a href="/events/">View all events \u2192</a></p>';
       }
     } catch (err) {
       container.innerHTML = '<p>Events for this chapter are coming soon.</p>';

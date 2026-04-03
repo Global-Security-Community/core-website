@@ -16,19 +16,19 @@
         return;
       }
       document.getElementById('event-info').innerHTML =
-        '<div class="card" style="max-width:600px;">' +
-        '<h2 style="margin-top:0;">' + GSC.esc(ev.title) + '</h2>' +
+        '<div class="card narrow-content">' +
+        '<h2 class="mt-0">' + GSC.esc(ev.title) + '</h2>' +
         '<p><span class="icon" aria-hidden="true">' + GSCIcons.calendar + '</span> ' + GSC.esc(ev.date) + (ev.endDate ? ' – ' + GSC.esc(ev.endDate) : '') + '</p>' +
         '<p><span class="icon" aria-hidden="true">' + GSCIcons.mapPin + '</span> ' + GSC.esc(ev.location) + '</p>' +
         '<p><span class="icon" aria-hidden="true">' + GSCIcons.ticket + '</span> ' + ev.registrationCount + (ev.registrationCap > 0 ? ' / ' + ev.registrationCap : '') + ' registered</p>' +
         '</div>';
 
       if (ev.status === 'closed' || ev.status === 'completed') {
-        document.getElementById('event-info').innerHTML += '<p style="color:#e74c3c;font-weight:600;">Registration is closed for this event.</p>';
+        document.getElementById('event-info').innerHTML += '<p class="reg-closed-msg">Registration is closed for this event.</p>';
         return;
       }
       if (ev.registrationCap > 0 && ev.registrationCount >= ev.registrationCap) {
-        document.getElementById('event-info').innerHTML += '<p style="color:#e74c3c;font-weight:600;">This event has reached capacity.</p>';
+        document.getElementById('event-info').innerHTML += '<p class="reg-closed-msg">This event has reached capacity.</p>';
         return;
       }
 

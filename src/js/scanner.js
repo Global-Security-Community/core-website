@@ -26,11 +26,11 @@
         function() {} // ignore per-frame scan misses
       ).catch(function(err) {
         document.getElementById('reader').innerHTML =
-          '<p style="color:#856404;background:#fff3cd;padding:1rem;border-radius:6px;"><span class="icon" aria-hidden="true">' + GSCIcons.camera + '</span> Camera not available: ' + GSC.esc(String(err)) + '<br>Use manual entry below.</p>';
+          '<p class="scanner-warning"><span class="icon" aria-hidden="true">' + GSCIcons.camera + '</span> Camera not available: ' + GSC.esc(String(err)) + '<br>Use manual entry below.</p>';
       });
     } catch (err) {
       document.getElementById('reader').innerHTML =
-        '<p style="color:#856404;background:#fff3cd;padding:1rem;border-radius:6px;"><span class="icon" aria-hidden="true">' + GSCIcons.camera + '</span> Camera not available. Use manual entry below.</p>';
+        '<p class="scanner-warning"><span class="icon" aria-hidden="true">' + GSCIcons.camera + '</span> Camera not available. Use manual entry below.</p>';
     }
   });
 
@@ -110,7 +110,7 @@
     var html = '';
     scanLog.slice(0, 20).forEach(function(s) {
       var icon = s.result === 'checked_in' ? GSCIcons.checkCircle : s.result === 'already_checked_in' ? GSCIcons.alertTriangle : GSCIcons.xCircle;
-      html += '<p style="margin:0.25rem 0;"><span class="icon" aria-hidden="true">' + icon + '</span> <strong>' + GSC.esc(s.name || s.code) + '</strong> <span style="color:#767676;font-size:0.8rem;">' + new Date(s.time).toLocaleTimeString() + '</span></p>';
+      html += '<p class="scan-log-entry"><span class="icon" aria-hidden="true">' + icon + '</span> <strong>' + GSC.esc(s.name || s.code) + '</strong> <span class="scan-log-time">' + new Date(s.time).toLocaleTimeString() + '</span></p>';
     });
     document.getElementById('scan-log').innerHTML = html;
   }

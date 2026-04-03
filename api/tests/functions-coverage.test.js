@@ -577,6 +577,7 @@ describe('createEvent function', () => {
     jest.clearAllMocks();
     // Default: admin owns Perth chapter, and it exists
     storage.getApprovedApplicationByEmail.mockResolvedValue({ city: 'Perth', country: 'Australia' });
+    storage.getApprovedApplicationsByEmail.mockResolvedValue([{ city: 'Perth' }]);
     storage.getApprovedApplicationBySlug.mockResolvedValue({ city: 'Perth', country: 'Australia' });
   });
 
@@ -619,6 +620,7 @@ describe('createEvent function', () => {
 
   test('returns 403 when admin has no approved chapter', async () => {
     storage.getApprovedApplicationByEmail.mockResolvedValueOnce(null);
+    storage.getApprovedApplicationsByEmail.mockResolvedValueOnce([]);
     const res = await createEvent(makeAuthRequest('POST', validBody, ['admin']), context);
     expect(res.status).toBe(403);
     expect(JSON.parse(res.body).error).toMatch(/chapter/i);
@@ -626,11 +628,12 @@ describe('createEvent function', () => {
 
   test('returns 403 when admin tries to create event for a different chapter', async () => {
     storage.getApprovedApplicationByEmail.mockResolvedValueOnce({ city: 'Sydney', country: 'Australia' });
+    storage.getApprovedApplicationsByEmail.mockResolvedValueOnce([{ city: 'Sydney' }]);
     const res = await createEvent(makeAuthRequest('POST', {
       ...validBody, chapterSlug: 'perth'
     }, ['admin']), context);
     expect(res.status).toBe(403);
-    expect(JSON.parse(res.body).error).toMatch(/authorised/i);
+    expect(JSON.parse(res.body).error).toMatch(/permission/i);
   });
 
   test('returns 400 for invalid chapter slug', async () => {

@@ -1823,6 +1823,116 @@ a.event-card:hover { color: inherit; }
 @media (max-width: 900px) { .skeleton-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px) { .skeleton-grid { grid-template-columns: 1fr; } }
 
+/* ─── Dynamic Content Styles ─── */
+
+/* Buttons */
+.btn-full { width: 100%; display: block; text-align: center; box-sizing: border-box; }
+
+/* Event badge (chapter events, events list) */
+.event-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.event-badge--upcoming { background: var(--color-primary-teal); color: white; }
+.event-badge--past { background: #666; color: white; }
+
+/* Chapter events */
+.chapter-events-more { text-align: center; margin-top: 1rem; }
+
+/* Chapter partners */
+.partner-website-link { font-size: 0.75rem; color: var(--color-primary-teal); }
+
+/* Events list */
+.events-empty { text-align: center; padding: 2rem; }
+.events-past-heading { margin-top: 2rem; }
+.event-card--past { opacity: 0.8; }
+.status-badge--inline { font-size: 0.7rem; margin-left: 0.5rem; }
+
+/* My tickets — cancelled state */
+.ticket-cancelled { padding: 2rem; text-align: center; }
+.ticket-cancelled-note { font-size: 0.85em; color: #666; }
+
+/* Registration */
+.reg-closed-msg { color: #e74c3c; font-weight: 600; }
+
+/* Scanner */
+.scanner-warning { color: #856404; background: #fff3cd; padding: 1rem; border-radius: 6px; }
+.scan-log-entry { margin: 0.25rem 0; }
+.scan-log-time { color: #767676; font-size: 0.8rem; }
+
+/* Dashboard — copyable code snippet */
+.dash-code {
+  cursor: pointer;
+  background: #e9ecef;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+/* Dashboard — card headings & descriptions */
+.dash-card-title { margin: 0 0 0.5rem 0; }
+.dash-section-title { margin: 0 0 0.75rem 0; }
+.dash-card-desc { font-size: 0.85rem; color: #666; margin: 0 0 0.5rem 0; }
+.dash-card-info { font-size: 0.85rem; color: #666; margin: 0; }
+
+/* Dashboard — sessionize speakers */
+.dash-speakers-list { margin-top: 0.75rem; }
+.dash-speakers-label { font-size: 0.8rem; color: #666; margin: 0 0 0.25rem 0; }
+.dash-tag-list { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.speaker-tag { background: #e9ecef; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; }
+
+/* Dashboard — community partners form */
+.dash-summary { cursor: pointer; color: var(--color-primary-teal); font-weight: 600; }
+.dash-form-content { margin-top: 0.75rem; }
+.dash-input { width: 100%; margin-bottom: 0.5rem; }
+.dash-field { margin-bottom: 0.5rem; }
+.dash-form-msg { display: none; font-size: 0.85rem; margin: 0.5rem 0 0 0; }
+
+/* Dashboard — partner preview */
+.partner-preview-img { max-width: 200px; max-height: 100px; }
+.partner-resize-info { font-size: 0.75rem; color: #666; margin: 0.25rem 0 0 0; }
+
+/* Dashboard — partner list */
+.dash-partner-list { margin-bottom: 0.75rem; }
+.dash-no-partners { font-size: 0.85rem; color: #666; }
+.partner-chip-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.partner-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+}
+.partner-chip-logo { max-width: 40px; max-height: 20px; object-fit: contain; }
+.partner-chip-name { font-size: 0.85rem; }
+.partner-chip-tier { font-size: 0.7rem; color: #666; }
+.btn-icon-delete {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0 0.25rem;
+}
+
+/* Dashboard — attendee table */
+.th-checkbox { width: 30px; }
+.td-mono { font-family: monospace; }
+
+/* Dashboard — chapter edit */
+.lead-card { padding: 1rem; margin-bottom: 1rem; }
+.lead-card-title { margin: 0 0 0.75rem 0; }
+.form-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+/* Spacing utility */
+.mb-1 { margin-bottom: 1rem; }
+
 /* ─── Inline SVG Icons ─── */
 .icon { display: inline-flex; vertical-align: middle; align-items: center; }
 .icon svg { width: 1em; height: 1em; }
