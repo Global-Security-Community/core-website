@@ -42,6 +42,7 @@
     .then(function(r) { return r.json(); })
     .then(function(d) {
       if (d.clientPrincipal) {
+        console.log('clientPrincipal:', JSON.stringify(d.clientPrincipal, null, 2));
         document.getElementById('dash-user').textContent = 'Welcome, ' + (d.clientPrincipal.userDetails || 'Admin');
         return loadEvents();
       }
@@ -62,7 +63,13 @@
       })
       .then(function(data) {
         var el = document.getElementById('events-list');
-        if (data._debug) console.log('eventAttendance debug:', JSON.stringify(data._debug, null, 2));
+        if (data._debug) {
+          console.log('eventAttendance debug:', JSON.stringify(data._debug, null, 2));
+          // Temporary: show debug info in the UI
+          var debugEl = document.createElement('details');
+          debugEl.innerHTML = '<summary style="cursor:pointer;color:#888;font-size:0.85em">Debug info</summary><pre style="font-size:0.75em;background:#f5f5f5;padding:0.5em;overflow:auto">' + GSC.esc(JSON.stringify(data._debug, null, 2)) + '</pre>';
+          el.parentNode.insertBefore(debugEl, el);
+        }
         if (data.chapterCity) {
           document.getElementById('dash-title').textContent = data.chapterCity + ' Chapter Management';
           // Derive chapter slug from city
