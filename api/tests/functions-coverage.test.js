@@ -569,7 +569,8 @@ describe('createEvent function', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Default: chapter slug is valid
+    // Default: admin owns Perth chapter, and it exists
+    storage.getApprovedApplicationByEmail.mockResolvedValue({ city: 'Perth', country: 'Australia' });
     storage.getApprovedApplicationBySlug.mockResolvedValue({ city: 'Perth', country: 'Australia' });
   });
 
@@ -610,13 +611,36 @@ describe('createEvent function', () => {
     expect(JSON.parse(res.body).error).toMatch(/length/);
   });
 
+  test('returns 403 when admin has no approved chapter', async () => {
+    storage.getApprovedApplicationByEmail.mockResolvedValueOnce(null);
+    const res = await createEvent(makeAuthRequest('POST', validBody, ['admin']), context);
+    expect(res.status).toBe(403);
+    expect(JSON.parse(res.body).error).toMatch(/chapter/i);
+  });
+
+  test('returns 403 when admin tries to create event for a different chapter', async () => {
+    storage.getApprovedApplicationByEmail.mockResolvedValueOnce({ city: 'Sydney', country: 'Australia' });
+    const res = await createEvent(makeAuthRequest('POST', {
+      ...validBody, chapterSlug: 'perth'
+    }, ['admin']), context);
+    expect(res.status).toBe(403);
+    expect(JSON.parse(res.body).error).toMatch(/authorised/i);
+  });
+
   test('returns 400 for invalid chapter slug', async () => {
-    storage.getApprovedApplicationBySlug.mockResolvedValueOnce(null);
+    storage.getApprovedApplicationByEmail.mockResolvedValueOnce(null);
     const res = await createEvent(makeAuthRequest('POST', {
       ...validBody, chapterSlug: 'nonexistent-chapter'
     }, ['admin']), context);
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(403);
     expect(JSON.parse(res.body).error).toMatch(/chapter/i);
+  });
+
+  test('returns 400 when chapter slug passes auth but is not in the database', async () => {
+    storage.getApprovedApplicationBySlug.mockResolvedValueOnce(null);
+    const res = await createEvent(makeAuthRequest('POST', validBody, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/chapter slug/i);
   });
 
   test('returns 201 on successful event creation', async () => {
