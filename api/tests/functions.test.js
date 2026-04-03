@@ -96,7 +96,11 @@ function makeAuthRequest(method, body, roles) {
   return {
     method,
     url: 'https://globalsecurity.community/api/test',
-    headers: { get: (h) => h === 'x-ms-client-principal' ? encoded : null },
+    headers: { get: (h) => {
+      if (h === 'x-ms-client-principal') return encoded;
+      if (h === 'x-requested-with') return 'fetch';
+      return null;
+    }},
     json: () => Promise.resolve(body || {})
   };
 }

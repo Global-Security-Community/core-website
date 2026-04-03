@@ -40,6 +40,7 @@ jest.mock('../src/helpers/tableStorage', () => ({
   isVolunteerForAnyEvent: jest.fn().mockResolvedValue(null),
   VALID_ROLES: ['attendee', 'volunteer', 'speaker', 'sponsor', 'organiser'],
   getApprovedApplicationByEmail: jest.fn(),
+  getApprovedApplicationsByEmail: jest.fn().mockResolvedValue([{ city: 'Perth' }]),
   getApprovedApplicationBySlug: jest.fn(),
   storeSessionizeCache: jest.fn().mockResolvedValue({}),
   getSessionizeCache: jest.fn(),
@@ -147,7 +148,11 @@ function makeAuthRequest(method, body, roles) {
   return {
     method,
     url: 'https://globalsecurity.community/api/test',
-    headers: { get: (h) => h === 'x-ms-client-principal' ? encoded : null },
+    headers: { get: (h) => {
+      if (h === 'x-ms-client-principal') return encoded;
+      if (h === 'x-requested-with') return 'fetch';
+      return null;
+    }},
     json: () => Promise.resolve(body || {})
   };
 }

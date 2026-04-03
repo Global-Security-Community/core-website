@@ -87,12 +87,6 @@ module.exports = async function (request, context) {
       // Look up chapter city from admin's application
       var chapterCity = '';
       try {
-        var emailClaims = ['preferred_username', 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress', 'email', 'emails'];
-        var adminEmail = '';
-        for (var ct of emailClaims) {
-          var claim = (user.claims || []).find(function(c) { return c.typ === ct; });
-          if (claim && claim.val && claim.val.includes('@')) { adminEmail = claim.val; break; }
-        }
         if (adminEmail) {
           var app = await getApprovedApplicationByEmail(adminEmail);
           if (app) chapterCity = app.city || '';
