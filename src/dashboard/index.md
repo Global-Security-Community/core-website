@@ -151,6 +151,11 @@ title: Dashboard
         <input type="text" id="edit-title" maxlength="200">
       </div>
       <div class="form-group">
+        <label for="edit-slug">URL Slug *</label>
+        <input type="text" id="edit-slug" maxlength="80" placeholder="e.g. my-event-name">
+        <span class="help-text">Only lowercase letters, numbers, and hyphens. Changing this will alter the event URL.</span>
+      </div>
+      <div class="form-group">
         <label for="edit-date">Start Date *</label>
         <input type="date" id="edit-date">
       </div>
@@ -193,6 +198,7 @@ title: Dashboard
         <input type="number" id="edit-cap" value="0" min="0">
       </div>
       <button id="edit-save-btn" type="button">Save Changes</button>
+      <button id="edit-delete-btn" type="button" class="btn-danger" style="margin-left:1rem;">Delete Event</button>
     </div>
   </div>
 

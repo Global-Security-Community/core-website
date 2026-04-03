@@ -91,6 +91,10 @@
       "allowedRoles": ["admin"]
     },
     {
+      "route": "/api/deleteEvent",
+      "allowedRoles": ["admin"]
+    },
+    {
       "route": "/api/getChapter",
       "allowedRoles": ["admin"]
     },

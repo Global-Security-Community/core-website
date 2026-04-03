@@ -23,6 +23,7 @@ jest.mock('../src/helpers/tableStorage', () => ({
   getEventBySlug: jest.fn(),
   listEvents: jest.fn().mockResolvedValue([]),
   updateEvent: jest.fn().mockResolvedValue({ status: 'closed' }),
+  deleteEvent: jest.fn().mockResolvedValue({}),
   storeRegistration: jest.fn().mockResolvedValue({}),
   getRegistrationByTicketCode: jest.fn(),
   getRegistrationsByUser: jest.fn().mockResolvedValue([]),
@@ -1124,5 +1125,117 @@ describe('regenerateImage function', () => {
     expect(res.status).toBe(503);
     const body = JSON.parse(res.body);
     expect(body.error).toMatch(/temporarily disabled/);
+  });
+});
+
+// ─── deleteEvent ────────────────────────────────────────────────────
+
+describe('deleteEvent function', () => {
+  const deleteEvent = require('../src/functions/deleteEvent');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('rejects unauthenticated requests', async () => {
+    const res = await deleteEvent(makeRequest('POST', { eventId: 'ev-1', chapterSlug: 'perth' }), context);
+    expect(res.status).toBe(401);
+  });
+
+  test('rejects non-admin users', async () => {
+    const res = await deleteEvent(makeAuthRequest('POST', { eventId: 'ev-1', chapterSlug: 'perth' }, ['authenticated']), context);
+    expect(res.status).toBe(403);
+  });
+
+  test('returns 400 for missing eventId', async () => {
+    const res = await deleteEvent(makeAuthRequest('POST', { chapterSlug: 'perth' }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/Missing/);
+  });
+
+  test('returns 400 for missing chapterSlug', async () => {
+    const res = await deleteEvent(makeAuthRequest('POST', { eventId: 'ev-1' }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/Missing/);
+  });
+
+  test('returns 400 when event not found', async () => {
+    storage.getEvent.mockResolvedValueOnce(null);
+    const res = await deleteEvent(makeAuthRequest('POST', { eventId: 'ev-1', chapterSlug: 'perth' }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/not found/);
+  });
+
+  test('deletes event successfully', async () => {
+    storage.getEvent.mockResolvedValueOnce({ rowKey: 'ev-1', slug: 'test-event', title: 'Test Event' });
+    storage.deleteEvent.mockResolvedValueOnce({});
+    const res = await deleteEvent(makeAuthRequest('POST', { eventId: 'ev-1', chapterSlug: 'perth' }, ['admin']), context);
+    expect(res.status).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+    expect(storage.deleteEvent).toHaveBeenCalledWith('perth', 'ev-1');
+  });
+});
+
+// ─── updateEvent slug ────────────────────────────────────────────────
+
+describe('updateEvent slug support', () => {
+  const updateEvent = require('../src/functions/updateEvent');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  const existingEvent = { rowKey: 'ev-1', slug: 'old-slug', title: 'Old Title', chapterSlug: 'perth' };
+
+  test('allows changing event slug to a unique value', async () => {
+    storage.getEvent.mockResolvedValueOnce(existingEvent);
+    storage.getEventBySlug.mockResolvedValueOnce(null);
+    storage.updateEvent.mockResolvedValueOnce({ slug: 'new-slug' });
+    const res = await updateEvent(makeAuthRequest('POST', {
+      eventId: 'ev-1', chapterSlug: 'perth', title: 'Old Title',
+      date: '2026-06-01', description: 'Desc', locationAddress1: '1 St', slug: 'new-slug'
+    }, ['admin']), context);
+    expect(res.status).toBe(200);
+    expect(storage.updateEvent).toHaveBeenCalledWith('perth', 'ev-1', expect.objectContaining({ slug: 'new-slug' }));
+  });
+
+  test('rejects slug already used by another event', async () => {
+    storage.getEvent.mockResolvedValueOnce(existingEvent);
+    storage.getEventBySlug.mockResolvedValueOnce({ rowKey: 'ev-other', slug: 'taken-slug' });
+    const res = await updateEvent(makeAuthRequest('POST', {
+      eventId: 'ev-1', chapterSlug: 'perth', title: 'Old Title',
+      date: '2026-06-01', description: 'Desc', locationAddress1: '1 St', slug: 'taken-slug'
+    }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/already in use/);
+  });
+
+  test('allows keeping the same slug unchanged', async () => {
+    storage.getEvent.mockResolvedValueOnce(existingEvent);
+    storage.updateEvent.mockResolvedValueOnce({ slug: 'old-slug' });
+    const res = await updateEvent(makeAuthRequest('POST', {
+      eventId: 'ev-1', chapterSlug: 'perth', title: 'Old Title',
+      date: '2026-06-01', description: 'Desc', locationAddress1: '1 St', slug: 'old-slug'
+    }, ['admin']), context);
+    expect(res.status).toBe(200);
+    expect(storage.getEventBySlug).not.toHaveBeenCalled();
+  });
+
+  test('sanitises slug input (removes special chars)', async () => {
+    storage.getEvent.mockResolvedValueOnce(existingEvent);
+    storage.getEventBySlug.mockResolvedValueOnce(null);
+    storage.updateEvent.mockResolvedValueOnce({ slug: 'my-event-2026' });
+    const res = await updateEvent(makeAuthRequest('POST', {
+      eventId: 'ev-1', chapterSlug: 'perth', title: 'Old Title',
+      date: '2026-06-01', description: 'Desc', locationAddress1: '1 St', slug: 'My Event 2026!'
+    }, ['admin']), context);
+    expect(res.status).toBe(200);
+    expect(storage.updateEvent).toHaveBeenCalledWith('perth', 'ev-1', expect.objectContaining({ slug: 'my-event-2026' }));
+  });
+
+  test('rejects empty slug after sanitisation', async () => {
+    storage.getEvent.mockResolvedValueOnce(existingEvent);
+    const res = await updateEvent(makeAuthRequest('POST', {
+      eventId: 'ev-1', chapterSlug: 'perth', title: 'Old Title',
+      date: '2026-06-01', description: 'Desc', locationAddress1: '1 St', slug: '!!!'
+    }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/alphanumeric/);
   });
 });
