@@ -62,6 +62,8 @@ module.exports = async function (request, context) {
       const adminSlugs = await getAdminChapterSlugs(adminEmail);
       const superAdmin = isSuperAdmin(adminEmail);
 
+      context.log(`eventAttendance list: email=${adminEmail}, slugs=[${adminSlugs}], superAdmin=${superAdmin}, totalEvents=${allEvents.length}, userDetails=${user.userDetails}, claimTypes=${(user.claims||[]).map(c=>c.typ).join(',')}`);
+
       const events = superAdmin ? allEvents : allEvents.filter(ev => {
         const evSlug = (ev.chapterSlug || ev.partitionKey || '').toLowerCase();
         return adminSlugs.includes(evSlug);
