@@ -96,9 +96,7 @@ module.exports = async function (request, context) {
       } catch (e) { /* non-critical */ }
 
       return { status: 200, headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ events: enriched, chapterCity: chapterCity,
-                 _debug: { email: adminEmail, slugs: adminSlugs, superAdmin, totalEvents: allEvents.length, filteredEvents: events.length, userDetails: user.userDetails, claimTypes: (user.claims||[]).map(c=>c.typ) }
-               }) };
+               body: JSON.stringify({ events: enriched, chapterCity: chapterCity }) };
     }
 
     // Attendance detail
