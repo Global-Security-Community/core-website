@@ -15,20 +15,39 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Generate event page
+        env:
+          SLUG: ${{ github.event.client_payload.event_slug }}
+          TITLE: ${{ github.event.client_payload.event_title }}
+          DATE: ${{ github.event.client_payload.event_date }}
+          END_DATE: ${{ github.event.client_payload.event_end_date }}
+          LOCATION: ${{ github.event.client_payload.event_location }}
+          DESCRIPTION: ${{ github.event.client_payload.event_description }}
+          SESSIONIZE_ID: ${{ github.event.client_payload.event_sessionize_id }}
+          REG_CAP: ${{ github.event.client_payload.event_registration_cap }}
+          CHAPTER_SLUG: ${{ github.event.client_payload.chapter_slug }}
         run: |
-          SLUG="${{ github.event.client_payload.event_slug }}"
-          TITLE="${{ github.event.client_payload.event_title }}"
-          DATE="${{ github.event.client_payload.event_date }}"
-          END_DATE="${{ github.event.client_payload.event_end_date }}"
-          LOCATION="${{ github.event.client_payload.event_location }}"
-          DESCRIPTION="${{ github.event.client_payload.event_description }}"
-          SESSIONIZE_ID="${{ github.event.client_payload.event_sessionize_id }}"
-          REG_CAP="${{ github.event.client_payload.event_registration_cap }}"
-          CHAPTER_SLUG="${{ github.event.client_payload.chapter_slug }}"
+          # Validate slug format (alphanumeric and hyphens only)
+          if ! [[ "$SLUG" =~ ^[a-z0-9][a-z0-9-]{0,60}[a-z0-9]$ ]]; then
+            echo "::error::Invalid event slug format: must be lowercase alphanumeric with hyphens"
+            exit 1
+          fi
+          if ! [[ "$CHAPTER_SLUG" =~ ^[a-z0-9][a-z0-9-]{0,60}[a-z0-9]$ ]]; then
+            echo "::error::Invalid chapter slug format"
+            exit 1
+          fi
 
-          mkdir -p "src/events/${SLUG}"
+          # Verify resolved path stays within expected directory
+          TARGET_DIR="src/events/${SLUG}"
+          RESOLVED=$(realpath -m "$TARGET_DIR")
+          EXPECTED_PREFIX=$(realpath "src/events")
+          if [[ "$RESOLVED" != "$EXPECTED_PREFIX"/* ]]; then
+            echo "::error::Path traversal detected in slug"
+            exit 1
+          fi
 
-          cat > "src/events/${SLUG}/index.md" << 'FRONTMATTER'
+          mkdir -p "$TARGET_DIR"
+
+          cat > "${TARGET_DIR}/index.md" << 'FRONTMATTER'
           ---
           layout: event.njk
           FRONTMATTER
@@ -37,31 +56,35 @@ jobs:
           # Replace newlines with ", " and escape double quotes for valid YAML
           safe_yaml() { echo "$1" | tr '\n' ',' | sed 's/,/, /g; s/, $//; s/"/\\"/g'; }
           {
-            echo "title: \"$(safe_yaml "${TITLE}")\""
-            echo "slug: \"${SLUG}\""
-            echo "date: \"${DATE}\""
-            echo "endDate: \"${END_DATE}\""
-            echo "location: \"$(safe_yaml "${LOCATION}")\""
-            echo "description: \"$(safe_yaml "${DESCRIPTION}")\""
-            echo "sessionizeApiId: \"${SESSIONIZE_ID}\""
-            echo "registrationCap: ${REG_CAP:-0}"
-            echo "chapterSlug: \"${CHAPTER_SLUG}\""
+            printf 'title: "%s"\n' "$(safe_yaml "${TITLE}")"
+            printf 'slug: "%s"\n' "${SLUG}"
+            printf 'date: "%s"\n' "${DATE}"
+            printf 'endDate: "%s"\n' "${END_DATE}"
+            printf 'location: "%s"\n' "$(safe_yaml "${LOCATION}")"
+            printf 'description: "%s"\n' "$(safe_yaml "${DESCRIPTION}")"
+            printf 'sessionizeApiId: "%s"\n' "${SESSIONIZE_ID}"
+            printf 'registrationCap: %s\n' "${REG_CAP:-0}"
+            printf 'chapterSlug: "%s"\n' "${CHAPTER_SLUG}"
             echo "---"
-          } >> "src/events/${SLUG}/index.md"
+          } >> "${TARGET_DIR}/index.md"
 
-          echo "Generated event page at src/events/${SLUG}/index.md"
+          echo "Generated event page at ${TARGET_DIR}/index.md"
 
       - name: Commit and push
+        env:
+          EVENT_TITLE: ${{ github.event.client_payload.event_title }}
+          EVENT_DATE: ${{ github.event.client_payload.event_date }}
+          CHAPTER_SLUG: ${{ github.event.client_payload.chapter_slug }}
         run: |
           git config user.name "GSC Chapter Generator[bot]"
           git config user.email "gsc-bot@globalsecurity.community"
           git add .
           git diff --cached --quiet && echo "No changes" && exit 0
-          git commit -m "Add event page: ${{ github.event.client_payload.event_title }}
+          git commit -m "Add event page: ${EVENT_TITLE}
 
-          Event: ${{ github.event.client_payload.event_title }}
-          Date: ${{ github.event.client_payload.event_date }}
-          Chapter: ${{ github.event.client_payload.chapter_slug }}
+          Event: ${EVENT_TITLE}
+          Date: ${EVENT_DATE}
+          Chapter: ${CHAPTER_SLUG}
 
           Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
           # Pull latest changes before pushing to avoid rejection

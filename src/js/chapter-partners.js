@@ -26,7 +26,7 @@
           if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" alt="' + GSC.esc(p.name) + '">';
           html += '<div><strong>' + GSC.esc(p.name) + '</strong></div>';
           if (p.eventTitle) html += '<div class="partner-event">' + GSC.esc(p.eventTitle) + '</div>';
-          if (p.website) html += '<a href="' + GSC.esc(p.website) + '" target="_blank" rel="noopener noreferrer" style="font-size:0.75rem;color:var(--color-primary-teal);">Website →</a>';
+          if (p.website) html += '<a href="' + GSC.esc(GSC.safeUrl(p.website)) + '" target="_blank" rel="noopener noreferrer" style="font-size:0.75rem;color:var(--color-primary-teal);">Website →</a>';
           html += '</div>';
         });
         html += '</div></div>';

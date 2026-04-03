@@ -1,4 +1,4 @@
-const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
+const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { updateEvent, getEvent } = require('../helpers/tableStorage');
 const { sanitiseFields } = require('../helpers/sanitise');
 
@@ -32,6 +32,11 @@ module.exports = async function (request, context) {
     if (!existing) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Event not found' }) };
+    }
+
+    // Verify admin has access to this chapter
+    if (!await verifyChapterAccess(user, chapterSlug, context)) {
+      return forbidden('You do not have permission to edit events for this chapter');
     }
 
     // Build updates from allowed fields only

@@ -1,6 +1,6 @@
 const { randomUUID } = require('crypto');
-const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
-const { storePartner, deletePartner } = require('../helpers/tableStorage');
+const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
+const { storePartner, deletePartner, getEventById } = require('../helpers/tableStorage');
 const { stripHtml } = require('../helpers/sanitise');
 
 const MAX_LOGO_SIZE = 200 * 1024; // 200KB base64
@@ -30,6 +30,15 @@ module.exports = async function (request, context) {
     if (!eventId) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Missing eventId' }) };
+    }
+
+    // Verify admin has access to this event's chapter
+    const event = await getEventById(eventId);
+    if (event) {
+      const chapterSlug = event.chapterSlug || event.partitionKey || '';
+      if (!await verifyChapterAccess(user, chapterSlug, context)) {
+        return forbidden('You do not have permission to manage partners for this event');
+      }
     }
 
     // Delete action
@@ -71,6 +80,17 @@ module.exports = async function (request, context) {
     const safeName = stripHtml(name).substring(0, 100);
     const safeTier = stripHtml(tier || '').substring(0, 50);
 
+    // Validate website URL scheme (only allow http/https)
+    let safeWebsite = '';
+    if (website) {
+      try {
+        const parsed = new URL(website);
+        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+          safeWebsite = website.substring(0, 300);
+        }
+      } catch { /* invalid URL — discard */ }
+    }
+
     const id = partnerId || randomUUID();
 
     await storePartner({
@@ -80,7 +100,7 @@ module.exports = async function (request, context) {
       tier: safeTier,
       logoBase64,
       logoContentType: logoContentType || 'image/png',
-      website: (website || '').substring(0, 300),
+      website: safeWebsite,
       displayOrder: body.displayOrder || 0
     });
 

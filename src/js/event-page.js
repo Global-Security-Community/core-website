@@ -89,7 +89,7 @@
           html += '<div class="partners-grid">';
           tiers[tierName].forEach(function(p) {
             var tag = p.website ? 'a' : 'div';
-            var href = p.website ? ' href="' + GSC.esc(p.website) + '" target="_blank" rel="noopener noreferrer"' : '';
+            var href = p.website ? ' href="' + GSC.esc(GSC.safeUrl(p.website)) + '" target="_blank" rel="noopener noreferrer"' : '';
             html += '<' + tag + ' class="partner-logo"' + href + '>';
             if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" alt="' + GSC.esc(p.name) + '">';
             html += '<span class="partner-name">' + GSC.esc(p.name) + '</span>';

@@ -39,14 +39,14 @@
           : 'background:#666;color:white;';
         var dateStr = new Date(e.date).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         var endStr = e.endDate ? ' \u2013 ' + new Date(e.endDate).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
-        return '<a href="/events/' + e.slug + '/" class="event-card">' +
+        return '<a href="/events/' + encodeURI(e.slug) + '/" class="event-card">' +
           '<div class="event-card-header">' +
             '<span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:0.8rem;font-weight:600;margin-bottom:0.5rem;' + badgeStyle + '">' + badgeText + '</span>' +
             '<div class="event-card-date"><span class="icon" aria-hidden="true">' + GSCIcons.calendar + '</span> ' + dateStr + endStr + '</div>' +
-            '<h3 class="event-card-title">' + e.title + '</h3>' +
+            '<h3 class="event-card-title">' + GSC.esc(e.title) + '</h3>' +
           '</div>' +
           '<div class="event-card-body">' +
-            '<div class="event-card-location"><span class="icon" aria-hidden="true">' + GSCIcons.mapPin + '</span> ' + (e.location || '').split('\n').join(', ') + '</div>' +
+            '<div class="event-card-location"><span class="icon" aria-hidden="true">' + GSCIcons.mapPin + '</span> ' + GSC.esc((e.location || '').split('\n').join(', ')) + '</div>' +
           '</div>' +
           '<div class="event-card-footer">' +
             '<span class="event-card-btn">View Event \u2192</span>' +

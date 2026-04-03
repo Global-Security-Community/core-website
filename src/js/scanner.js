@@ -61,7 +61,7 @@
     resultEl.style.backgroundColor = '#fff3cd';
     resultEl.style.color = '#856404';
 
-    fetch('/api/checkIn', {
+    GSC.fetch('/api/checkIn', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ticketCode: ticketCode, eventId: eventId })
@@ -92,7 +92,7 @@
   }
 
   function loadStats() {
-    fetch('/api/eventAttendance?eventId=' + encodeURIComponent(eventId))
+    GSC.fetch('/api/eventAttendance?eventId=' + encodeURIComponent(eventId))
       .then(function(r) { return r.json(); })
       .then(function(data) {
         totalRegistered = data.total || 0;

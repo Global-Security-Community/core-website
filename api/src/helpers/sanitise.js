@@ -1,5 +1,7 @@
 /**
- * Strips HTML tags from a string to prevent XSS when rendering user input.
+ * Strips HTML tags from a string. Note: this is tag-stripping only —
+ * it does NOT handle HTML entities, URL schemes, YAML, or CSV contexts.
+ * Use context-specific validators for those cases.
  * @param {string} input
  * @returns {string}
  */
@@ -31,4 +33,19 @@ function sanitiseFields(obj, fields) {
   return result;
 }
 
-module.exports = { stripHtml, sanitiseFields };
+/**
+ * Validates that a URL uses only http: or https: schemes.
+ * Returns the URL string if safe, empty string otherwise.
+ * @param {string} url
+ * @returns {string}
+ */
+function sanitiseUrl(url) {
+  if (!url || typeof url !== 'string') return '';
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return url;
+  } catch { /* invalid URL */ }
+  return '';
+}
+
+module.exports = { stripHtml, sanitiseFields, sanitiseUrl };

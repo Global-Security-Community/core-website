@@ -34,10 +34,28 @@ function checkRateLimit(key, action, maxRequests = 5, windowMs = 3600000) {
   return true;
 }
 
+/**
+ * Check rate limit and log if exceeded.
+ * @param {string} key
+ * @param {string} action
+ * @param {number} maxRequests
+ * @param {number} windowMs
+ * @param {object} context - Azure Functions context (optional)
+ * @returns {boolean}
+ */
+function checkRateLimitWithLog(key, action, maxRequests = 5, windowMs = 3600000, context = null) {
+  const allowed = checkRateLimit(key, action, maxRequests, windowMs);
+  if (!allowed && context) {
+    const { logSecurityEvent } = require('./securityLogger');
+    logSecurityEvent(context, 'rate_limited', { key, action, maxRequests });
+  }
+  return allowed;
+}
+
 function getClientIP(request) {
   return request.headers.get('x-forwarded-for') ||
          request.headers.get('client-ip') ||
          'unknown';
 }
 
-module.exports = { checkRateLimit, getClientIP };
+module.exports = { checkRateLimit, checkRateLimitWithLog, getClientIP };

@@ -8,7 +8,7 @@
   }
 
   // Fetch event details
-  fetch('/api/getEvent?slug=' + encodeURIComponent(eventSlug))
+  GSC.fetch('/api/getEvent?slug=' + encodeURIComponent(eventSlug))
     .then(function(r) { return r.json(); })
     .then(function(ev) {
       if (!ev || ev.error) {
@@ -91,7 +91,7 @@
       turnstileToken: turnstileToken
     };
 
-    fetch('/api/registerEvent', {
+    GSC.fetch('/api/registerEvent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

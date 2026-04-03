@@ -21,8 +21,23 @@ jobs:
           ref: main
 
       - name: Verify chapter exists
+        env:
+          SLUG: ${{ inputs.chapter_slug }}
         run: |
-          SLUG="${{ inputs.chapter_slug }}"
+          # Validate slug format
+          if ! [[ "$SLUG" =~ ^[a-z0-9][a-z0-9-]{0,60}[a-z0-9]$ ]]; then
+            echo "::error::Invalid chapter slug format: must be lowercase alphanumeric with hyphens"
+            exit 1
+          fi
+
+          # Verify path stays within expected directory
+          RESOLVED=$(realpath -m "src/chapters/${SLUG}")
+          EXPECTED_PREFIX=$(realpath "src/chapters")
+          if [[ "$RESOLVED" != "$EXPECTED_PREFIX"/* ]]; then
+            echo "::error::Path traversal detected in slug"
+            exit 1
+          fi
+
           if [ ! -f "src/chapters/${SLUG}/index.md" ]; then
             echo "❌ Chapter 'src/chapters/${SLUG}/index.md' not found"
             exit 1
@@ -30,8 +45,11 @@ jobs:
           echo "Found chapter: ${SLUG}"
 
       - name: Archive Discord channel
+        env:
+          SLUG: ${{ inputs.chapter_slug }}
+          BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
         run: |
-          SLUG="${{ inputs.chapter_slug }}"
           # Extract discord_channel_id from frontmatter
           CHANNEL_ID=$(grep 'discord_channel_id:' "src/chapters/${SLUG}/index.md" | sed 's/.*discord_channel_id: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/' | tr -d ' ')
           
@@ -44,27 +62,29 @@ jobs:
 
           # Rename channel with archived- prefix and move out of chapters category
           curl -s -X PATCH "https://discord.com/api/v10/channels/${CHANNEL_ID}" \
-            -H "Authorization: Bot ${{ secrets.DISCORD_BOT_TOKEN }}" \
+            -H "Authorization: Bot ${BOT_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d "{\"name\": \"archived-${SLUG}\", \"permission_overwrites\": [{\"id\": \"${{ secrets.DISCORD_GUILD_ID }}\", \"type\": 0, \"deny\": \"2048\"}]}"
+            -d "{\"name\": \"archived-${SLUG}\", \"permission_overwrites\": [{\"id\": \"${GUILD_ID}\", \"type\": 0, \"deny\": \"2048\"}]}"
 
           # Post archive notice
           curl -s -X POST "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages" \
-            -H "Authorization: Bot ${{ secrets.DISCORD_BOT_TOKEN }}" \
+            -H "Authorization: Bot ${BOT_TOKEN}" \
             -H "Content-Type: application/json" \
             -d '{"embeds": [{"title": "📦 Chapter Archived", "description": "This chapter has been archived. The channel is now read-only.", "color": 16753920}]}'
 
           echo "Discord channel archived"
 
       - name: Delete chapter
+        env:
+          SLUG: ${{ inputs.chapter_slug }}
         run: |
-          SLUG="${{ inputs.chapter_slug }}"
           rm -rf "src/chapters/${SLUG}"
           echo "Deleted src/chapters/${SLUG}/"
 
       - name: Commit and push
+        env:
+          SLUG: ${{ inputs.chapter_slug }}
         run: |
-          SLUG="${{ inputs.chapter_slug }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A

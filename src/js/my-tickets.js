@@ -1,5 +1,5 @@
 (function() {
-  fetch('/api/myTickets')
+  GSC.fetch('/api/myTickets')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var el = document.getElementById('tickets-list');
@@ -47,7 +47,7 @@
           var cancelBtn = this;
           cancelBtn.disabled = true;
           cancelBtn.textContent = 'Cancelling...';
-          fetch('/api/cancelRegistration', {
+          GSC.fetch('/api/cancelRegistration', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ registrationId: regId })

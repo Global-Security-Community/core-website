@@ -1,5 +1,5 @@
-const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
-const { getRegistrationsByEvent, updateRegistration, VALID_ROLES } = require('../helpers/tableStorage');
+const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
+const { getRegistrationsByEvent, updateRegistration, getEventById, VALID_ROLES } = require('../helpers/tableStorage');
 
 /**
  * POST /api/updateRegistrationRole
@@ -27,6 +27,15 @@ module.exports = async function (request, context) {
     if (!VALID_ROLES.includes(role)) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: `Invalid role. Must be one of: ${VALID_ROLES.join(', ')}` }) };
+    }
+
+    // Verify admin has access to this event's chapter
+    const event = await getEventById(eventId);
+    if (event) {
+      const chapterSlug = event.chapterSlug || event.partitionKey || '';
+      if (!await verifyChapterAccess(user, chapterSlug, context)) {
+        return forbidden('You do not have permission to manage registrations for this event');
+      }
     }
 
     const registrations = await getRegistrationsByEvent(eventId);

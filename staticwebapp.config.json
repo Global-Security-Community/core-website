@@ -36,19 +36,23 @@
     },
     {
       "route": "/dashboard/*",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/scanner/*",
-      "allowedRoles": ["admin", "volunteer"]
+      "allowedRoles": ["admin", "volunteer"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/register/*",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["authenticated"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/my-tickets/*",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["authenticated"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/createEvent",
@@ -155,6 +159,6 @@
     "Cross-Origin-Opener-Policy": "same-origin",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "Cache-Control": "public, max-age=300, must-revalidate",
-    "Content-Security-Policy": "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.gravatar.com https://gravatar.com https://*.wp.com https://sessionize.com https://cache.sessionize.com https://gsccoresa.blob.core.windows.net; connect-src 'self' https://sessionize.com; worker-src 'self'; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://globalsecuritycommunity.ciamlogin.com"
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.gravatar.com https://gravatar.com https://*.wp.com https://sessionize.com https://cache.sessionize.com https://gsccoresa.blob.core.windows.net; connect-src 'self' https://sessionize.com; worker-src 'self'; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://globalsecuritycommunity.ciamlogin.com; upgrade-insecure-requests"
   }
 }
