@@ -66,12 +66,32 @@ function isSuperAdmin(userEmail) {
 }
 
 /**
+ * Extracts the user's email from the SWA principal.
+ * Tries claims first (multiple OIDC formats), falls back to userDetails.
+ */
+function extractEmail(user) {
+  const claims = user.claims || [];
+  const emailClaimTypes = [
+    'emails', 'email', 'preferred_username',
+    'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
+    'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'
+  ];
+  for (const typ of emailClaimTypes) {
+    const claim = claims.find(c => c.typ === typ);
+    if (claim && claim.val && claim.val.includes('@')) return claim.val.toLowerCase();
+  }
+  const details = (user.userDetails || '');
+  if (details.includes('@')) return details.toLowerCase();
+  return '';
+}
+
+/**
  * Verifies the authenticated admin user has access to a specific chapter.
  * Returns true if: user is a super admin, OR user leads the target chapter.
  * Returns false otherwise.
  */
 async function verifyChapterAccess(user, targetChapterSlug, context) {
-  const email = (user.userDetails || '').toLowerCase();
+  const email = extractEmail(user);
   if (isSuperAdmin(email)) {
     return true;
   }
@@ -126,4 +146,4 @@ function verifyCsrfHeader(request) {
   };
 }
 
-module.exports = { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess, getAdminChapterSlugs, isSuperAdmin, cityToSlug, verifyCsrfHeader };
+module.exports = { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess, getAdminChapterSlugs, isSuperAdmin, cityToSlug, verifyCsrfHeader, extractEmail };

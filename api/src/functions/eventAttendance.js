@@ -57,8 +57,8 @@ module.exports = async function (request, context) {
       const allEvents = await listEvents(chapterSlug || undefined);
 
       // Filter to only events the admin has access to
-      const { getAdminChapterSlugs, isSuperAdmin } = require('../helpers/auth');
-      const adminEmail = (user.userDetails || '').toLowerCase();
+      const { getAdminChapterSlugs, isSuperAdmin, extractEmail } = require('../helpers/auth');
+      const adminEmail = extractEmail(user);
       const adminSlugs = await getAdminChapterSlugs(adminEmail);
       const superAdmin = isSuperAdmin(adminEmail);
 
