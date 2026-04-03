@@ -52,7 +52,14 @@
 
   function loadEvents() {
     return GSC.fetch('/api/eventAttendance?action=list')
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (!r.ok) {
+          throw new Error(r.status === 401 ? 'Not authenticated — please log in again.' :
+            r.status === 403 ? 'You do not have permission to view events.' :
+            'Failed to load events (status ' + r.status + ').');
+        }
+        return r.json();
+      })
       .then(function(data) {
         var el = document.getElementById('events-list');
         if (data.chapterCity) {
@@ -88,8 +95,8 @@
           });
         });
       })
-      .catch(function() {
-        document.getElementById('events-list').innerHTML = '<p>Failed to load events.</p>';
+      .catch(function(err) {
+        document.getElementById('events-list').innerHTML = '<p>' + GSC.esc(err.message || 'Failed to load events.') + '</p>';
       });
   }
 

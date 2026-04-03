@@ -23,6 +23,10 @@
   },
   "routes": [
     {
+      "route": "/favicon.ico",
+      "rewrite": "/assets/GlobalSecurityCommunityLogo2.png"
+    },
+    {
       "route": "/css/*",
       "headers": { "Cache-Control": "public, max-age=300, must-revalidate" }
     },
