@@ -60,79 +60,98 @@
     },
     {
       "route": "/api/createEvent",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/checkIn",
-      "allowedRoles": ["admin", "volunteer"]
+      "allowedRoles": ["admin", "volunteer"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/issueBadges",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/eventAttendance",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/updateRegistrationRole",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/manualRegister",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/updateChapter",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/updateEvent",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/fixEventChapter",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/deleteEvent",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/getChapter",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/registerEvent",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["authenticated"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/cancelRegistration",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["authenticated"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/myTickets",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["authenticated"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/badge",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["authenticated"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/chapterSubscribe",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["authenticated"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/refreshSessionize",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/communityPartner",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/regenerateImage",
-      "allowedRoles": ["admin"]
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
     },
     {
       "route": "/api/*",
