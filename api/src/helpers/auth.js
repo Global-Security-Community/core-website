@@ -78,7 +78,24 @@ function extractEmail(user) {
   ];
   for (const typ of emailClaimTypes) {
     const claim = claims.find(c => c.typ === typ);
-    if (claim && claim.val && claim.val.includes('@')) return claim.val.toLowerCase();
+    if (claim && claim.val) {
+      // Handle JSON array values (e.g. B2C 'emails' claim: '["user@example.com"]')
+      let val = claim.val;
+      if (val.startsWith('[')) {
+        try { val = JSON.parse(val)[0] || ''; } catch { /* not JSON */ }
+      }
+      if (val.includes('@')) return val.toLowerCase();
+    }
+  }
+  // Fallback: scan ALL claims for any value containing an email
+  for (const claim of claims) {
+    if (claim.val && claim.val.includes('@')) {
+      let val = claim.val;
+      if (val.startsWith('[')) {
+        try { val = JSON.parse(val)[0] || ''; } catch { /* not JSON */ }
+      }
+      if (val.includes('@')) return val.toLowerCase();
+    }
   }
   const details = (user.userDetails || '');
   if (details.includes('@')) return details.toLowerCase();
