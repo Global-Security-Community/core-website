@@ -534,8 +534,23 @@
             setStepState('step-live', 'done');
             var link = document.getElementById('create-progress-link');
             link.href = pageUrl;
-            link.style.display = 'inline-block';
-            document.getElementById('create-another-btn').style.display = 'inline-block';
+            link.classList.remove('is-hidden');
+            document.getElementById('create-another-btn').classList.remove('is-hidden');
+            // Publish the event now that its page is live
+            if (event.id && event.chapterSlug) {
+              fetch('/api/eventAttendance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ eventId: event.id, chapterSlug: event.chapterSlug, status: 'published' })
+              }).then(function(r) {
+                loadEvents();
+                if (!r.ok) {
+                  document.querySelector('.pipeline-note').textContent = 'Event page is live! Note: status update encountered an error — the event may still appear as draft in the dashboard until you refresh.';
+                }
+              }).catch(function() {
+                document.querySelector('.pipeline-note').textContent = 'Event page is live! Note: status update failed — the event may still appear as draft in the dashboard until you refresh.';
+              });
+            }
           } else if (attempts >= maxAttempts) {
             clearInterval(pollTimer);
             setStepState('step-page', 'done');
@@ -578,8 +593,8 @@
     document.getElementById('ev-cap').value = '0';
     // Reset pipeline steps
     ['step-stored','step-page','step-live'].forEach(function(id) { setStepState(id, 'pending'); });
-    document.getElementById('create-progress-link').style.display = 'none';
-    document.getElementById('create-another-btn').style.display = 'none';
+    document.getElementById('create-progress-link').classList.add('is-hidden');
+    document.getElementById('create-another-btn').classList.add('is-hidden');
   });
 
   function updateRoleActionBar() {
