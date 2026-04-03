@@ -1,5 +1,3 @@
-const { getApprovedApplicationsByEmail } = require('./tableStorage');
-
 /**
  * Extracts the authenticated user from SWA's client principal header.
  * SWA injects x-ms-client-principal as a Base64-encoded JSON payload.
@@ -52,6 +50,8 @@ function cityToSlug(city) {
  */
 async function getAdminChapterSlugs(userEmail) {
   if (!userEmail) return [];
+  // Lazy-load to avoid pulling in @azure/data-tables at module level (breaks tests on Node 18)
+  const { getApprovedApplicationsByEmail } = require('./tableStorage');
   const apps = await getApprovedApplicationsByEmail(userEmail);
   return apps.map(app => cityToSlug(app.city)).filter(Boolean);
 }
