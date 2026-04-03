@@ -32,13 +32,13 @@
   document.getElementById('btn-chapter').addEventListener('click', function() { showSection('chapter'); loadChapterEdit(); });
   document.getElementById('btn-back-events').addEventListener('click', function() { showSection('events'); });
 
-  // Check auth
-  fetch('/.auth/me')
+  // Check auth — assign to eventsLoadedPromise so loadChapterEdit() can wait for it
+  eventsLoadedPromise = fetch('/.auth/me')
     .then(function(r) { return r.json(); })
     .then(function(d) {
       if (d.clientPrincipal) {
         document.getElementById('dash-user').textContent = 'Welcome, ' + (d.clientPrincipal.userDetails || 'Admin');
-        eventsLoadedPromise = loadEvents();
+        return loadEvents();
       }
     })
     .catch(function() {
@@ -817,25 +817,30 @@
     document.getElementById('chapter-edit-form').innerHTML = '<p>Loading chapter data...</p>';
     document.getElementById('chapter-edit-message').style.display = 'none';
 
-    // If we already know the slug, use it; otherwise ask the API to look it up by email
-    var url = currentChapterSlug
-      ? '/api/getChapter?slug=' + encodeURIComponent(currentChapterSlug)
-      : '/api/getChapter?mine=true';
+    // Wait for events to finish loading — they set currentChapterSlug from the API
+    eventsLoadedPromise.then(function() {
+      // If we already know the slug, use it; otherwise ask the API to look it up by email
+      var url = currentChapterSlug
+        ? '/api/getChapter?slug=' + encodeURIComponent(currentChapterSlug)
+        : '/api/getChapter?mine=true';
 
-    fetch(url)
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.error) {
-          document.getElementById('chapter-edit-form').innerHTML = '<p>' + GSC.esc(data.error) + '</p>';
-          return;
-        }
-        if (data.slug) currentChapterSlug = data.slug;
-        renderChapterForm(data.leads || [], data.city, data.country);
-        chapterEditLoaded = true;
-      })
-      .catch(function() {
-        document.getElementById('chapter-edit-form').innerHTML = '<p>Failed to load chapter data.</p>';
-      });
+      fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.error) {
+            document.getElementById('chapter-edit-form').innerHTML = '<p>' + GSC.esc(data.error) + '</p>';
+            return;
+          }
+          if (data.slug) currentChapterSlug = data.slug;
+          renderChapterForm(data.leads || [], data.city, data.country);
+          chapterEditLoaded = true;
+        })
+        .catch(function() {
+          document.getElementById('chapter-edit-form').innerHTML = '<p>Failed to load chapter data.</p>';
+        });
+    }).catch(function() {
+      document.getElementById('chapter-edit-form').innerHTML = '<p>Failed to load chapter data.</p>';
+    });
   }
 
   function renderChapterForm(leads, city, country) {
