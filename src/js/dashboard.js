@@ -62,6 +62,7 @@
       })
       .then(function(data) {
         var el = document.getElementById('events-list');
+        if (data._debug) console.log('eventAttendance debug:', JSON.stringify(data._debug, null, 2));
         if (data.chapterCity) {
           document.getElementById('dash-title').textContent = data.chapterCity + ' Chapter Management';
           // Derive chapter slug from city
