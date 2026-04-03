@@ -9,6 +9,10 @@ on:
     branches:
       - live-version-swa
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
@@ -24,11 +28,11 @@ jobs:
       with:
         node-version: '18'
     - name: Install dependencies
-      run: npm install
+      run: npm ci
     - name: Install API dependencies and test
-      run: cd api && npm install && npm test
+      run: cd api && npm ci && npm test
     - name: Audit dependencies
-      run: cd api && npm audit --audit-level=high || true
+      run: cd api && npm audit --audit-level=high
     - name: Build
       run: npm run build
     - name: Clean API dev dependencies
