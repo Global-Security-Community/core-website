@@ -16,13 +16,13 @@ description: "Apply to lead a Global Security Community chapter in your city. We
 
       <div class="form-group">
         <label for="fullName">Full Name *</label>
-        <input type="text" id="fullName" name="fullName" required maxlength="100">
+        <input type="text" id="fullName" name="fullName" required aria-required="true" maxlength="100">
       </div>
 
       <div class="form-group">
         <label for="email">Email *</label>
-        <small class="help-text-block">This must be the email address you use to log in to the Global Security Community website.</small>
-        <input type="email" id="email" name="email" required>
+        <small class="help-text-block" id="email-help">This must be the email address you use to log in to the Global Security Community website.</small>
+        <input type="email" id="email" name="email" required aria-required="true" aria-describedby="email-help">
       </div>
 
       <div class="form-group">
@@ -44,8 +44,8 @@ description: "Apply to lead a Global Security Community chapter in your city. We
 
       <div class="form-group">
         <label for="secondLeadEmail">Email</label>
-        <small class="help-text-block">Must match the email they use to log in to the website.</small>
-        <input type="email" id="secondLeadEmail" name="secondLeadEmail">
+        <small class="help-text-block" id="secondLeadEmail-help">Must match the email they use to log in to the website.</small>
+        <input type="email" id="secondLeadEmail" name="secondLeadEmail" aria-describedby="secondLeadEmail-help">
       </div>
 
       <div class="form-group">
@@ -62,12 +62,12 @@ description: "Apply to lead a Global Security Community chapter in your city. We
 
       <div class="form-group">
         <label for="city">City *</label>
-        <input type="text" id="city" name="city" required maxlength="100" placeholder="e.g. Perth, London, New York">
+        <input type="text" id="city" name="city" required aria-required="true" maxlength="100" placeholder="e.g. Perth, London, New York">
       </div>
 
       <div class="form-group">
         <label for="country">Country *</label>
-        <select id="country" name="country" required>
+        <select id="country" name="country" required aria-required="true">
           <option value="">Select your country</option>
           <option value="Afghanistan">Afghanistan</option>
           <option value="Albania">Albania</option>
@@ -144,7 +144,7 @@ description: "Apply to lead a Global Security Community chapter in your city. We
 
       <div class="form-group">
         <label for="whyLead">Why Do You Want to Lead a Chapter? * <span class="char-hint">(max 500 characters)</span></label>
-        <textarea id="whyLead" name="whyLead" rows="4" required maxlength="500" placeholder="What motivates you to start a security community in your city?"></textarea>
+        <textarea id="whyLead" name="whyLead" rows="4" required aria-required="true" maxlength="500" placeholder="What motivates you to start a security community in your city?"></textarea>
         <span class="char-count" data-for="whyLead">0 / 500</span>
       </div>
 

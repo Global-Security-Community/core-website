@@ -14,22 +14,22 @@ description: "Get in touch with the Global Security Community. Ask questions, su
     <form id="contact-form">
       <div class="form-group">
         <label for="name">Name *</label>
-        <input type="text" id="name" name="name" required>
+        <input type="text" id="name" name="name" required aria-required="true">
       </div>
 
       <div class="form-group">
         <label for="email">Email *</label>
-        <input type="email" id="email" name="email" required>
+        <input type="email" id="email" name="email" required aria-required="true">
       </div>
 
       <div class="form-group">
         <label for="subject">Subject *</label>
-        <input type="text" id="subject" name="subject" required>
+        <input type="text" id="subject" name="subject" required aria-required="true">
       </div>
 
       <div class="form-group">
         <label for="message">Message *</label>
-        <textarea id="message" name="message" rows="5" required></textarea>
+        <textarea id="message" name="message" rows="5" required aria-required="true"></textarea>
       </div>
 
       <div class="form-group">

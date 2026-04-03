@@ -1,6 +1,7 @@
 ---
 layout: base.njk
 title: Register for Event
+description: "Register for a Global Security Community event. Join cybersecurity professionals for workshops, talks, and networking."
 ---
 
 <div class="container">
@@ -13,11 +14,11 @@ title: Register for Event
       <h2>Your Details</h2>
       <div class="form-group">
         <label for="reg-name">Full Name *</label>
-        <input type="text" id="reg-name" required maxlength="100">
+        <input type="text" id="reg-name" required aria-required="true" maxlength="100">
       </div>
       <div class="form-group">
         <label for="reg-email">Email *</label>
-        <input type="email" id="reg-email" required>
+        <input type="email" id="reg-email" required aria-required="true">
       </div>
 
       <h2>About You <span class="form-hint">(helps us understand our community)</span></h2>

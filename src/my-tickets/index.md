@@ -1,6 +1,7 @@
 ---
 layout: base.njk
 title: My Tickets
+description: "View your Global Security Community event tickets and registration details."
 ---
 
 <div class="container">
