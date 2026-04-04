@@ -1,7 +1,7 @@
 ---
 layout: event.njk
-title: "Global Security Bootcamp 2026"
-slug: "global-security-bootcamp-2026"
+title: "Global Security Bootcamp Perth 2026"
+slug: "global-security-bootcamp-perth-2026"
 date: "2026-08-01"
 endDate: "2026-08-01"
 location: "Microsoft Office, 10/100 St Georges Terrace, Perth WA"

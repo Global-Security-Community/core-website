@@ -1,6 +1,6 @@
 const { randomUUID } = require('crypto');
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
-const { storeEvent, getSubscriptionsByChapter, updateEvent, getApprovedApplicationBySlug } = require('../helpers/tableStorage');
+const { storeEvent, getSubscriptionsByChapter, updateEvent, getApprovedApplicationBySlug, getEventBySlug } = require('../helpers/tableStorage');
 const { sanitiseFields } = require('../helpers/sanitise');
 const { sendMessage } = require('../helpers/discordBot');
 const { sendEventNotificationEmail } = require('../helpers/emailService');
@@ -79,12 +79,28 @@ module.exports = async function (request, context) {
     }
 
     const eventId = randomUUID();
-    const slug = safe.title
+    let slug = safe.title
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .substring(0, 80);
+
+    // Ensure slug uniqueness — append city or counter if needed
+    if (await getEventBySlug(slug)) {
+      const citySlug = (safe.locationCity || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (citySlug && !slug.includes(citySlug)) {
+        slug = (slug + '-' + citySlug).substring(0, 80);
+      }
+      // If still not unique, append a counter
+      let counter = 2;
+      let candidate = slug;
+      while (await getEventBySlug(candidate)) {
+        candidate = slug + '-' + counter;
+        counter++;
+      }
+      slug = candidate;
+    }
 
     const event = {
       id: eventId,
