@@ -618,11 +618,18 @@ async function storeContactSubmission({ name, email, subject, message }) {
 
 async function storeUserEmail(userId, email) {
   const client = getTableClient('UserEmails');
-  await client.upsertEntity({
-    partitionKey: 'users',
-    rowKey: userId,
-    email: email.toLowerCase()
-  }, 'Replace');
+  const entity = { partitionKey: 'users', rowKey: userId, email: email.toLowerCase() };
+  try {
+    await client.upsertEntity(entity, 'Replace');
+  } catch (e) {
+    // Table may not exist yet — create it and retry
+    if (e.statusCode === 404 || (e.message && e.message.includes('TableNotFound'))) {
+      await client.createTable();
+      await client.upsertEntity(entity, 'Replace');
+    } else {
+      throw e;
+    }
+  }
 }
 
 async function getUserEmail(userId) {
