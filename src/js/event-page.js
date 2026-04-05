@@ -12,6 +12,22 @@
     }
   }
 
+  // Update register button for unauthenticated users to preserve redirect through login
+  if (eventSlug) {
+    fetch('/.auth/me')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.clientPrincipal) {
+          var btn = document.getElementById('register-btn');
+          if (btn) {
+            var registerUrl = '/register/?event=' + encodeURIComponent(eventSlug);
+            btn.href = '/.auth/login/ciam?post_login_redirect_uri=' + encodeURIComponent(registerUrl);
+          }
+        }
+      })
+      .catch(function() {});
+  }
+
   // Fetch registration count
   if (eventSlug) {
     fetch('/api/getEvent?slug=' + encodeURIComponent(eventSlug))

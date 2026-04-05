@@ -44,10 +44,12 @@
         // Replace the single auth <li> with multiple <li> elements
         container.outerHTML = items.join('');
       } else {
-        container.innerHTML = '<a href="/.auth/login/ciam" class="nav-link">Login</a>';
+        var loginUrl = '/.auth/login/ciam?post_login_redirect_uri=' + encodeURIComponent(window.location.pathname + window.location.search);
+        container.innerHTML = '<a href="' + loginUrl + '" class="nav-link">Login</a>';
       }
     })
     .catch(function() {
-      container.innerHTML = '<a href="/.auth/login/ciam" class="nav-link">Login</a>';
+      var loginUrl = '/.auth/login/ciam?post_login_redirect_uri=' + encodeURIComponent(window.location.pathname + window.location.search);
+      container.innerHTML = '<a href="' + loginUrl + '" class="nav-link">Login</a>';
     });
 })();
