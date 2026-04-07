@@ -161,7 +161,7 @@ description: "Apply to lead a Global Security Community chapter in your city. We
       </div>
 
       <div class="form-group">
-        <div class="cf-turnstile" data-sitekey="{{ turnstileSiteKey }}"></div>
+        <div class="cf-turnstile" data-sitekey="{{ turnstileSiteKey }}" data-theme="light"></div>
       </div>
 
       <button type="submit">Submit Application</button>

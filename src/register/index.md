@@ -98,7 +98,7 @@ description: "Register for a Global Security Community event. Join cybersecurity
       </div>
 
       <div class="form-group">
-        <div class="cf-turnstile" data-sitekey="{{ turnstileSiteKey }}"></div>
+        <div class="cf-turnstile" data-sitekey="{{ turnstileSiteKey }}" data-theme="light"></div>
       </div>
 
       <button type="submit">Register</button>

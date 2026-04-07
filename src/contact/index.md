@@ -33,7 +33,7 @@ description: "Get in touch with the Global Security Community. Ask questions, su
       </div>
 
       <div class="form-group">
-        <div class="cf-turnstile" data-sitekey="{{ turnstileSiteKey }}"></div>
+        <div class="cf-turnstile" data-sitekey="{{ turnstileSiteKey }}" data-theme="light"></div>
       </div>
 
       <button type="submit">Send Message</button>
