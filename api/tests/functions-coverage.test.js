@@ -520,6 +520,80 @@ describe('registerEvent function', () => {
   });
 });
 
+// ─── resendTicketEmail ──────────────────────────────────────────────
+
+describe('resendTicketEmail function', () => {
+  const resendTicketEmail = require('../src/functions/resendTicketEmail');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  const mockEvent = {
+    rowKey: 'ev-1', title: 'Test Event', slug: 'test-event', chapterSlug: 'perth',
+    partitionKey: 'perth', date: '2026-05-15', location: 'Perth', status: 'published'
+  };
+  const mockRegs = [
+    { rowKey: 'r1', fullName: 'Alice', email: 'alice@test.com', ticketCode: 'AAAA1111', role: 'attendee' },
+    { rowKey: 'r2', fullName: 'Bob', email: 'bob@test.com', ticketCode: 'BBBB2222', role: 'speaker' }
+  ];
+
+  test('rejects unauthenticated requests', async () => {
+    const res = await resendTicketEmail(makeRequest('POST', { eventId: 'ev-1', registrationIds: ['r1'] }), context);
+    expect(res.status).toBe(401);
+  });
+
+  test('rejects non-admin users', async () => {
+    const res = await resendTicketEmail(makeAuthRequest('POST', { eventId: 'ev-1', registrationIds: ['r1'] }), context);
+    expect(res.status).toBe(403);
+  });
+
+  test('returns 400 for missing fields', async () => {
+    const res = await resendTicketEmail(makeAuthRequest('POST', { eventId: 'ev-1' }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/registrationIds/);
+  });
+
+  test('returns 400 when event not found', async () => {
+    storage.getEventById.mockResolvedValueOnce(null);
+    const res = await resendTicketEmail(makeAuthRequest('POST', { eventId: 'ev-1', registrationIds: ['r1'] }, ['admin']), context);
+    expect(res.status).toBe(400);
+  });
+
+  test('sends emails to selected registrations', async () => {
+    storage.getEventById.mockResolvedValueOnce(mockEvent);
+    storage.getRegistrationsByEvent.mockResolvedValueOnce(mockRegs);
+    const res = await resendTicketEmail(makeAuthRequest('POST', { eventId: 'ev-1', registrationIds: ['r1', 'r2'] }, ['admin']), context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.sent).toBe(2);
+    expect(emailService.sendTicketEmail).toHaveBeenCalledTimes(2);
+  });
+
+  test('reports errors for failed sends', async () => {
+    storage.getEventById.mockResolvedValueOnce(mockEvent);
+    storage.getRegistrationsByEvent.mockResolvedValueOnce(mockRegs);
+    emailService.sendTicketEmail.mockResolvedValueOnce({});
+    emailService.sendTicketEmail.mockRejectedValueOnce(new Error('ACS error'));
+    const res = await resendTicketEmail(makeAuthRequest('POST', { eventId: 'ev-1', registrationIds: ['r1', 'r2'] }, ['admin']), context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.sent).toBe(1);
+    expect(body.failed).toBe(1);
+    expect(body.errors).toHaveLength(1);
+    expect(body.errors[0].email).toBe('bob@test.com');
+  });
+
+  test('reports error for unknown registration ids', async () => {
+    storage.getEventById.mockResolvedValueOnce(mockEvent);
+    storage.getRegistrationsByEvent.mockResolvedValueOnce(mockRegs);
+    const res = await resendTicketEmail(makeAuthRequest('POST', { eventId: 'ev-1', registrationIds: ['r999'] }, ['admin']), context);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.sent).toBe(0);
+    expect(body.failed).toBe(1);
+  });
+});
+
 // ─── cancelRegistration ─────────────────────────────────────────────
 
 describe('cancelRegistration function', () => {

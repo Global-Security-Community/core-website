@@ -135,6 +135,7 @@ title: Dashboard
         <option value="organiser">Organiser</option>
       </select>
       <button id="role-apply-btn" type="button">Apply</button>
+      <button id="resend-email-btn" type="button" class="btn-outline">Resend Email</button>
     </div>
     <div id="detail-attendees"></div>
   </div>

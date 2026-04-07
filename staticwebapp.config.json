@@ -149,6 +149,11 @@
       "headers": { "Cache-Control": "private, no-store" }
     },
     {
+      "route": "/api/resendTicketEmail",
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
+    },
+    {
       "route": "/api/regenerateImage",
       "allowedRoles": ["admin"],
       "headers": { "Cache-Control": "private, no-store" }

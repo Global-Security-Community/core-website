@@ -353,6 +353,8 @@
 
         // Role apply button
         document.getElementById('role-apply-btn').addEventListener('click', function() { applyRoleChange(eventId, eventTitle); });
+        // Resend email button
+        document.getElementById('resend-email-btn').addEventListener('click', function() { resendTicketEmails(eventId, eventTitle); });
       })
       .catch(function() {
         document.getElementById('detail-title').textContent = 'Error loading event details';
@@ -647,6 +649,35 @@
       }
     })
     .catch(function() { alert('Network error.'); });
+  }
+
+  function resendTicketEmails(eventId, eventTitle) {
+    var selected = document.querySelectorAll('.attendee-check:checked');
+    var ids = [];
+    selected.forEach(function(cb) { ids.push(cb.dataset.regId); });
+    if (ids.length === 0) return;
+    if (!confirm('Resend ticket confirmation email to ' + ids.length + ' attendee(s)?')) return;
+
+    var btn = document.getElementById('resend-email-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    GSC.fetch('/api/resendTicketEmail', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ eventId: eventId, registrationIds: ids })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        var msg = d.sent + ' email(s) sent.';
+        if (d.failed > 0) msg += ' ' + d.failed + ' failed.';
+        alert(msg);
+      } else {
+        alert(d.error || 'Failed to resend emails.');
+      }
+    })
+    .catch(function() { alert('Network error.'); })
+    .finally(function() { btn.disabled = false; btn.textContent = 'Resend Email'; });
   }
 
   function adminRegister(eventId) {

@@ -26,6 +26,7 @@ const regenerateImageHandler = require('./functions/regenerateImage');
 const updateEventHandler = require('./functions/updateEvent');
 const fixEventChapterHandler = require('./functions/fixEventChapter');
 const deleteEventHandler = require('./functions/deleteEvent');
+const resendTicketEmailHandler = require('./functions/resendTicketEmail');
 
 /**
  * Wraps a POST handler with CSRF header verification.
@@ -72,3 +73,4 @@ app.post('regenerateImage', { authLevel: 'anonymous', handler: withCsrf(regenera
 app.post('updateEvent', { authLevel: 'anonymous', handler: withCsrf(updateEventHandler) });
 app.post('fixEventChapter', { authLevel: 'anonymous', handler: withCsrf(fixEventChapterHandler) });
 app.post('deleteEvent', { authLevel: 'anonymous', handler: withCsrf(deleteEventHandler) });
+app.post('resendTicketEmail', { authLevel: 'anonymous', handler: withCsrf(resendTicketEmailHandler) });
