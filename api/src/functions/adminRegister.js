@@ -93,8 +93,11 @@ module.exports = async function (request, context) {
       context.log(`QR generation failed: ${qrErr.message}`);
     }
 
+    let emailSent = false;
     try {
+      context.log(`Sending ticket email to ${registration.email} for event ${eventId}`);
       await sendTicketEmail(registration, event, qrDataUrl, context);
+      emailSent = true;
     } catch (emailErr) {
       context.log(`Ticket email send failed (non-fatal): ${emailErr.message}`);
     }
@@ -106,6 +109,7 @@ module.exports = async function (request, context) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         success: true,
+        emailSent,
         registration: { id: registrationId, ticketCode, role: assignedRole, fullName: registration.fullName, email: registration.email }
       })
     };

@@ -49,7 +49,7 @@ module.exports = async function (request, context) {
     // Get the event
     const event = await getEventBySlug(eventSlug);
     if (!event) {
-      return { status: 404, headers: { 'Content-Type': 'application/json' },
+      return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Event not found' }) };
     }
 
@@ -123,11 +123,14 @@ module.exports = async function (request, context) {
       context.log(`QR generation failed: ${qrErr.message}`);
     }
 
-    // Send ticket email (non-blocking — don't fail registration if email fails)
+    // Send ticket email — don't fail registration if email fails
+    let emailSent = false;
     try {
       let partners = [];
       try { partners = await getPartnersByEvent(eventId); } catch (e) { /* non-critical */ }
+      context.log(`Sending ticket email to ${registration.email} for event ${event.slug}`);
       await sendTicketEmail(registration, event, qrDataUrl, context, partners);
+      emailSent = true;
     } catch (emailErr) {
       context.log(`Ticket email send failed (non-fatal): ${emailErr.message}`);
     }
@@ -137,6 +140,7 @@ module.exports = async function (request, context) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         success: true,
+        emailSent,
         registration: {
           id: registrationId,
           ticketCode,

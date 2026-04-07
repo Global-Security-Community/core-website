@@ -456,10 +456,10 @@ describe('registerEvent function', () => {
     expect(JSON.parse(res.body).error).toMatch(/Missing required/);
   });
 
-  test('returns 404 when event not found', async () => {
+  test('returns 400 when event not found', async () => {
     storage.getEventBySlug.mockResolvedValueOnce(null);
     const res = await registerEvent(makeAuthRequest('POST', validBody), context);
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(400);
   });
 
   test('returns 400 for closed event', async () => {
@@ -494,6 +494,7 @@ describe('registerEvent function', () => {
     expect(res.status).toBe(201);
     const body = JSON.parse(res.body);
     expect(body.success).toBe(true);
+    expect(body.emailSent).toBe(true);
     expect(body.registration.ticketCode).toBeTruthy();
     expect(body.registration.eventTitle).toBe('Test Event');
     expect(storage.storeRegistration).toHaveBeenCalledTimes(1);
@@ -507,6 +508,15 @@ describe('registerEvent function', () => {
     emailService.sendTicketEmail.mockRejectedValueOnce(new Error('email failed'));
     const res = await registerEvent(makeAuthRequest('POST', validBody), context);
     expect(res.status).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body.emailSent).toBe(false);
+  });
+
+  test('returns 400 (not 404) when event not found', async () => {
+    storage.getEventBySlug.mockResolvedValueOnce(null);
+    const res = await registerEvent(makeAuthRequest('POST', validBody), context);
+    expect(res.status).toBe(400);
+    expect(res.status).not.toBe(404);
   });
 });
 

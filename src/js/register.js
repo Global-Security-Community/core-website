@@ -122,6 +122,19 @@
         '</div>';
         document.getElementById('success-qr').innerHTML = ticketHtml;
         document.getElementById('success-details').textContent = '';
+        // Show email status message
+        var emailMsg = document.getElementById('success-email-status');
+        if (emailMsg) {
+          if (res.data.emailSent) {
+            emailMsg.innerHTML = '<p>A confirmation email with your ticket has been sent.</p>' +
+              '<p class="help-text"><span class="icon" aria-hidden="true">' + GSCIcons.mail + '</span> Can\'t find it? Please check your junk or spam folder.</p>';
+          } else {
+            emailMsg.innerHTML = '<div class="form-message form-message--warning" style="display:block;">' +
+              '<p><strong>We couldn\'t send a confirmation email.</strong></p>' +
+              '<p>Your registration is confirmed — you can find your ticket on the <a href="/my-tickets/">My Tickets</a> page. ' +
+              'If you need a copy emailed, please <a href="/contact/">contact us</a>.</p></div>';
+          }
+        }
       } else if (res.status === 409) {
         msg.style.display = 'block';
         msg.style.backgroundColor = '#fff3cd'; msg.style.color = '#856404';
