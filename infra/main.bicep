@@ -28,8 +28,11 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     minimumTlsVersion: 'TLS1_2'
     supportsHttpsTrafficOnly: true
     allowBlobPublicAccess: false
+    // IMPORTANT: defaultAction MUST be 'Allow'. SWA managed functions cannot
+    // access Table Storage when set to 'Deny', even with bypass: 'AzureServices'.
+    // See: production outage 2026-04-01 and 2026-04-07.
     networkAcls: {
-      defaultAction: 'Deny'
+      defaultAction: 'Allow'
       bypass: 'AzureServices'
     }
   }
