@@ -27,11 +27,11 @@ document.getElementById('chapter-apply-form').addEventListener('submit', async f
       fullName: document.getElementById('fullName').value,
       email: document.getElementById('email').value,
       linkedIn: document.getElementById('linkedIn').value,
-      aboutYou: document.getElementById('aboutYou').value,
+      github: document.getElementById('github').value,
       secondLeadName: document.getElementById('secondLeadName').value,
       secondLeadEmail: document.getElementById('secondLeadEmail').value,
       secondLeadLinkedIn: document.getElementById('secondLeadLinkedIn').value,
-      secondLeadAbout: document.getElementById('secondLeadAbout').value,
+      secondLeadGitHub: document.getElementById('secondLeadGitHub').value,
       city: document.getElementById('city').value,
       country: document.getElementById('country').value,
       whyLead: document.getElementById('whyLead').value,
@@ -71,7 +71,9 @@ document.getElementById('chapter-apply-form').addEventListener('submit', async f
 
     formMessage.style.display = 'block';
   } catch (error) {
-    GSC.showMessage(formMessage, 'error', 'Error submitting application. Please try again later.');
+    console.error('Chapter application error:', error);
+    var detail = error.message || '';
+    GSC.showMessage(formMessage, 'error', 'Error submitting application. Please try again later.' + (detail ? ' (' + detail + ')' : ''));
     formMessage.style.display = 'block';
   } finally {
     button.disabled = false;
