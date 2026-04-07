@@ -77,6 +77,15 @@
     var turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
     var turnstileToken = turnstileResponse ? turnstileResponse.value : '';
 
+    if (!turnstileToken) {
+      msg.style.display = 'block';
+      msg.style.backgroundColor = '#fff3cd'; msg.style.color = '#856404';
+      msg.textContent = 'Security verification not ready — please wait a moment and try again. If this persists, check that ad blockers are not blocking the verification widget.';
+      btn.disabled = false;
+      btn.textContent = 'Register';
+      return;
+    }
+
     var payload = {
       eventSlug: eventSlug,
       fullName: document.getElementById('reg-name').value,

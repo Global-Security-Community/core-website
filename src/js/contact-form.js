@@ -31,6 +31,11 @@ document.getElementById('contact-form').addEventListener('submit', async functio
   var turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
   var turnstileToken = turnstileResponse ? turnstileResponse.value : '';
 
+  if (!turnstileToken) {
+    showError('Security verification not ready — please wait a moment and try again. If this persists, check that ad blockers are not blocking the verification widget.');
+    return;
+  }
+
   try {
     button.disabled = true;
     button.textContent = 'Sending...';

@@ -42,6 +42,12 @@ document.getElementById('chapter-apply-form').addEventListener('submit', async f
     var turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
     formData.turnstileToken = turnstileResponse ? turnstileResponse.value : '';
 
+    if (!formData.turnstileToken) {
+      GSC.showMessage(formMessage, 'error', 'Security verification not ready — please wait a moment and try again. If this persists, check that ad blockers are not blocking the verification widget.');
+      formMessage.style.display = 'block';
+      return;
+    }
+
     var response = await GSC.fetch('/api/chapterApplication', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
