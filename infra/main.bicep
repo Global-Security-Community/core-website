@@ -244,7 +244,7 @@ resource latencyAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
 // Route resource logs to Log Analytics for centralised troubleshooting.
 
 resource acsDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: 'acs-to-log-analytics'
+  name: 'gsc-core-acs'
   scope: communicationService
   properties: {
     workspaceId: logAnalytics.id
