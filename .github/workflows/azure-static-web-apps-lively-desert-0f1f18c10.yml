@@ -33,6 +33,19 @@ jobs:
       run: cd api && npm ci && npm test
     - name: Audit dependencies
       run: cd api && npm audit --audit-level=high
+    - name: Verify all functions load without errors
+      run: cd api && node -e "require('./src/app.js')"
+    - name: Validate CSP includes Turnstile
+      run: |
+        if ! grep -q 'connect-src.*challenges.cloudflare.com' staticwebapp.config.json; then
+          echo "::error::CSP connect-src missing challenges.cloudflare.com — Turnstile forms will break"
+          exit 1
+        fi
+    - name: Validate no API functions return 404
+      run: |
+        if grep -rn "status: 404" api/src/functions/ | grep -v node_modules | grep -v test; then
+          echo "::warning::API functions returning 404 will be rewritten to index.html by SWA responseOverrides"
+        fi
     - name: Build
       run: npm run build
     - name: Clean API dev dependencies
@@ -48,6 +61,68 @@ jobs:
         api_location: "api"
         output_location: "_site"
           ###### End of Repository/Build Configurations ######
+
+  smoke_test_job:
+    needs: build_and_deploy_job
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    name: Post-Deploy Smoke Tests
+    steps:
+      - name: Wait for deployment to stabilise
+        run: sleep 30
+
+      - name: Smoke test - Events API
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://globalsecurity.community/api/getEvent?action=list")
+          echo "Events API: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Events API returned $STATUS — expected 200"
+            exit 1
+          fi
+
+      - name: Smoke test - Homepage
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://globalsecurity.community/")
+          echo "Homepage: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Homepage returned $STATUS — expected 200"
+            exit 1
+          fi
+
+      - name: Smoke test - Events page
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://globalsecurity.community/events/")
+          echo "Events page: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Events page returned $STATUS — expected 200"
+            exit 1
+          fi
+
+      - name: Smoke test - Chapters page
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://globalsecurity.community/chapters/")
+          echo "Chapters page: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Chapters page returned $STATUS — expected 200"
+            exit 1
+          fi
+
+      - name: Smoke test - CSP includes Turnstile
+        run: |
+          CSP=$(curl -sI "https://globalsecurity.community/" | grep -i "content-security-policy" || echo "")
+          echo "CSP header: $CSP"
+          if ! echo "$CSP" | grep -q "challenges.cloudflare.com"; then
+            echo "::error::CSP header missing challenges.cloudflare.com — Turnstile will break"
+            exit 1
+          fi
+
+      - name: Smoke test - API returns JSON (not HTML 404 override)
+        run: |
+          BODY=$(curl -s "https://globalsecurity.community/api/getEvent?action=list" | head -c 1)
+          if [ "$BODY" != "[" ] && [ "$BODY" != "{" ]; then
+            echo "::error::API returned non-JSON (likely SWA 404 override) — check function registration"
+            exit 1
+          fi
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

@@ -40,6 +40,25 @@ jobs:
             --query "identity.principalId" -o tsv 2>/dev/null || echo "")
           echo "principal_id=${PRINCIPAL_ID}" >> "$GITHUB_OUTPUT"
 
+      - name: Validate Bicep template
+        run: az bicep build --file ./infra/main.bicep
+
+      - name: Safety checks - catch known dangerous settings
+        run: |
+          echo "Checking for dangerous Bicep settings..."
+
+          # Storage defaultAction must be Allow (Deny blocks SWA functions)
+          if grep -A2 "networkAcls" ./infra/main.bicep | grep -q "defaultAction.*'Deny'" | head -1; then
+            # Check if it's the storage account (not Key Vault)
+            STORAGE_DENY=$(awk '/resource storageAccount/,/^resource / { if (/defaultAction.*Deny/) print NR": "$0 }' ./infra/main.bicep)
+            if [ -n "$STORAGE_DENY" ]; then
+              echo "::error::Storage account has networkAcls.defaultAction = 'Deny' — this WILL break all API endpoints. See outages 2026-04-01 and 2026-04-07."
+              exit 1
+            fi
+          fi
+
+          echo "✓ No dangerous settings detected"
+
       - name: Deploy Bicep
         uses: azure/arm-deploy@a1361c2c2cd398621955b16ca32e01c65ea340f5 # v2.0.0
         with:
@@ -49,3 +68,16 @@ jobs:
             swaPrincipalId=${{ steps.swa-identity.outputs.principal_id }}
             adminIpAddresses=${{ secrets.KEYVAULT_ADMIN_IPS || '[]' }}
           failOnStdErr: false
+
+      - name: Post-deploy - Verify storage account is accessible
+        run: |
+          echo "Waiting 15s for changes to propagate..."
+          sleep 15
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://globalsecurity.community/api/getEvent?action=list")
+          echo "Events API: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Events API returned $STATUS after infra deploy — storage may be blocked"
+            echo "::error::Run: az storage account update --name gsccoresa --resource-group gsc-corewebsite-rg --default-action Allow"
+            exit 1
+          fi
+          echo "✓ API accessible after infra deploy"
