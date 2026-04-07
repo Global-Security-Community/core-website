@@ -239,3 +239,45 @@ resource latencyAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
     description: 'Alert when average response time exceeds 5 seconds'
   }
 }
+
+// ─── Diagnostic Settings ─────────────────────────────────────────────
+// Route resource logs to Log Analytics for centralised troubleshooting.
+
+resource acsDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: 'acs-to-log-analytics'
+  scope: communicationService
+  properties: {
+    workspaceId: logAnalytics.id
+    logs: [
+      { categoryGroup: 'allLogs', enabled: true }
+    ]
+    metrics: [
+      { category: 'AllMetrics', enabled: true }
+    ]
+  }
+}
+
+resource storageDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: 'storage-to-log-analytics'
+  scope: storageAccount
+  properties: {
+    workspaceId: logAnalytics.id
+    metrics: [
+      { category: 'Transaction', enabled: true }
+    ]
+  }
+}
+
+resource keyVaultDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: 'keyvault-to-log-analytics'
+  scope: keyVault
+  properties: {
+    workspaceId: logAnalytics.id
+    logs: [
+      { categoryGroup: 'allLogs', enabled: true }
+    ]
+    metrics: [
+      { category: 'AllMetrics', enabled: true }
+    ]
+  }
+}

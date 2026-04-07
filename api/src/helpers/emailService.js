@@ -123,10 +123,10 @@ async function sendTicketEmail(registration, event, qrDataUrl, context, partners
   try {
     const poller = await client.beginSend(message);
     const result = await poller.pollUntilDone();
-    if (context) context.log(`Ticket email sent to ${registration.email}, status: ${result.status}`);
+    if (context) context.log(`Ticket email sent to ${registration.email}, status: ${result.status}, id: ${result.id || 'n/a'}`);
     return result;
   } catch (err) {
-    if (context) context.log(`Ticket email failed: ${err.message}`);
+    if (context) context.log(`Ticket email FAILED | to: ${registration.email} | event: ${event.slug || 'unknown'} | error: ${err.message}`);
     throw err;
   }
 }
@@ -178,10 +178,10 @@ async function sendBadgeEmail(recipient, badgeContent, event, badgeType, context
   try {
     const poller = await client.beginSend(message);
     const result = await poller.pollUntilDone();
-    if (context) context.log(`Badge email sent to ${recipient.email}, status: ${result.status}`);
+    if (context) context.log(`Badge email sent to ${recipient.email}, status: ${result.status}, id: ${result.id || 'n/a'}`);
     return result;
   } catch (err) {
-    if (context) context.log(`Badge email failed: ${err.message}`);
+    if (context) context.log(`Badge email FAILED | to: ${recipient.email} | error: ${err.message}`);
     throw err;
   }
 }
@@ -248,10 +248,10 @@ async function sendCancellationEmail(registration, event, context) {
   try {
     const poller = await client.beginSend(message);
     const result = await poller.pollUntilDone();
-    if (context) context.log(`Cancellation email sent to ${registration.email}, status: ${result.status}`);
+    if (context) context.log(`Cancellation email sent to ${registration.email}, status: ${result.status}, id: ${result.id || 'n/a'}`);
     return result;
   } catch (err) {
-    if (context) context.log(`Cancellation email failed: ${err.message}`);
+    if (context) context.log(`Cancellation email FAILED | to: ${registration.email} | error: ${err.message}`);
     throw err;
   }
 }
@@ -297,10 +297,10 @@ async function sendEventNotificationEmail(subscriberEmail, event, context) {
   try {
     const poller = await client.beginSend(message);
     const result = await poller.pollUntilDone();
-    if (context) context.log(`Event notification sent to ${subscriberEmail}, status: ${result.status}`);
+    if (context) context.log(`Event notification sent to ${subscriberEmail}, status: ${result.status}, id: ${result.id || 'n/a'}`);
     return result;
   } catch (err) {
-    if (context) context.log(`Event notification email failed for ${subscriberEmail}: ${err.message}`);
+    if (context) context.log(`Event notification FAILED | to: ${subscriberEmail} | error: ${err.message}`);
   }
 }
 
