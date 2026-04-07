@@ -670,7 +670,12 @@
     .then(function(d) {
       if (d.success) {
         var msg = d.sent + ' email(s) sent.';
-        if (d.failed > 0) msg += ' ' + d.failed + ' failed.';
+        if (d.failed > 0) {
+          msg += ' ' + d.failed + ' failed.';
+          if (d.errors && d.errors.length > 0) {
+            msg += '\n\nErrors:\n' + d.errors.map(function(e) { return (e.email || e.id) + ': ' + e.error; }).join('\n');
+          }
+        }
         alert(msg);
       } else {
         alert(d.error || 'Failed to resend emails.');
