@@ -92,3 +92,13 @@ jobs:
 
           Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
           git push
+
+      - name: Deploy to production
+        env:
+          SLUG: ${{ github.event.client_payload.chapter_slug }}
+        run: |
+          git fetch origin live-version-swa
+          git checkout live-version-swa
+          git merge main --no-edit
+          git push origin live-version-swa
+          echo "✅ Chapter deletion merged to live-version-swa — deploying to production"

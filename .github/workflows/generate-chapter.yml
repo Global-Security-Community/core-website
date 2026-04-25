@@ -103,3 +103,11 @@ jobs:
           Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
           git pull --rebase origin main
           git push
+
+      - name: Deploy to production
+        run: |
+          git fetch origin live-version-swa
+          git checkout live-version-swa
+          git merge main --no-edit
+          git push origin live-version-swa
+          echo "✅ Chapter page merged to live-version-swa — deploying to production"

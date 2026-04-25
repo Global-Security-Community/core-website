@@ -90,3 +90,11 @@ jobs:
           # Pull latest changes before pushing to avoid rejection
           git pull --rebase origin main
           git push
+
+      - name: Deploy to production
+        run: |
+          git fetch origin live-version-swa
+          git checkout live-version-swa
+          git merge main --no-edit
+          git push origin live-version-swa
+          echo "✅ Event page merged to live-version-swa — deploying to production"
