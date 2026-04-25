@@ -278,7 +278,7 @@ describe('chapterApplication function', () => {
   });
 
   test('returns 200 silently when honeypot triggered', async () => {
-    const res = await chapterApplication(makeRequest('POST', { ...validBody, website: 'spam.com' }), context);
+    const res = await chapterApplication(makeRequest('POST', { ...validBody, fax_number: 'spam.com' }), context);
     expect(res.status).toBe(200);
     expect(JSON.parse(res.body).success).toBe(true);
     // Should NOT store the application

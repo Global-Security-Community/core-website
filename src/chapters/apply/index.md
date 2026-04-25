@@ -156,8 +156,8 @@ description: "Apply to lead a Global Security Community chapter in your city. We
 
       <!-- Honeypot field — hidden from real users, bots will fill it -->
       <div style="position: absolute; left: -9999px;" aria-hidden="true">
-        <label for="website">Website</label>
-        <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+        <label for="fax_number">Fax</label>
+        <input type="text" id="fax_number" name="fax_number" tabindex="-1" autocomplete="off">
       </div>
 
       <div class="form-group">

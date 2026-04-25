@@ -32,11 +32,11 @@ module.exports = async function (request, context) {
       };
     }
 
-    const { fullName, email, city, country, linkedIn, github, whyLead, existingCommunity, website,
+    const { fullName, email, city, country, linkedIn, github, whyLead, existingCommunity, fax_number,
             secondLeadName, secondLeadEmail, secondLeadLinkedIn, secondLeadGitHub, turnstileToken } = body;
 
-    // Honeypot check — 'website' field should be empty (hidden from real users)
-    if (website) {
+    // Honeypot check — hidden field should be empty (bots fill it, browser autofill won't)
+    if (fax_number) {
       context.log('Honeypot triggered, rejecting submission');
       return {
         status: 200,

@@ -36,7 +36,7 @@ document.getElementById('chapter-apply-form').addEventListener('submit', async f
       country: document.getElementById('country').value,
       whyLead: document.getElementById('whyLead').value,
       existingCommunity: document.getElementById('existingCommunity').value,
-      website: document.getElementById('website').value
+      fax_number: document.getElementById('fax_number').value
     };
 
     var turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
