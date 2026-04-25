@@ -21,13 +21,13 @@ async function storeApplication(application) {
     city: application.city,
     country: application.country,
     linkedIn: application.linkedIn || '',
-    aboutYou: application.aboutYou,
+    github: application.github || '',
     whyLead: application.whyLead,
     existingCommunity: application.existingCommunity || '',
     secondLeadName: application.secondLeadName || '',
     secondLeadEmail: application.secondLeadEmail || '',
     secondLeadLinkedIn: application.secondLeadLinkedIn || '',
-    secondLeadAbout: application.secondLeadAbout || '',
+    secondLeadGitHub: application.secondLeadGitHub || '',
     status: 'pending',
     submittedAt: new Date().toISOString()
   };
