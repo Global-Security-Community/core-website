@@ -170,6 +170,7 @@ describe('checkIn function', () => {
   });
 
   test('returns 404 for invalid ticket', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', chapterSlug: 'perth' });
     storage.getRegistrationByTicketCode.mockResolvedValueOnce(null);
     const req = makeAuthRequest('POST', { ticketCode: 'INVALID', eventId: 'ev-1' }, ['admin']);
     const res = await checkIn(req, context);
@@ -178,6 +179,7 @@ describe('checkIn function', () => {
   });
 
   test('checks in valid ticket', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', chapterSlug: 'perth' });
     storage.getRegistrationByTicketCode.mockResolvedValueOnce({
       rowKey: 'reg-1',
       fullName: 'Alice',
@@ -193,6 +195,7 @@ describe('checkIn function', () => {
   });
 
   test('returns already_checked_in for duplicate scan', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', chapterSlug: 'perth' });
     storage.getRegistrationByTicketCode.mockResolvedValueOnce({
       rowKey: 'reg-1',
       fullName: 'Alice',

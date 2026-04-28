@@ -588,13 +588,13 @@ describe('eventAttendance — status transitions', () => {
     expect(res.status).toBe(200);
   });
 
-  test('allows completed → published (re-publish)', async () => {
+  test('blocks completed → published (re-publish)', async () => {
     storage.getEventById.mockResolvedValueOnce({ status: 'completed' });
-    storage.updateEvent.mockResolvedValueOnce({ status: 'published' });
     const res = await eventAttendance(makeAuthRequest('POST', {
       eventId: 'ev-1', chapterSlug: 'perth', status: 'published'
     }, ['admin']), context);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toContain('Invalid status transition');
   });
 
   test('blocks completed → closed', async () => {

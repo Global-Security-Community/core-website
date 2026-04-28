@@ -38,6 +38,8 @@ module.exports = async function (request, context) {
     // Verify Turnstile token
     const turnstileValid = await verifyTurnstileToken(turnstileToken, clientIP, context);
     if (!turnstileValid) {
+      const { logSecurityEvent } = require('../helpers/securityLogger');
+      logSecurityEvent(context, 'bot_check_failed', { ip: clientIP, endpoint: 'chapterApplication' });
       return {
         status: 403,
         headers: { 'Content-Type': 'application/json' },
@@ -127,12 +129,12 @@ module.exports = async function (request, context) {
     const sanitised = sanitiseFields(
       { fullName, email, city, country, linkedIn, github, whyLead, existingCommunity,
         secondLeadName, secondLeadEmail, secondLeadLinkedIn, secondLeadGitHub },
-      ['fullName', 'city', 'country', 'whyLead', 'existingCommunity', 'secondLeadName']
+      ['fullName', 'city', 'country', 'whyLead', 'existingCommunity', 'secondLeadName', 'email', 'secondLeadEmail']
     );
     const application = {
       id: applicationId,
       fullName: sanitised.fullName.trim(),
-      email: email.trim(),
+      email: sanitised.email.trim(),
       city: sanitised.city.trim(),
       country: sanitised.country.trim(),
       linkedIn: linkedIn ? linkedIn.trim() : '',
@@ -140,7 +142,7 @@ module.exports = async function (request, context) {
       whyLead: sanitised.whyLead.trim(),
       existingCommunity: sanitised.existingCommunity ? sanitised.existingCommunity.trim() : '',
       secondLeadName: sanitised.secondLeadName ? sanitised.secondLeadName.trim() : '',
-      secondLeadEmail: secondLeadEmail ? secondLeadEmail.trim() : '',
+      secondLeadEmail: sanitised.secondLeadEmail ? sanitised.secondLeadEmail.trim() : '',
       secondLeadLinkedIn: secondLeadLinkedIn ? secondLeadLinkedIn.trim() : '',
       secondLeadGitHub: secondLeadGitHub ? secondLeadGitHub.trim() : ''
     };

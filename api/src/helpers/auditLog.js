@@ -56,7 +56,7 @@ async function logAudit(entityType, entityId, action, adminEmail, details, conte
  */
 async function getAuditLog(entityType, entityId, limit = 50) {
   const client = getTableClient();
-  const partitionKey = `${entityType}_${entityId}`;
+  const partitionKey = `${entityType}_${entityId}`.replace(/'/g, "''");
   const entities = client.listEntities({
     queryOptions: { filter: `PartitionKey eq '${partitionKey}'` }
   });

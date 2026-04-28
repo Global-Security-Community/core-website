@@ -28,11 +28,13 @@ module.exports = async function (request, context) {
 
     // Verify admin/volunteer has access to this event's chapter
     const event = await getEventById(eventId);
-    if (event) {
-      const chapterSlug = event.chapterSlug || event.partitionKey || '';
-      if (!await verifyChapterAccess(user, chapterSlug, context)) {
-        return forbidden('You do not have permission to check in attendees for this event');
-      }
+    if (!event) {
+      return { status: 400, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Event not found' }) };
+    }
+    const chapterSlug = event.chapterSlug || event.partitionKey || '';
+    if (!await verifyChapterAccess(user, chapterSlug, context)) {
+      return forbidden('You do not have permission to check in attendees for this event');
     }
 
     const registration = await getRegistrationByTicketCode(eventId, ticketCode);

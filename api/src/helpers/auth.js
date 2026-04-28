@@ -87,16 +87,7 @@ function extractEmail(user) {
       if (val.includes('@')) return val.toLowerCase();
     }
   }
-  // Fallback: scan ALL claims for any value containing an email
-  for (const claim of claims) {
-    if (claim.val && claim.val.includes('@')) {
-      let val = claim.val;
-      if (val.startsWith('[')) {
-        try { val = JSON.parse(val)[0] || ''; } catch { /* not JSON */ }
-      }
-      if (val.includes('@')) return val.toLowerCase();
-    }
-  }
+  // Fallback to userDetails if it looks like an email
   const details = (user.userDetails || '');
   if (details.includes('@')) return details.toLowerCase();
   return '';

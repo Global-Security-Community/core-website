@@ -58,7 +58,7 @@ module.exports = async function (request, context) {
     context.log(`fixEventChapter error: ${error.message}`);
     if (error.statusCode === 404 || error.statusCode === 409) {
       return { status: error.statusCode, headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ error: error.message }) };
+               body: JSON.stringify({ error: error.statusCode === 404 ? 'Event not found' : 'Conflict — event may have been modified' }) };
     }
     return { status: 500, headers: { 'Content-Type': 'application/json' },
              body: JSON.stringify({ error: 'Internal server error' }) };

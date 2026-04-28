@@ -2,6 +2,7 @@ const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = r
 const { getRegistrationsByEvent, getEventById, getPartnersByEvent } = require('../helpers/tableStorage');
 const { sendTicketEmail } = require('../helpers/emailService');
 const { logAudit } = require('../helpers/auditLog');
+const { checkRateLimit, getClientIP } = require('../helpers/rateLimiter');
 
 /**
  * POST /api/resendTicketEmail
@@ -24,6 +25,19 @@ module.exports = async function (request, context) {
     if (!eventId || !registrationIds || !Array.isArray(registrationIds) || registrationIds.length === 0) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Missing eventId or registrationIds (array)' }) };
+    }
+
+    // Cap the number of emails per request
+    if (registrationIds.length > 100) {
+      return { status: 400, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Maximum 100 registrations per resend request' }) };
+    }
+
+    // Rate limit: max 10 resend requests per admin per hour
+    const clientIP = getClientIP(request);
+    if (!checkRateLimit(clientIP, 'resendEmail', 10)) {
+      return { status: 429, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Too many resend requests. Please try again later.' }) };
     }
 
     const event = await getEventById(eventId);
@@ -76,7 +90,7 @@ module.exports = async function (request, context) {
         context.log(`Resent ticket email to ${reg.email} for event ${eventId}`);
       } catch (emailErr) {
         context.log(`Resend email failed for ${reg.email}: ${emailErr.message}`);
-        errors.push({ id: regId, email: reg.email, error: emailErr.message });
+        errors.push({ id: regId, email: reg.email, error: 'Email send failed' });
       }
     }
 

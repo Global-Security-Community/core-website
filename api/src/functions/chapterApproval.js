@@ -2,6 +2,7 @@ const { verifyApprovalToken } = require('../helpers/tokenHelper');
 const { getApplication, updateApplicationStatus } = require('../helpers/tableStorage');
 const { createChapterChannel } = require('../helpers/discordBot');
 const { logAudit } = require('../helpers/auditLog');
+const { stripHtml } = require('../helpers/sanitise');
 // AI image generation disabled for now — use dashboard to regenerate when ready
 // const { generateChapterBanner, generateChapterShield } = require('../helpers/imageGenerator');
 const { Octokit } = require('@octokit/rest');
@@ -145,7 +146,7 @@ module.exports = async function (request, context) {
     // }
 
     // Build success message with details about what happened
-    var details = [`The chapter in <strong>${application.city}, ${application.country}</strong> has been approved!`];
+    var details = [`The chapter in <strong>${stripHtml(application.city)}, ${stripHtml(application.country)}</strong> has been approved!`];
     if (discordChannel) {
       details.push('✅ Discord channel created');
     } else {

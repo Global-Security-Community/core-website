@@ -23,7 +23,7 @@
         html += '<div class="partners-grid">';
         tiers[tierName].forEach(function(p) {
           html += '<div class="chapter-partner-card">';
-          if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" alt="' + GSC.esc(p.name) + '">';
+          if (p.logoDataUrl && p.logoDataUrl.indexOf('data:image/') === 0) html += '<img src="' + GSC.esc(p.logoDataUrl) + '" alt="' + GSC.esc(p.name) + '">';
           html += '<div><strong>' + GSC.esc(p.name) + '</strong></div>';
           if (p.eventTitle) html += '<div class="partner-event">' + GSC.esc(p.eventTitle) + '</div>';
           if (p.website) html += '<a href="' + GSC.esc(GSC.safeUrl(p.website)) + '" target="_blank" rel="noopener noreferrer" class="partner-website-link">Website →</a>';

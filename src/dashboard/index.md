@@ -3,7 +3,7 @@ layout: base.njk
 title: Dashboard
 ---
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" integrity="sha384-ecIckRi4QlKYya/FQUbBUjS4qp65jF/J87Guw5uzTbO1C1Jfa/6kYmd6dXUF6D7i" crossorigin="anonymous">
 
 <div class="container">
   <h1 id="dash-title">Chapter Lead Dashboard</h1>
@@ -210,5 +210,6 @@ title: Dashboard
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.5/dist/purify.min.js" integrity="sha384-qSFej5dZNviyoPgYJ5+Xk4bEbX8AYddxAHPuzs1aSgRiXxJ3qmyWNaPsRkpv/+x5" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js" integrity="sha384-utBUCeG4SYaCm4m7GQZYr8Hy8Fpy3V4KGjBZaf4WTKOcwhCYpt/0PfeEe3HNlwx8" crossorigin="anonymous"></script>
 <script src="/js/dashboard.js?v={{ cacheBust }}"></script>
