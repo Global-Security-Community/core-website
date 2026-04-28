@@ -3,6 +3,7 @@ const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = r
 const { getEventById, storeRegistration, getRegistrationsByEvent, VALID_ROLES } = require('../helpers/tableStorage');
 const { stripHtml } = require('../helpers/sanitise');
 const { sendTicketEmail } = require('../helpers/emailService');
+const { logAudit } = require('../helpers/auditLog');
 
 /**
  * POST /api/adminRegister
@@ -103,6 +104,7 @@ module.exports = async function (request, context) {
     }
 
     context.log(`Admin registered ${email} as ${assignedRole} for event ${eventId} by ${user.userDetails}`);
+    logAudit('event', eventId, 'registration_admin_created', user.userDetails, { email, role: assignedRole, registrationId }, context);
 
     return {
       status: 201,

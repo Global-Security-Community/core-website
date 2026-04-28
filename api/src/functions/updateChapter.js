@@ -4,6 +4,7 @@ const { getApprovedApplicationBySlug, updateApplicationStatus } = require('../he
 const { stripHtml } = require('../helpers/sanitise');
 const { Octokit } = require('@octokit/rest');
 const { createAppAuth } = require('@octokit/auth-app');
+const { logAudit } = require('../helpers/auditLog');
 
 const MAX_LEADS = 4;
 
@@ -135,6 +136,8 @@ module.exports = async function (request, context) {
     } catch (err) {
       context.log(`GitHub page update failed: ${err.message}`);
     }
+
+    logAudit('chapter', chapterSlug, 'chapter_updated', user.userDetails, { leadCount: sanitisedLeads.length, pageUpdated }, context);
 
     return {
       status: 200,

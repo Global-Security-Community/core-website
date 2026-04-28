@@ -1,5 +1,6 @@
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { getEvent, deleteEvent } = require('../helpers/tableStorage');
+const { logAudit } = require('../helpers/auditLog');
 
 /**
  * POST /api/deleteEvent
@@ -39,6 +40,7 @@ module.exports = async function (request, context) {
     }
 
     await deleteEvent(chapterSlug, eventId);
+    logAudit('event', eventId, 'event_deleted', user.userDetails, { chapterSlug }, context);
     context.log(`Event ${eventId} deleted by ${user.userId}`);
 
     return {

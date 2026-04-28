@@ -3,6 +3,7 @@ const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = r
 const { getRegistrationsByEvent, getEvent, storeBadge, getBadgesByEvent } = require('../helpers/tableStorage');
 const { generateBadge, generateBadgePng } = require('../helpers/badgeGenerator');
 const { sendBadgeEmail } = require('../helpers/emailService');
+const { logAudit } = require('../helpers/auditLog');
 
 /**
  * POST /api/issueBadges
@@ -118,6 +119,8 @@ module.exports = async function (request, context) {
         context.log(`Badge issue failed for ${reg.email}: ${err.message}`);
       }
     }
+
+    logAudit('event', eventId, 'badges_issued', user.userDetails, { issued, total: checkedInRegs.length, errors: errors.length }, context);
 
     return {
       status: 200,

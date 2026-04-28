@@ -1,6 +1,7 @@
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { updateEvent, getEvent, getEventBySlug } = require('../helpers/tableStorage');
 const { sanitiseFields } = require('../helpers/sanitise');
+const { logAudit } = require('../helpers/auditLog');
 
 /**
  * POST /api/updateEvent
@@ -127,6 +128,7 @@ module.exports = async function (request, context) {
     }
 
     const updated = await updateEvent(chapterSlug, eventId, updates);
+    logAudit('event', eventId, 'event_updated', user.userDetails, { chapterSlug, fields: Object.keys(updates) }, context);
     context.log(`Event ${eventId} updated: ${Object.keys(updates).join(', ')}`);
 
     return {

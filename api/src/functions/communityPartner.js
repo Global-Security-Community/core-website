@@ -2,6 +2,7 @@ const { randomUUID } = require('crypto');
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { storePartner, deletePartner, getEventById } = require('../helpers/tableStorage');
 const { stripHtml } = require('../helpers/sanitise');
+const { logAudit } = require('../helpers/auditLog');
 
 const MAX_LOGO_SIZE = 200 * 1024; // 200KB base64
 
@@ -48,6 +49,7 @@ module.exports = async function (request, context) {
                  body: JSON.stringify({ error: 'Missing partnerId for delete' }) };
       }
       await deletePartner(eventId, partnerId);
+      logAudit('event', eventId, 'partner_deleted', user.userDetails, { partnerId }, context);
       return { status: 200, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ success: true, message: 'Community partner removed' }) };
     }
@@ -105,6 +107,7 @@ module.exports = async function (request, context) {
     });
 
     context.log(`Community partner ${safeName} saved for event ${eventId}`);
+    logAudit('event', eventId, partnerId ? 'partner_updated' : 'partner_added', user.userDetails, { partnerId: id, name: safeName, tier: safeTier }, context);
 
     return {
       status: 201,

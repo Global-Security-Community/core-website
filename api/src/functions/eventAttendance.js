@@ -1,5 +1,6 @@
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess, verifyCsrfHeader } = require('../helpers/auth');
 const { getRegistrationsByEvent, countRegistrations, getEvent, getEventById, listEvents, updateEvent, getApprovedApplicationByEmail } = require('../helpers/tableStorage');
+const { logAudit } = require('../helpers/auditLog');
 
 /**
  * GET /api/eventAttendance?eventId={eventId}&chapterSlug={chapterSlug}
@@ -60,6 +61,7 @@ module.exports = async function (request, context) {
         }
       }
       const updated = await updateEvent(chapterSlug, eventId, { status });
+      logAudit('event', eventId, 'event_status_' + status, user.userDetails, { chapterSlug, from: currentEvent?.status || 'unknown', to: status }, context);
       return { status: 200, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ success: true, event: { id: eventId, status: updated.status } }) };
     }

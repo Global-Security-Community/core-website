@@ -27,6 +27,7 @@ const updateEventHandler = require('./functions/updateEvent');
 const fixEventChapterHandler = require('./functions/fixEventChapter');
 const deleteEventHandler = require('./functions/deleteEvent');
 const resendTicketEmailHandler = require('./functions/resendTicketEmail');
+const getAuditLogHandler = require('./functions/getAuditLog');
 
 /**
  * Wraps a POST handler with CSRF header verification.
@@ -74,3 +75,4 @@ app.post('updateEvent', { authLevel: 'anonymous', handler: withCsrf(updateEventH
 app.post('fixEventChapter', { authLevel: 'anonymous', handler: withCsrf(fixEventChapterHandler) });
 app.post('deleteEvent', { authLevel: 'anonymous', handler: withCsrf(deleteEventHandler) });
 app.post('resendTicketEmail', { authLevel: 'anonymous', handler: withCsrf(resendTicketEmailHandler) });
+app.get('getAuditLog', { authLevel: 'anonymous', handler: getAuditLogHandler });

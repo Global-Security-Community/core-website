@@ -4,6 +4,7 @@ const { storeEvent, getSubscriptionsByChapter, updateEvent, getApprovedApplicati
 const { sanitiseFields } = require('../helpers/sanitise');
 const { sendMessage } = require('../helpers/discordBot');
 const { sendEventNotificationEmail } = require('../helpers/emailService');
+const { logAudit } = require('../helpers/auditLog');
 // AI image generation disabled until reliable workflow is established
 // const { generateEventBadgeBackground } = require('../helpers/imageGenerator');
 const { Octokit } = require('@octokit/rest');
@@ -213,6 +214,8 @@ module.exports = async function (request, context) {
     } catch (notifErr) {
       context.log(`Chapter notification failed (non-critical): ${notifErr.message}`);
     }
+
+    logAudit('event', eventId, 'event_created', user.userDetails, { chapterSlug: chapterSlug.toLowerCase().trim(), title: safe.title, slug, date }, context);
 
     return {
       status: 201,

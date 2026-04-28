@@ -1,6 +1,7 @@
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { getRegistrationsByEvent, getEventById, getPartnersByEvent } = require('../helpers/tableStorage');
 const { sendTicketEmail } = require('../helpers/emailService');
+const { logAudit } = require('../helpers/auditLog');
 
 /**
  * POST /api/resendTicketEmail
@@ -80,6 +81,7 @@ module.exports = async function (request, context) {
     }
 
     context.log(`Resent ${sent}/${registrationIds.length} ticket emails for event ${eventId} by ${user.userDetails}`);
+    logAudit('event', eventId, 'email_resent', user.userDetails, { sent, failed: errors.length, registrationIds }, context);
 
     return {
       status: 200,

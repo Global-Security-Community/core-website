@@ -138,6 +138,8 @@ title: Dashboard
       <button id="resend-email-btn" type="button" class="btn-outline">Resend Email</button>
     </div>
     <div id="detail-attendees"></div>
+    <h3>Activity Log</h3>
+    <div id="audit-log" class="audit-log"><p class="text-muted">Loading activity log...</p></div>
   </div>
 
   <!-- Edit Event -->

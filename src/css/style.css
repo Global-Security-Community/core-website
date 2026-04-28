@@ -1944,4 +1944,24 @@ a.event-card:hover { color: inherit; }
 /* ─── Inline SVG Icons ─── */
 .icon { display: inline-flex; vertical-align: middle; align-items: center; }
 .icon svg { width: 1em; height: 1em; }
+
+/* Dashboard — Audit / Activity Log */
+.audit-entries { display: flex; flex-direction: column; gap: 0.5rem; }
+.audit-entry {
+  display: grid;
+  grid-template-columns: 10rem 10rem 1fr;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+  font-size: 0.875rem;
+  align-items: baseline;
+}
+.audit-entry:last-child { border-bottom: none; }
+.audit-time { color: #666; font-size: 0.8rem; }
+.audit-action { font-weight: 600; }
+.audit-admin { color: #666; }
+.audit-detail { grid-column: 1 / -1; color: #666; font-size: 0.8rem; padding-left: 0.25rem; }
+@media (max-width: 600px) {
+  .audit-entry { grid-template-columns: 1fr; }
+}
 .icon--lg svg { width: 2rem; height: 2rem; }

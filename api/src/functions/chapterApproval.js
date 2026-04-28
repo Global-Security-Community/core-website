@@ -1,6 +1,7 @@
 const { verifyApprovalToken } = require('../helpers/tokenHelper');
 const { getApplication, updateApplicationStatus } = require('../helpers/tableStorage');
 const { createChapterChannel } = require('../helpers/discordBot');
+const { logAudit } = require('../helpers/auditLog');
 // AI image generation disabled for now — use dashboard to regenerate when ready
 // const { generateChapterBanner, generateChapterShield } = require('../helpers/imageGenerator');
 const { Octokit } = require('@octokit/rest');
@@ -57,6 +58,7 @@ module.exports = async function (request, context) {
 
     if (action === 'reject') {
       await updateApplicationStatus(applicationId, 'rejected');
+      logAudit('chapter', application.city.toLowerCase().replace(/\s+/g, '-'), 'chapter_rejected', 'approval-link', { applicationId, city: application.city }, context);
       return htmlResponse(200, '❌ Application Rejected',
         `The chapter application for <strong>${application.city}, ${application.country}</strong> has been rejected.`
       );
@@ -66,6 +68,7 @@ module.exports = async function (request, context) {
 
     // Atomically mark as approved before running side effects
     await updateApplicationStatus(applicationId, 'approved');
+    logAudit('chapter', application.city.toLowerCase().replace(/\s+/g, '-'), 'chapter_approved', 'approval-link', { applicationId, city: application.city, country: application.country }, context);
 
     // 1. Create Discord channel (non-critical — continue if it fails)
     var discordChannel = null;

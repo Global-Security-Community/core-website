@@ -1,5 +1,6 @@
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { getRegistrationByTicketCode, updateRegistration, getEventById } = require('../helpers/tableStorage');
+const { logAudit } = require('../helpers/auditLog');
 
 /**
  * POST /api/checkIn
@@ -60,6 +61,8 @@ module.exports = async function (request, context) {
       checkedIn: true,
       checkedInAt: new Date().toISOString()
     });
+
+    logAudit('event', eventId, 'attendee_checked_in', user.userDetails, { attendee: registration.fullName, ticketCode }, context);
 
     return {
       status: 200,

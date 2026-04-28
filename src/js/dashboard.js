@@ -255,6 +255,9 @@
         // Load existing partners
         loadEventPartners(eventId);
 
+        // Load activity log
+        loadAuditLog(eventId);
+
         // Logo preview with auto-resize
         document.getElementById('cp-logo').addEventListener('change', function(e) {
           var file = e.target.files[0];
@@ -713,6 +716,74 @@
     })
     .catch(function() { alert('Network error.'); })
     .finally(function() { btn.disabled = false; btn.textContent = 'Resend Email'; });
+  }
+
+  function loadAuditLog(eventId) {
+    var el = document.getElementById('audit-log');
+    if (!el) return;
+    el.innerHTML = '<p class="text-muted">Loading activity log...</p>';
+    GSC.fetch('/api/getAuditLog?eventId=' + encodeURIComponent(eventId))
+      .then(function(r) { return r.ok ? r.json() : { entries: [] }; })
+      .then(function(data) {
+        var entries = data.entries || [];
+        if (entries.length === 0) {
+          el.innerHTML = '<p class="text-muted">No activity recorded yet.</p>';
+          return;
+        }
+        var html = '<div class="audit-entries">';
+        entries.forEach(function(e) {
+          var ts = new Date(e.timestamp).toLocaleString();
+          var label = formatAuditAction(e.action);
+          var detail = '';
+          if (e.details) {
+            try {
+              var d = typeof e.details === 'string' ? JSON.parse(e.details) : e.details;
+              detail = formatAuditDetails(e.action, d);
+            } catch(err) { /* ignore */ }
+          }
+          html += '<div class="audit-entry">' +
+            '<span class="audit-time">' + GSC.esc(ts) + '</span>' +
+            '<span class="audit-action">' + GSC.esc(label) + '</span>' +
+            '<span class="audit-admin">' + GSC.esc(e.adminEmail || 'system') + '</span>' +
+            (detail ? '<span class="audit-detail">' + detail + '</span>' : '') +
+          '</div>';
+        });
+        html += '</div>';
+        el.innerHTML = html;
+      })
+      .catch(function() {
+        el.innerHTML = '<p class="text-muted">Failed to load activity log.</p>';
+      });
+  }
+
+  function formatAuditAction(action) {
+    var labels = {
+      'event_created': 'Created event',
+      'event_updated': 'Updated event',
+      'event_deleted': 'Deleted event',
+      'status_changed': 'Changed status',
+      'registration_admin_created': 'Admin registered attendee',
+      'registration_role_updated': 'Updated roles',
+      'attendee_checked_in': 'Checked in attendee',
+      'partner_added': 'Added partner',
+      'partner_updated': 'Updated partner',
+      'partner_deleted': 'Removed partner',
+      'email_resent': 'Resent emails',
+      'badges_issued': 'Issued badges'
+    };
+    return labels[action] || action.replace(/_/g, ' ');
+  }
+
+  function formatAuditDetails(action, d) {
+    if (action === 'status_changed') return GSC.esc(d.from || '?') + ' → ' + GSC.esc(d.to || '?');
+    if (action === 'registration_admin_created') return GSC.esc(d.email || '') + ' as ' + GSC.esc(d.role || 'attendee');
+    if (action === 'registration_role_updated') return GSC.esc((d.count || 0) + '') + ' attendee(s) → ' + GSC.esc(d.role || '');
+    if (action === 'attendee_checked_in') return GSC.esc(d.attendee || '');
+    if (action === 'email_resent') return GSC.esc((d.sent || 0) + '') + ' sent' + (d.failed ? ', ' + d.failed + ' failed' : '');
+    if (action === 'badges_issued') return GSC.esc((d.issued || 0) + '/' + (d.total || 0)) + ' badges';
+    if (action === 'event_updated' && d.fields) return 'Fields: ' + GSC.esc(d.fields.join(', '));
+    if ((action === 'partner_added' || action === 'partner_updated') && d.name) return GSC.esc(d.name);
+    return '';
   }
 
   function adminRegister(eventId) {

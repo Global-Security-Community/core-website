@@ -1,5 +1,6 @@
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { getRegistrationsByEvent, updateRegistration, getEventById, VALID_ROLES } = require('../helpers/tableStorage');
+const { logAudit } = require('../helpers/auditLog');
 
 /**
  * POST /api/updateRegistrationRole
@@ -59,6 +60,7 @@ module.exports = async function (request, context) {
     }
 
     context.log(`Updated ${updated} registration roles to '${role}' for event ${eventId} by ${user.userDetails}`);
+    logAudit('event', eventId, 'registration_role_updated', user.userDetails, { role, count: updated, registrationIds }, context);
 
     return {
       status: 200,
