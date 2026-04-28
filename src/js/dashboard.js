@@ -124,27 +124,39 @@
         });
 
         // 4-column grid: 2 stat cards + 2 action groups
-        var isDraft = data.eventStatus === 'draft';
+        var evtStatus = data.eventStatus || 'published';
+        var isDraft = evtStatus === 'draft';
+        var isPublished = evtStatus === 'published';
+        var isClosed = evtStatus === 'closed';
+        var isCompleted = evtStatus === 'completed';
+        var needsPublish = isDraft || isCompleted || isClosed;
         document.getElementById('detail-panel').innerHTML =
           '<div class="card stat-card"><p class="stat-number">' + data.total + '</p><p class="stat-label">Registered</p></div>' +
           '<div class="card stat-card"><p class="stat-number">' + data.checkedIn + '</p><p class="stat-label">Checked In</p></div>' +
           '<div class="action-card card">' +
-            (isDraft ? '<button id="btn-publish" class="btn-success btn-full">Publish Event</button>' : '') +
+            (needsPublish ? '<button id="btn-publish" class="btn-success btn-full">' + (isDraft ? 'Publish Event' : 'Re-publish Event') + '</button>' : '') +
             '<button id="btn-export" class="btn-full">Export CSV</button>' +
             '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" class="btn-link btn-full">Open Scanner</a>' +
           '</div>' +
-          '<div class="action-card card">' +
+          (isPublished ? '<div class="action-card card">' +
             '<button id="btn-close-reg" class="btn-warning btn-full">Close Registration</button>' +
             '<button id="btn-complete" class="btn-danger btn-full">Mark Complete</button>' +
-          '</div>';
+          '</div>' : '') +
+          (isClosed ? '<div class="action-card card">' +
+            '<button id="btn-complete" class="btn-danger btn-full">Mark Complete</button>' +
+          '</div>' : '');
 
         var actionsEl = document.getElementById('detail-actions');
         actionsEl.innerHTML = '';
 
         document.getElementById('btn-export').addEventListener('click', function() { exportCSV(eventId); });
-        document.getElementById('btn-close-reg').addEventListener('click', function() { closeReg(eventId, chapterSlug); });
-        document.getElementById('btn-complete').addEventListener('click', function() { completeEvent(eventId, chapterSlug); });
-        if (isDraft) {
+        if (isPublished) {
+          document.getElementById('btn-close-reg').addEventListener('click', function() { closeReg(eventId, chapterSlug); });
+        }
+        if (isPublished || isClosed) {
+          document.getElementById('btn-complete').addEventListener('click', function() { completeEvent(eventId, chapterSlug); });
+        }
+        if (needsPublish) {
           document.getElementById('btn-publish').addEventListener('click', function() { publishEvent(eventId, chapterSlug); });
         }
 

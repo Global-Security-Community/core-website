@@ -11,12 +11,12 @@
 
     var upcoming = events.filter(function(e) {
       var eventDate = new Date(e.endDate || e.date);
-      return eventDate >= now && e.status === 'published';
+      return eventDate >= now;
     }).sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
 
     var past = events.filter(function(e) {
       var eventDate = new Date(e.endDate || e.date);
-      return eventDate < now || e.status === 'completed' || e.status === 'closed';
+      return eventDate < now;
     }).sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
 
     var html = '';

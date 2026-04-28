@@ -43,6 +43,22 @@ module.exports = async function (request, context) {
         return { status: 400, headers: { 'Content-Type': 'application/json' },
                  body: JSON.stringify({ error: 'Invalid status. Must be published, closed, or completed' }) };
       }
+      // Validate status transitions: draft→published, published→closed, published→completed, closed→completed
+      // Also allow re-publishing from closed/completed (to fix accidental status changes)
+      const currentEvent = await getEventById(chapterSlug, eventId);
+      if (currentEvent) {
+        const current = currentEvent.status || 'draft';
+        const validTransitions = {
+          draft: ['published'],
+          published: ['closed', 'completed'],
+          closed: ['published', 'completed'],
+          completed: ['published']
+        };
+        if (validTransitions[current] && !validTransitions[current].includes(status)) {
+          return { status: 400, headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ error: 'Invalid status transition from ' + current + ' to ' + status }) };
+        }
+      }
       const updated = await updateEvent(chapterSlug, eventId, { status });
       return { status: 200, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ success: true, event: { id: eventId, status: updated.status } }) };

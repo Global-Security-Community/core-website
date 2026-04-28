@@ -858,6 +858,7 @@ describe('eventAttendance function', () => {
   });
 
   test('POST: updates event status', async () => {
+    storage.getEventById.mockResolvedValueOnce({ status: 'published' });
     storage.updateEvent.mockResolvedValueOnce({ status: 'closed' });
     const res = await eventAttendance(makeAuthRequest('POST', {
       eventId: 'ev-1', chapterSlug: 'perth', status: 'closed'

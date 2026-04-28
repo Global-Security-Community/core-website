@@ -32,7 +32,7 @@
 
       container.innerHTML = '<div class="events-grid">' + display.map(function(e) {
         var eventDate = new Date(e.endDate || e.date);
-        var isUpcoming = eventDate >= now && e.status === 'published';
+        var isUpcoming = eventDate >= now;
         var badgeText = isUpcoming ? 'Upcoming' : 'Past Event';
         var badgeClass = isUpcoming ? 'event-badge event-badge--upcoming' : 'event-badge event-badge--past';
         var dateStr = new Date(e.date).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
