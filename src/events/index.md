@@ -10,14 +10,20 @@ description: "Browse upcoming and past Global Security Community events — work
   <p>Join us at upcoming events where security professionals gather to learn, network, and share insights.</p>
 
   <div id="events-list">
-    {% set now = "" %}
     {% set upcoming = [] %}
     {% set past = [] %}
     {% for event in events %}
-      {% if event.status == "published" %}
-        {% set upcoming = (upcoming.push(event), upcoming) %}
+      {% set eventDateStr = event.endDate if event.endDate else event.date %}
+      {% if eventDateStr %}
+        {% set eventTs = eventDateStr | dateToMs %}
+        {% set nowTs = "" | nowMs %}
+        {% if eventTs >= nowTs %}
+          {% set upcoming = (upcoming.push(event), upcoming) %}
+        {% else %}
+          {% set past = (past.push(event), past) %}
+        {% endif %}
       {% else %}
-        {% set past = (past.push(event), past) %}
+        {% set upcoming = (upcoming.push(event), upcoming) %}
       {% endif %}
     {% endfor %}
 

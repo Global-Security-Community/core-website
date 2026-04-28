@@ -15,6 +15,19 @@ module.exports = function(eleventyConfig) {
     return crypto.createHash('md5').update(value.trim().toLowerCase()).digest('hex');
   });
 
+  // Date filters for date-based event grouping in templates
+  eleventyConfig.addFilter("dateToMs", function(value) {
+    if (!value) return 0;
+    var d = new Date(value);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  });
+  eleventyConfig.addFilter("nowMs", function() {
+    var d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  });
+
   // Cache-busting version string (changes each build)
   eleventyConfig.addGlobalData("cacheBust", Date.now().toString(36));
 
