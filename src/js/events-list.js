@@ -22,7 +22,7 @@
     var html = '';
 
     if (upcoming.length) {
-      html += '<div class="events-grid">' + upcoming.map(renderEventCard).join('') + '</div>';
+      html += '<div class="events-grid">' + upcoming.map(function(e) { return renderEventCard(e); }).join('') + '</div>';
     } else {
       html += '<div class="card events-empty"><h3>Events Coming Soon</h3><p>We\'re planning exciting events. Check back soon or <a href="/chapters/">find your chapter</a> to get notified!</p></div>';
     }
