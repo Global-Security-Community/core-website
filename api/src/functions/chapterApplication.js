@@ -32,18 +32,8 @@ module.exports = async function (request, context) {
       };
     }
 
-    const { fullName, email, city, country, linkedIn, github, whyLead, existingCommunity, fax_number,
+    const { fullName, email, city, country, linkedIn, github, whyLead, existingCommunity,
             secondLeadName, secondLeadEmail, secondLeadLinkedIn, secondLeadGitHub, turnstileToken } = body;
-
-    // Honeypot check — hidden field should be empty (bots fill it, browser autofill won't)
-    if (fax_number) {
-      context.log('Honeypot triggered, rejecting submission');
-      return {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ success: true, message: 'Your application has been received. We will review it shortly!' })
-      };
-    }
 
     // Verify Turnstile token
     const turnstileValid = await verifyTurnstileToken(turnstileToken, clientIP, context);

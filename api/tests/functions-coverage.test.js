@@ -277,12 +277,12 @@ describe('chapterApplication function', () => {
     expect(res.status).toBe(429);
   });
 
-  test('returns 200 silently when honeypot triggered', async () => {
+  test('extra unknown fields are ignored and application still succeeds', async () => {
     const res = await chapterApplication(makeRequest('POST', { ...validBody, fax_number: 'spam.com' }), context);
     expect(res.status).toBe(200);
     expect(JSON.parse(res.body).success).toBe(true);
-    // Should NOT store the application
-    expect(storage.storeApplication).not.toHaveBeenCalled();
+    // Should still store the application (honeypot removed, Turnstile handles bot protection)
+    expect(storage.storeApplication).toHaveBeenCalled();
   });
 
   test('returns 400 for missing required fields', async () => {
