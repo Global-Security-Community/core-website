@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "@azure/static-web-apps-cli": "^2.0.9",
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "^1.59.1",
     "azure-functions-core-tools": "^4.9.0"
   },
   "overrides": {
