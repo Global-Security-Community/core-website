@@ -21,6 +21,6 @@
   },
   "devDependencies": {
     "azure-functions-core-tools": "^4.9.0",
-    "jest": "^29.7.0"
+    "jest": "^30.3.0"
   }
 }
