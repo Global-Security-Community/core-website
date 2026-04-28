@@ -372,20 +372,17 @@ describe('createEvent — GitHub dispatch integration', () => {
     await createEvent(makeAuthRequest('POST', validBody, ['admin']), context);
 
     const payload = mockCreateDispatchEvent.mock.calls[0][0].client_payload;
-    expect(payload.event_end_date).toBe('');
     expect(payload.event_sessionize_id).toBe('');
   });
 
-  test('includes endDate and sessionizeApiId when provided', async () => {
+  test('includes sessionizeApiId when provided', async () => {
     setGitHubEnv();
     await createEvent(makeAuthRequest('POST', {
       ...validBody,
-      endDate: '2026-09-16',
       sessionizeApiId: 'sess-123'
     }, ['admin']), context);
 
     const payload = mockCreateDispatchEvent.mock.calls[0][0].client_payload;
-    expect(payload.event_end_date).toBe('2026-09-16');
     expect(payload.event_sessionize_id).toBe('sess-123');
   });
 

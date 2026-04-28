@@ -13,7 +13,7 @@ description: "Browse upcoming and past Global Security Community events — work
     {% set upcoming = [] %}
     {% set past = [] %}
     {% for event in events %}
-      {% set eventDateStr = event.endDate if event.endDate else event.date %}
+      {% set eventDateStr = event.date %}
       {% if eventDateStr %}
         {% set eventTs = eventDateStr | dateToMs %}
         {% set nowTs = "" | nowMs %}

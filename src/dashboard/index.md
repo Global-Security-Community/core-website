@@ -29,12 +29,8 @@ title: Dashboard
         <input type="text" id="ev-title" maxlength="200" placeholder="e.g. Global Security Bootcamp Perth 2026">
       </div>
       <div class="form-group">
-        <label for="ev-date">Start Date *</label>
+        <label for="ev-date">Date *</label>
         <input type="date" id="ev-date">
-      </div>
-      <div class="form-group">
-        <label for="ev-enddate">End Date</label>
-        <input type="date" id="ev-enddate">
       </div>
       <div class="form-group">
         <label for="ev-building">Building / Venue Name</label>
@@ -160,12 +156,8 @@ title: Dashboard
         <span class="help-text">Only lowercase letters, numbers, and hyphens. Changing this will alter the event URL.</span>
       </div>
       <div class="form-group">
-        <label for="edit-date">Start Date *</label>
+        <label for="edit-date">Date *</label>
         <input type="date" id="edit-date">
-      </div>
-      <div class="form-group">
-        <label for="edit-enddate">End Date</label>
-        <input type="date" id="edit-enddate">
       </div>
       <div class="form-group">
         <label for="edit-building">Building / Venue Name</label>

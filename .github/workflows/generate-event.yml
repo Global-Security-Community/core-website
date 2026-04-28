@@ -19,7 +19,6 @@ jobs:
           SLUG: ${{ github.event.client_payload.event_slug }}
           TITLE: ${{ github.event.client_payload.event_title }}
           DATE: ${{ github.event.client_payload.event_date }}
-          END_DATE: ${{ github.event.client_payload.event_end_date }}
           LOCATION: ${{ github.event.client_payload.event_location }}
           DESCRIPTION: ${{ github.event.client_payload.event_description }}
           SESSIONIZE_ID: ${{ github.event.client_payload.event_sessionize_id }}
@@ -59,7 +58,6 @@ jobs:
             printf 'title: "%s"\n' "$(safe_yaml "${TITLE}")"
             printf 'slug: "%s"\n' "${SLUG}"
             printf 'date: "%s"\n' "${DATE}"
-            printf 'endDate: "%s"\n' "${END_DATE}"
             printf 'location: "%s"\n' "$(safe_yaml "${LOCATION}")"
             printf 'description: "%s"\n' "$(safe_yaml "${DESCRIPTION}")"
             printf 'sessionizeApiId: "%s"\n' "${SESSIONIZE_ID}"

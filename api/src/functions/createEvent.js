@@ -161,7 +161,6 @@ module.exports = async function (request, context) {
             event_title: safe.title,
             event_slug: slug,
             event_date: date,
-            event_end_date: endDate || '',
             event_location: location,
             event_description: safe.description,
             event_sessionize_id: sessionizeApiId || '',

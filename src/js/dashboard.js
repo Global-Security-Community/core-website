@@ -495,11 +495,6 @@
     }
     if (title.length > 200) { showErr('Title must be 200 characters or less.'); return; }
     if (description.length > 5000) { showErr('Description must be 5000 characters or less.'); return; }
-    var endDate = document.getElementById('ev-enddate').value;
-    if (endDate && endDate < date) {
-      showErr('End date must be after the start date.');
-      return;
-    }
 
     createSubmitting = true;
     btn.disabled = true;
@@ -509,7 +504,6 @@
     var payload = {
       title: title,
       date: date,
-      endDate: endDate,
       locationBuilding: document.getElementById('ev-building').value,
       locationAddress1: address1,
       locationAddress2: document.getElementById('ev-address2').value,
@@ -639,7 +633,7 @@
     document.getElementById('create-btn').disabled = false;
     document.getElementById('create-btn').textContent = 'Create Event';
     // Clear form fields
-    ['ev-title','ev-date','ev-enddate','ev-building','ev-address1','ev-address2','ev-city','ev-state','ev-description','ev-sessionize','ev-chapter'].forEach(function(id) {
+    ['ev-title','ev-date','ev-building','ev-address1','ev-address2','ev-city','ev-state','ev-description','ev-sessionize','ev-chapter'].forEach(function(id) {
       document.getElementById(id).value = '';
     });
     document.getElementById('ev-cap').value = '0';
@@ -843,7 +837,6 @@
         document.getElementById('edit-title').value = data.title || '';
         document.getElementById('edit-slug').value = data.slug || '';
         document.getElementById('edit-date').value = data.date || '';
-        document.getElementById('edit-enddate').value = data.endDate || '';
         document.getElementById('edit-building').value = data.locationBuilding || '';
         document.getElementById('edit-address1').value = data.locationAddress1 || '';
         document.getElementById('edit-address2').value = data.locationAddress2 || '';
@@ -890,7 +883,6 @@
       title: title,
       slug: slug,
       date: date,
-      endDate: document.getElementById('edit-enddate').value,
       locationBuilding: document.getElementById('edit-building').value,
       locationAddress1: address1,
       locationAddress2: document.getElementById('edit-address2').value,
