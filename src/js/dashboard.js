@@ -12,16 +12,22 @@
     ['link'],
     ['clean']
   ];
-  var createQuill = new Quill('#ev-description-editor', {
-    theme: 'snow',
-    modules: { toolbar: quillToolbar },
-    placeholder: 'Describe the event...'
-  });
-  var editQuill = new Quill('#edit-description-editor', {
-    theme: 'snow',
-    modules: { toolbar: quillToolbar },
-    placeholder: 'Event description...'
-  });
+  var createQuill = null;
+  var editQuill = null;
+  try {
+    createQuill = new Quill('#ev-description-editor', {
+      theme: 'snow',
+      modules: { toolbar: quillToolbar },
+      placeholder: 'Describe the event...'
+    });
+    editQuill = new Quill('#edit-description-editor', {
+      theme: 'snow',
+      modules: { toolbar: quillToolbar },
+      placeholder: 'Event description...'
+    });
+  } catch (e) {
+    console.error('Quill init failed:', e);
+  }
 
   function showSection(s) {
     currentSection = s;
@@ -494,8 +500,8 @@
 
     var title = document.getElementById('ev-title').value.trim();
     var date = document.getElementById('ev-date').value;
-    var description = createQuill.getText().trim();
-    var descriptionHtml = createQuill.root.innerHTML;
+    var description = createQuill ? createQuill.getText().trim() : '';
+    var descriptionHtml = createQuill ? createQuill.root.innerHTML : '';
     var address1 = document.getElementById('ev-address1').value.trim();
     var chapterSlug = document.getElementById('ev-chapter').value.trim();
 
@@ -656,7 +662,7 @@
     ['ev-title','ev-date','ev-building','ev-address1','ev-address2','ev-city','ev-state','ev-sessionize','ev-chapter'].forEach(function(id) {
       document.getElementById(id).value = '';
     });
-    createQuill.setText('');
+    if (createQuill) createQuill.setText('');
     document.getElementById('ev-cap').value = '0';
     // Reset pipeline steps
     ['step-stored','step-page','step-live'].forEach(function(id) { setStepState(id, 'pending'); });
@@ -863,7 +869,7 @@
         document.getElementById('edit-address2').value = data.locationAddress2 || '';
         document.getElementById('edit-city').value = data.locationCity || '';
         document.getElementById('edit-state').value = data.locationState || '';
-        editQuill.root.innerHTML = data.description || '';
+        if (editQuill) editQuill.root.innerHTML = data.description || '';
         document.getElementById('edit-sessionize').value = data.sessionizeApiId || '';
         document.getElementById('edit-cap').value = data.registrationCap || 0;
         document.getElementById('edit-event-form').style.display = 'block';
@@ -882,8 +888,8 @@
     var title = document.getElementById('edit-title').value.trim();
     var slug = document.getElementById('edit-slug').value.trim();
     var date = document.getElementById('edit-date').value;
-    var description = editQuill.getText().trim();
-    var descriptionHtml = editQuill.root.innerHTML;
+    var description = editQuill ? editQuill.getText().trim() : '';
+    var descriptionHtml = editQuill ? editQuill.root.innerHTML : '';
     var address1 = document.getElementById('edit-address1').value.trim();
 
     function showErr(text) {

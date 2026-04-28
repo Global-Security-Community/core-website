@@ -3,7 +3,7 @@ layout: base.njk
 title: Dashboard
 ---
 
-<link rel="stylesheet" href="https://cdn.quilljs.com/2.0.3/quill.snow.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css">
 
 <div class="container">
   <h1 id="dash-title">Chapter Lead Dashboard</h1>
@@ -210,5 +210,5 @@ title: Dashboard
   </div>
 </div>
 
-<script src="https://cdn.quilljs.com/2.0.3/quill.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script src="/js/dashboard.js?v={{ cacheBust }}"></script>
