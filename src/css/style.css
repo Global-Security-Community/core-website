@@ -857,6 +857,14 @@ button:focus-visible {
   color: white;
 }
 
+.btn-success {
+  background-color: #27ae60;
+}
+
+.btn-success:hover {
+  background-color: #1e8449;
+}
+
 .btn-danger {
   background-color: #e74c3c;
 }

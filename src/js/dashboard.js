@@ -124,10 +124,12 @@
         });
 
         // 4-column grid: 2 stat cards + 2 action groups
+        var isDraft = data.eventStatus === 'draft';
         document.getElementById('detail-panel').innerHTML =
           '<div class="card stat-card"><p class="stat-number">' + data.total + '</p><p class="stat-label">Registered</p></div>' +
           '<div class="card stat-card"><p class="stat-number">' + data.checkedIn + '</p><p class="stat-label">Checked In</p></div>' +
           '<div class="action-card card">' +
+            (isDraft ? '<button id="btn-publish" class="btn-success btn-full">Publish Event</button>' : '') +
             '<button id="btn-export" class="btn-full">Export CSV</button>' +
             '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" class="btn-link btn-full">Open Scanner</a>' +
           '</div>' +
@@ -142,6 +144,9 @@
         document.getElementById('btn-export').addEventListener('click', function() { exportCSV(eventId); });
         document.getElementById('btn-close-reg').addEventListener('click', function() { closeReg(eventId, chapterSlug); });
         document.getElementById('btn-complete').addEventListener('click', function() { completeEvent(eventId, chapterSlug); });
+        if (isDraft) {
+          document.getElementById('btn-publish').addEventListener('click', function() { publishEvent(eventId, chapterSlug); });
+        }
 
         // Sessionize refresh button
         var existingRefreshCard = document.getElementById('card-sessionize-speakers');
@@ -403,6 +408,19 @@
         });
       })
       .catch(function() {});
+  }
+
+  function publishEvent(eventId, chapterSlug) {
+    if (!confirm('Publish this event? It will become visible to the public.')) return;
+    GSC.fetch('/api/eventAttendance', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug, status: 'published' })
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('Failed');
+      alert('Event published!'); loadEvents();
+    })
+    .catch(function() { alert('Failed to publish event. Please try again.'); });
   }
 
   function closeReg(eventId, chapterSlug) {

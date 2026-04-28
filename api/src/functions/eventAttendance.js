@@ -142,6 +142,7 @@ module.exports = async function (request, context) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         eventId,
+        eventStatus: event ? event.status : undefined,
         total,
         checkedIn,
         attendees: registrations.map(r => ({
