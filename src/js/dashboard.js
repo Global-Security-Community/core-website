@@ -4,6 +4,25 @@
   var currentChapterSlug = '';
   var eventsLoadedPromise = null;
 
+  // Quill rich text editor configuration
+  var quillToolbar = [
+    ['bold', 'italic', 'underline'],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    [{ 'align': [] }],
+    ['link'],
+    ['clean']
+  ];
+  var createQuill = new Quill('#ev-description-editor', {
+    theme: 'snow',
+    modules: { toolbar: quillToolbar },
+    placeholder: 'Describe the event...'
+  });
+  var editQuill = new Quill('#edit-description-editor', {
+    theme: 'snow',
+    modules: { toolbar: quillToolbar },
+    placeholder: 'Event description...'
+  });
+
   function showSection(s) {
     currentSection = s;
     history.replaceState(null, '', '#' + s);
@@ -475,7 +494,8 @@
 
     var title = document.getElementById('ev-title').value.trim();
     var date = document.getElementById('ev-date').value;
-    var description = document.getElementById('ev-description').value.trim();
+    var description = createQuill.getText().trim();
+    var descriptionHtml = createQuill.root.innerHTML;
     var address1 = document.getElementById('ev-address1').value.trim();
     var chapterSlug = document.getElementById('ev-chapter').value.trim();
 
@@ -509,7 +529,7 @@
       locationAddress2: document.getElementById('ev-address2').value,
       locationCity: document.getElementById('ev-city').value,
       locationState: document.getElementById('ev-state').value,
-      description: description,
+      description: descriptionHtml,
       sessionizeApiId: document.getElementById('ev-sessionize').value,
       registrationCap: document.getElementById('ev-cap').value,
       chapterSlug: chapterSlug
@@ -633,9 +653,10 @@
     document.getElementById('create-btn').disabled = false;
     document.getElementById('create-btn').textContent = 'Create Event';
     // Clear form fields
-    ['ev-title','ev-date','ev-building','ev-address1','ev-address2','ev-city','ev-state','ev-description','ev-sessionize','ev-chapter'].forEach(function(id) {
+    ['ev-title','ev-date','ev-building','ev-address1','ev-address2','ev-city','ev-state','ev-sessionize','ev-chapter'].forEach(function(id) {
       document.getElementById(id).value = '';
     });
+    createQuill.setText('');
     document.getElementById('ev-cap').value = '0';
     // Reset pipeline steps
     ['step-stored','step-page','step-live'].forEach(function(id) { setStepState(id, 'pending'); });
@@ -842,7 +863,7 @@
         document.getElementById('edit-address2').value = data.locationAddress2 || '';
         document.getElementById('edit-city').value = data.locationCity || '';
         document.getElementById('edit-state').value = data.locationState || '';
-        document.getElementById('edit-description').value = data.description || '';
+        editQuill.root.innerHTML = data.description || '';
         document.getElementById('edit-sessionize').value = data.sessionizeApiId || '';
         document.getElementById('edit-cap').value = data.registrationCap || 0;
         document.getElementById('edit-event-form').style.display = 'block';
@@ -861,7 +882,8 @@
     var title = document.getElementById('edit-title').value.trim();
     var slug = document.getElementById('edit-slug').value.trim();
     var date = document.getElementById('edit-date').value;
-    var description = document.getElementById('edit-description').value.trim();
+    var description = editQuill.getText().trim();
+    var descriptionHtml = editQuill.root.innerHTML;
     var address1 = document.getElementById('edit-address1').value.trim();
 
     function showErr(text) {
@@ -888,7 +910,7 @@
       locationAddress2: document.getElementById('edit-address2').value,
       locationCity: document.getElementById('edit-city').value,
       locationState: document.getElementById('edit-state').value,
-      description: description,
+      description: descriptionHtml,
       sessionizeApiId: document.getElementById('edit-sessionize').value,
       registrationCap: document.getElementById('edit-cap').value
     };

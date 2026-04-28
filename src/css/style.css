@@ -1965,3 +1965,12 @@ a.event-card:hover { color: inherit; }
   .audit-entry { grid-template-columns: 1fr; }
 }
 .icon--lg svg { width: 2rem; height: 2rem; }
+
+/* Rich text editor (Quill) */
+.rich-editor { min-height: 150px; background: #fff; border-radius: 0 0 4px 4px; }
+.rich-editor .ql-editor { min-height: 150px; font-size: 1rem; line-height: 1.6; }
+.event-description p { margin: 0.5em 0; }
+.event-description ul, .event-description ol { margin: 0.5em 0; padding-left: 1.5em; }
+.event-description .ql-align-center { text-align: center; }
+.event-description .ql-align-right { text-align: right; }
+.event-description .ql-align-justify { text-align: justify; }

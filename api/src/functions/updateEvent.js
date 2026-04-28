@@ -1,6 +1,6 @@
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { updateEvent, getEvent, getEventBySlug } = require('../helpers/tableStorage');
-const { sanitiseFields } = require('../helpers/sanitise');
+const { sanitiseFields, sanitiseRichText } = require('../helpers/sanitise');
 const { logAudit } = require('../helpers/auditLog');
 
 /**
@@ -42,10 +42,10 @@ module.exports = async function (request, context) {
 
     // Build updates from allowed fields only
     const updates = {};
-    const allowedText = ['title', 'description', 'locationBuilding', 'locationAddress1',
+    const allowedText = ['title', 'locationBuilding', 'locationAddress1',
                          'locationAddress2', 'locationCity', 'locationState', 'sessionizeApiId'];
 
-    // Sanitise text fields
+    // Sanitise text fields (strip all HTML)
     const textFields = {};
     for (const field of allowedText) {
       if (body[field] !== undefined) textFields[field] = body[field];
@@ -53,6 +53,11 @@ module.exports = async function (request, context) {
     if (Object.keys(textFields).length > 0) {
       const safe = sanitiseFields(textFields, Object.keys(textFields));
       Object.assign(updates, safe);
+    }
+
+    // Sanitise description with rich text allowlist
+    if (body.description !== undefined) {
+      updates.description = sanitiseRichText(body.description);
     }
 
     // Slug update
@@ -101,9 +106,9 @@ module.exports = async function (request, context) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Title must be 200 characters or less' }) };
     }
-    if (updates.description && updates.description.length > 5000) {
+    if (updates.description && updates.description.length > 10000) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ error: 'Description must be 5000 characters or less' }) };
+               body: JSON.stringify({ error: 'Description must be 10000 characters or less' }) };
     }
 
     // Recompose display location if address fields changed

@@ -1,7 +1,7 @@
 const { randomUUID } = require('crypto');
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { storeEvent, getSubscriptionsByChapter, updateEvent, getApprovedApplicationBySlug, getEventBySlug } = require('../helpers/tableStorage');
-const { sanitiseFields } = require('../helpers/sanitise');
+const { sanitiseFields, sanitiseRichText, stripHtml } = require('../helpers/sanitise');
 const { sendMessage } = require('../helpers/discordBot');
 const { sendEventNotificationEmail } = require('../helpers/emailService');
 const { logAudit } = require('../helpers/auditLog');
@@ -53,15 +53,16 @@ module.exports = async function (request, context) {
 
     // Sanitise user inputs
     const safe = sanitiseFields(
-      { title, description,
+      { title,
         locationBuilding: locationBuilding || '',
         locationAddress1: locationAddress1 || '',
         locationAddress2: locationAddress2 || '',
         locationCity: locationCity || '',
         locationState: locationState || '',
         legacyLocation: legacyLocation || '' },
-      ['title', 'description', 'locationBuilding', 'locationAddress1', 'locationAddress2', 'locationCity', 'locationState', 'legacyLocation']
+      ['title', 'locationBuilding', 'locationAddress1', 'locationAddress2', 'locationCity', 'locationState', 'legacyLocation']
     );
+    const safeDescription = sanitiseRichText(description);
 
     // Compose display location from structured fields or use legacy
     let location;
@@ -74,7 +75,7 @@ module.exports = async function (request, context) {
       location = safe.legacyLocation;
     }
 
-    if (safe.title.length > 200 || location.length > 500 || safe.description.length > 5000) {
+    if (safe.title.length > 200 || location.length > 500 || safeDescription.length > 10000) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Field length exceeds maximum' }) };
     }
@@ -116,7 +117,7 @@ module.exports = async function (request, context) {
       locationAddress2: safe.locationAddress2,
       locationCity: safe.locationCity,
       locationState: safe.locationState,
-      description: safe.description,
+      description: safeDescription,
       sessionizeApiId: sessionizeApiId || '',
       registrationCap: parseInt(registrationCap) || 0,
       status: 'draft',
@@ -162,7 +163,7 @@ module.exports = async function (request, context) {
             event_slug: slug,
             event_date: date,
             event_location: location,
-            event_description: safe.description,
+            event_description: stripHtml(safeDescription),
             event_sessionize_id: sessionizeApiId || '',
             event_registration_cap: (parseInt(registrationCap) || 0).toString(),
             chapter_slug: chapterSlug.toLowerCase().trim()

@@ -200,6 +200,6 @@
     "Cross-Origin-Opener-Policy": "same-origin",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "Cache-Control": "public, max-age=300, must-revalidate",
-    "Content-Security-Policy": "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self'; img-src 'self' data: https://www.gravatar.com https://gravatar.com https://*.wp.com https://sessionize.com https://cache.sessionize.com https://gsccoresa.blob.core.windows.net; connect-src 'self' https://sessionize.com https://challenges.cloudflare.com; worker-src 'self'; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://globalsecuritycommunity.ciamlogin.com; upgrade-insecure-requests"
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://cdn.quilljs.com; style-src 'self' https://cdn.quilljs.com; img-src 'self' data: https://www.gravatar.com https://gravatar.com https://*.wp.com https://sessionize.com https://cache.sessionize.com https://gsccoresa.blob.core.windows.net; connect-src 'self' https://sessionize.com https://challenges.cloudflare.com; worker-src 'self'; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://globalsecuritycommunity.ciamlogin.com; upgrade-insecure-requests"
   }
 }

@@ -3,6 +3,8 @@ layout: base.njk
 title: Dashboard
 ---
 
+<link rel="stylesheet" href="https://cdn.quilljs.com/2.0.3/quill.snow.css">
+
 <div class="container">
   <h1 id="dash-title">Chapter Lead Dashboard</h1>
   <p id="dash-user" aria-live="polite">Loading...</p>
@@ -55,8 +57,8 @@ title: Dashboard
         </div>
       </div>
       <div class="form-group">
-        <label for="ev-description">Description *</label>
-        <textarea id="ev-description" rows="5" maxlength="5000" placeholder="Describe the event..."></textarea>
+        <label>Description *</label>
+        <div id="ev-description-editor" class="rich-editor"></div>
       </div>
       <div class="form-group">
         <label for="ev-sessionize">Sessionize API ID</label>
@@ -182,8 +184,8 @@ title: Dashboard
         </div>
       </div>
       <div class="form-group">
-        <label for="edit-description">Description *</label>
-        <textarea id="edit-description" rows="5" maxlength="5000"></textarea>
+        <label>Description *</label>
+        <div id="edit-description-editor" class="rich-editor"></div>
       </div>
       <div class="form-group">
         <label for="edit-sessionize">Sessionize API ID</label>
@@ -208,4 +210,5 @@ title: Dashboard
   </div>
 </div>
 
+<script src="https://cdn.quilljs.com/2.0.3/quill.js"></script>
 <script src="/js/dashboard.js?v={{ cacheBust }}"></script>

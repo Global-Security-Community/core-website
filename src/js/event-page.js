@@ -62,6 +62,11 @@
             btn.style.pointerEvents = 'none';
           }
         }
+        // Render rich HTML description from API (overrides SSR plain text)
+        if (data.description) {
+          var descEl = document.getElementById('event-description');
+          if (descEl) descEl.innerHTML = data.description;
+        }
         // Render volunteer cards
         if (data.volunteers && data.volunteers.length > 0) {
           var volEl = document.getElementById('volunteer-cards');
