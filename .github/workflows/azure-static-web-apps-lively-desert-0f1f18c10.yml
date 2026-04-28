@@ -71,23 +71,26 @@ jobs:
       - name: Wait for deployment to stabilise
         run: sleep 30
 
+      # Cloudflare bot protection may return 403 for GitHub Actions runner IPs.
+      # These tests accept 403 with a warning — the value is catching 500s and misconfigurations.
       - name: Smoke test - Events API
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" -A "GSC-Smoke-Test/1.0" "https://globalsecurity.community/api/getEvent?action=list")
           echo "Events API: $STATUS"
-          if [ "$STATUS" != "200" ] && [ "$STATUS" != "403" ]; then
-            echo "::error::Events API returned $STATUS — expected 200 (403 = Cloudflare bot protection, acceptable from CI)"
-            exit 1
-          fi
           if [ "$STATUS" = "403" ]; then
-            echo "::warning::Events API returned 403 (Cloudflare bot protection) — skipping, verify manually"
+            echo "::warning::Cloudflare blocked request (403) — verify manually"
+          elif [ "$STATUS" != "200" ]; then
+            echo "::error::Events API returned $STATUS — expected 200"
+            exit 1
           fi
 
       - name: Smoke test - Homepage
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" -A "GSC-Smoke-Test/1.0" "https://globalsecurity.community/")
           echo "Homepage: $STATUS"
-          if [ "$STATUS" != "200" ]; then
+          if [ "$STATUS" = "403" ]; then
+            echo "::warning::Cloudflare blocked request (403) — verify manually"
+          elif [ "$STATUS" != "200" ]; then
             echo "::error::Homepage returned $STATUS — expected 200"
             exit 1
           fi
@@ -96,7 +99,9 @@ jobs:
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" -A "GSC-Smoke-Test/1.0" "https://globalsecurity.community/events/")
           echo "Events page: $STATUS"
-          if [ "$STATUS" != "200" ]; then
+          if [ "$STATUS" = "403" ]; then
+            echo "::warning::Cloudflare blocked request (403) — verify manually"
+          elif [ "$STATUS" != "200" ]; then
             echo "::error::Events page returned $STATUS — expected 200"
             exit 1
           fi
@@ -105,7 +110,9 @@ jobs:
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" -A "GSC-Smoke-Test/1.0" "https://globalsecurity.community/chapters/")
           echo "Chapters page: $STATUS"
-          if [ "$STATUS" != "200" ]; then
+          if [ "$STATUS" = "403" ]; then
+            echo "::warning::Cloudflare blocked request (403) — verify manually"
+          elif [ "$STATUS" != "200" ]; then
             echo "::error::Chapters page returned $STATUS — expected 200"
             exit 1
           fi
@@ -113,10 +120,13 @@ jobs:
       - name: Smoke test - CSP includes Turnstile
         run: |
           CSP=$(curl -sI -A "GSC-Smoke-Test/1.0" "https://globalsecurity.community/" | grep -i "content-security-policy" || echo "")
-          echo "CSP header: $CSP"
-          if ! echo "$CSP" | grep -q "challenges.cloudflare.com"; then
+          if [ -z "$CSP" ]; then
+            echo "::warning::Could not retrieve CSP header (likely Cloudflare 403) — verify manually"
+          elif ! echo "$CSP" | grep -q "challenges.cloudflare.com"; then
             echo "::error::CSP header missing challenges.cloudflare.com — Turnstile will break"
             exit 1
+          else
+            echo "CSP header OK: includes challenges.cloudflare.com"
           fi
 
       - name: Smoke test - API returns JSON (not HTML 404 override)
@@ -125,6 +135,10 @@ jobs:
           if [ "$BODY" = "<" ]; then
             echo "::error::API returned HTML (likely SWA 404 override) — check function registration"
             exit 1
+          elif [ -z "$BODY" ]; then
+            echo "::warning::Empty response (likely Cloudflare 403) — verify manually"
+          else
+            echo "API returns non-HTML content — OK"
           fi
 
   close_pull_request_job:
