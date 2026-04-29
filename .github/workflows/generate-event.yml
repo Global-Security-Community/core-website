@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   generate:
@@ -95,4 +96,11 @@ jobs:
           git checkout live-version-swa
           git merge main --no-edit
           git push origin live-version-swa
-          echo "✅ Event page merged to live-version-swa — deploying to production"
+          echo "✅ Event page merged to live-version-swa"
+
+      - name: Trigger SWA deploy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run azure-static-web-apps-lively-desert-0f1f18c10.yml --ref live-version-swa
+          echo "✅ SWA deploy triggered"

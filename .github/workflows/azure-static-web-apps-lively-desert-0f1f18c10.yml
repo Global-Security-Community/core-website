@@ -8,6 +8,7 @@ on:
     types: [opened, synchronize, reopened, closed]
     branches:
       - live-version-swa
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,7 +16,7 @@ permissions:
 
 jobs:
   build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
@@ -64,7 +65,7 @@ jobs:
 
   smoke_test_job:
     needs: build_and_deploy_job
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     name: Post-Deploy Smoke Tests
     steps:
@@ -131,14 +132,19 @@ jobs:
 
       - name: Smoke test - API returns JSON (not HTML 404 override)
         run: |
-          BODY=$(curl -s -A "GSC-Smoke-Test/1.0" "https://globalsecurity.community/api/getEvent?action=list" | head -c 1)
-          if [ "$BODY" = "<" ]; then
-            echo "::error::API returned HTML (likely SWA 404 override) — check function registration"
-            exit 1
-          elif [ -z "$BODY" ]; then
-            echo "::warning::Empty response (likely Cloudflare 403) — verify manually"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -A "GSC-Smoke-Test/1.0" "https://globalsecurity.community/api/getEvent?action=list")
+          if [ "$STATUS" = "403" ]; then
+            echo "::warning::Cloudflare blocked request (403) — cannot verify API response format"
           else
-            echo "API returns non-HTML content — OK"
+            BODY=$(curl -s -A "GSC-Smoke-Test/1.0" "https://globalsecurity.community/api/getEvent?action=list" | head -c 1)
+            if [ "$BODY" = "<" ]; then
+              echo "::error::API returned HTML (likely SWA 404 override) — check function registration"
+              exit 1
+            elif [ -z "$BODY" ]; then
+              echo "::warning::Empty response — verify manually"
+            else
+              echo "API returns non-HTML content — OK"
+            fi
           fi
 
   close_pull_request_job:
