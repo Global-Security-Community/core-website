@@ -4,6 +4,7 @@ const { getRegistrationsByEvent, getEvent, storeBadge, getBadgesByEvent } = requ
 const { generateBadge, generateBadgePng } = require('../helpers/badgeGenerator');
 const { sendBadgeEmail } = require('../helpers/emailService');
 const { logAudit } = require('../helpers/auditLog');
+const { checkRateLimit, getClientIP } = require('../helpers/rateLimiter');
 
 /**
  * POST /api/issueBadges
@@ -30,10 +31,23 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Missing eventId or chapterSlug' }) };
     }
 
+    // Rate limit: max 5 badge issuance requests per hour
+    const clientIP = getClientIP(request);
+    if (!checkRateLimit(clientIP, 'issueBadges', 5)) {
+      return { status: 429, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Too many requests. Please try again later.' }) };
+    }
+
     const event = await getEvent(chapterSlug, eventId);
     if (!event) {
       return { status: 404, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Event not found' }) };
+    }
+
+    // Only allow badge issuance for completed events
+    if (event.status !== 'completed') {
+      return { status: 400, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Badges can only be issued for completed events' }) };
     }
 
     // Verify admin has access to this chapter
@@ -49,6 +63,10 @@ module.exports = async function (request, context) {
       return { status: 200, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ success: true, issued: 0, message: 'No eligible recipients found' }) };
     }
+
+    // Check for already-issued badges to prevent duplicates
+    const existingBadges = await getBadgesByEvent(eventId);
+    const issuedEmails = new Set(existingBadges.map(b => (b.recipientEmail || '').toLowerCase()));
 
     // Map role to badge type (capitalised)
     const roleToBadgeType = {
@@ -66,13 +84,20 @@ module.exports = async function (request, context) {
     let backgroundBuffer = null;
     if (event.badgeImageUrl) {
       try {
-        const bgRes = await fetch(event.badgeImageUrl);
-        if (bgRes.ok) backgroundBuffer = Buffer.from(await bgRes.arrayBuffer());
+        // Validate URL is HTTPS and not a private/internal address
+        const badgeUrl = new URL(event.badgeImageUrl);
+        if (badgeUrl.protocol === 'https:') {
+          const bgRes = await fetch(event.badgeImageUrl);
+          if (bgRes.ok) backgroundBuffer = Buffer.from(await bgRes.arrayBuffer());
+        }
       } catch (e) { context.log(`Could not fetch badge background: ${e.message}`); }
     }
 
     for (const reg of checkedInRegs) {
       try {
+        // Skip if badge already issued to this recipient
+        if (issuedEmails.has((reg.email || '').toLowerCase())) continue;
+
         const role = reg.role || 'attendee';
         const badgeType = roleToBadgeType[role] || 'Attendee';
         const badgeId = randomUUID();
@@ -115,7 +140,7 @@ module.exports = async function (request, context) {
 
         issued++;
       } catch (err) {
-        errors.push({ email: reg.email, error: err.message });
+        errors.push({ email: reg.email, error: 'Badge generation failed' });
         context.log(`Badge issue failed for ${reg.email}: ${err.message}`);
       }
     }

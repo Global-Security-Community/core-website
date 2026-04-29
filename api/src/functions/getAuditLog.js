@@ -1,5 +1,6 @@
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { getAuditLog } = require('../helpers/auditLog');
+const { getEventById } = require('../helpers/tableStorage');
 
 /**
  * GET /api/getAuditLog?eventId={eventId}&chapterSlug={chapterSlug}
@@ -27,8 +28,21 @@ module.exports = async function (request, context) {
     }
 
     // Verify admin has access to this chapter
-    const slug = chapterSlug || '';
-    if (slug && !await verifyChapterAccess(user, slug, context)) {
+    let verifiedSlug = chapterSlug || '';
+
+    // When eventId is provided without chapterSlug, look up the event's chapter
+    if (eventId && !chapterSlug) {
+      const event = await getEventById(eventId);
+      if (event) {
+        verifiedSlug = event.chapterSlug || event.partitionKey || '';
+      }
+    }
+
+    if (verifiedSlug && !await verifyChapterAccess(user, verifiedSlug, context)) {
+      return forbidden('You do not have permission to view this audit log');
+    }
+    if (!verifiedSlug && eventId) {
+      // Event not found — deny access rather than skipping check
       return forbidden('You do not have permission to view this audit log');
     }
 

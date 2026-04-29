@@ -429,7 +429,7 @@
         var html = '<div class="partner-chip-list">';
         allPartners.forEach(function(p) {
           html += '<div class="partner-chip">';
-          if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" class="partner-chip-logo">';
+          if (p.logoDataUrl && p.logoDataUrl.indexOf('data:image/') === 0) html += '<img src="' + GSC.esc(p.logoDataUrl) + '" class="partner-chip-logo">';
           html += '<span class="partner-chip-name">' + GSC.esc(p.name) + '</span>';
           if (p.tierName) html += '<span class="partner-chip-tier">(' + GSC.esc(p.tierName) + ')</span>';
           html += '<button class="cp-delete btn-icon-delete" data-id="' + GSC.esc(p.id) + '" title="Remove"><span class="icon" aria-hidden="true">' + GSCIcons.x + '</span></button>';
@@ -869,7 +869,12 @@
         document.getElementById('edit-address2').value = data.locationAddress2 || '';
         document.getElementById('edit-city').value = data.locationCity || '';
         document.getElementById('edit-state').value = data.locationState || '';
-        if (editQuill) editQuill.root.innerHTML = data.description || '';
+        if (editQuill) {
+          var safeDesc = typeof DOMPurify !== 'undefined'
+            ? DOMPurify.sanitize(data.description || '')
+            : GSC.esc(data.description || '');
+          editQuill.root.innerHTML = safeDesc;
+        }
         document.getElementById('edit-sessionize').value = data.sessionizeApiId || '';
         document.getElementById('edit-cap').value = data.registrationCap || 0;
         document.getElementById('edit-event-form').style.display = 'block';

@@ -35,11 +35,13 @@ module.exports = async function (request, context) {
 
     // Verify admin has access to this event's chapter
     const event = await getEventById(eventId);
-    if (event) {
-      const chapterSlug = event.chapterSlug || event.partitionKey || '';
-      if (!await verifyChapterAccess(user, chapterSlug, context)) {
-        return forbidden('You do not have permission to manage partners for this event');
-      }
+    if (!event) {
+      return { status: 400, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Event not found' }) };
+    }
+    const chapterSlug = event.chapterSlug || event.partitionKey || '';
+    if (!await verifyChapterAccess(user, chapterSlug, context)) {
+      return forbidden('You do not have permission to manage partners for this event');
     }
 
     // Delete action

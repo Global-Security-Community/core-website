@@ -89,6 +89,8 @@ module.exports = async function (request, context) {
     // Verify Turnstile token
     const turnstileValid = await verifyTurnstileToken(turnstileToken, clientIP, context);
     if (!turnstileValid) {
+      const { logSecurityEvent } = require('../helpers/securityLogger');
+      logSecurityEvent(context, 'bot_check_failed', { ip: clientIP, endpoint: 'contactForm' });
       return {
         status: 403,
         headers: { 'Content-Type': 'application/json' },

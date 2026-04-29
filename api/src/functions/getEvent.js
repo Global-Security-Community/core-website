@@ -86,6 +86,12 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Event not found' }) };
     }
 
+    // Don't expose draft events publicly
+    if (event.status === 'draft') {
+      return { status: 404, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Event not found' }) };
+    }
+
     const registrationCount = await countRegistrations(event.rowKey);
 
     // Fetch volunteers (public-safe info only)

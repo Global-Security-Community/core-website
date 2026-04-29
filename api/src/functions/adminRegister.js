@@ -30,6 +30,13 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Missing eventId, name, or email' }) };
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { status: 400, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Please enter a valid email address' }) };
+    }
+
     const assignedRole = role || 'attendee';
     if (!VALID_ROLES.includes(assignedRole)) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },

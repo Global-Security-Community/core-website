@@ -466,7 +466,7 @@ describe('registerEvent function', () => {
     storage.getEventBySlug.mockResolvedValueOnce({ ...mockEvent, status: 'closed' });
     const res = await registerEvent(makeAuthRequest('POST', validBody), context);
     expect(res.status).toBe(400);
-    expect(JSON.parse(res.body).error).toMatch(/closed/);
+    expect(JSON.parse(res.body).error).toMatch(/not open/);
   });
 
   test('returns 409 for duplicate registration', async () => {
@@ -476,7 +476,7 @@ describe('registerEvent function', () => {
     ]);
     const res = await registerEvent(makeAuthRequest('POST', validBody), context);
     expect(res.status).toBe(409);
-    expect(JSON.parse(res.body).ticketCode).toBe('EXISTING1');
+    expect(JSON.parse(res.body).error).toMatch(/already registered/);
   });
 
   test('returns 400 when event at capacity', async () => {
@@ -794,7 +794,8 @@ describe('issueBadges function', () => {
   });
 
   test('returns issued:0 when no checked-in registrations', async () => {
-    storage.getEvent.mockResolvedValueOnce({ title: 'Test', date: '2026-05-15', location: 'Perth' });
+    storage.getEvent.mockResolvedValueOnce({ title: 'Test', date: '2026-05-15', location: 'Perth', status: 'completed' });
+    storage.getBadgesByEvent.mockResolvedValueOnce([]);
     storage.getRegistrationsByEvent.mockResolvedValueOnce([
       { rowKey: 'r1', checkedIn: false }
     ]);
@@ -804,7 +805,8 @@ describe('issueBadges function', () => {
   });
 
   test('issues badges to checked-in registrations with correct roles', async () => {
-    storage.getEvent.mockResolvedValueOnce({ title: 'Test', date: '2026-05-15', location: 'Perth' });
+    storage.getEvent.mockResolvedValueOnce({ title: 'Test', date: '2026-05-15', location: 'Perth', status: 'completed' });
+    storage.getBadgesByEvent.mockResolvedValueOnce([]);
     storage.getRegistrationsByEvent.mockResolvedValueOnce([
       { rowKey: 'r1', fullName: 'Alice', email: 'alice@test.com', checkedIn: true, role: 'attendee', userId: 'u1' },
       { rowKey: 'r2', fullName: 'Bob', email: 'bob@test.com', checkedIn: true, role: 'speaker', userId: 'u2' },
@@ -1159,18 +1161,21 @@ describe('communityPartner function', () => {
   });
 
   test('returns 400 for missing name', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', chapterSlug: 'perth' });
     const res = await communityPartner(makeAuthRequest('POST', { eventId: 'ev-1', logoBase64: 'abc' }, ['admin']), context);
     expect(res.status).toBe(400);
     expect(JSON.parse(res.body).error).toMatch(/name/);
   });
 
   test('returns 400 for missing logo', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', chapterSlug: 'perth' });
     const res = await communityPartner(makeAuthRequest('POST', { eventId: 'ev-1', name: 'Acme' }, ['admin']), context);
     expect(res.status).toBe(400);
     expect(JSON.parse(res.body).error).toMatch(/logo/i);
   });
 
   test('returns 400 for oversized logo', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', chapterSlug: 'perth' });
     const res = await communityPartner(makeAuthRequest('POST', {
       eventId: 'ev-1', name: 'Acme', logoBase64: 'x'.repeat(210000)
     }, ['admin']), context);
@@ -1179,6 +1184,7 @@ describe('communityPartner function', () => {
   });
 
   test('adds partner successfully', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', chapterSlug: 'perth' });
     const res = await communityPartner(makeAuthRequest('POST', {
       eventId: 'ev-1', name: 'Acme Corp', tier: 'Gold', logoBase64: 'abc123', logoContentType: 'image/png', website: 'https://acme.com'
     }, ['admin']), context);
@@ -1190,6 +1196,7 @@ describe('communityPartner function', () => {
   });
 
   test('deletes partner successfully', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', chapterSlug: 'perth' });
     const res = await communityPartner(makeAuthRequest('POST', {
       eventId: 'ev-1', partnerId: 'p-1', action: 'delete'
     }, ['admin']), context);

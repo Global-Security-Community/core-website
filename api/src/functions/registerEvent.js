@@ -1,7 +1,7 @@
 const { randomUUID, randomBytes } = require('crypto');
 const { getAuthUser, unauthorised } = require('../helpers/auth');
 const { getEventBySlug, storeRegistration, storeDemographics, countRegistrations, getRegistrationsByEvent, getPartnersByEvent, deleteRegistration } = require('../helpers/tableStorage');
-const { sanitiseFields } = require('../helpers/sanitise');
+const { sanitiseFields, stripHtml } = require('../helpers/sanitise');
 const { sendTicketEmail } = require('../helpers/emailService');
 const { checkRateLimit, getClientIP } = require('../helpers/rateLimiter');
 const { verifyTurnstileToken } = require('../helpers/turnstile');
@@ -37,9 +37,18 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Missing required fields: eventSlug, fullName, email' }) };
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { status: 400, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Please enter a valid email address' }) };
+    }
+
     // Verify Turnstile token
     const turnstileValid = await verifyTurnstileToken(turnstileToken, clientIP, context);
     if (!turnstileValid) {
+      const { logSecurityEvent } = require('../helpers/securityLogger');
+      logSecurityEvent(context, 'bot_check_failed', { ip: clientIP, endpoint: 'registerEvent' });
       return { status: 403, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Bot verification failed. Please try again.' }) };
     }
@@ -53,9 +62,9 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Event not found' }) };
     }
 
-    if (event.status === 'closed' || event.status === 'completed') {
+    if (event.status !== 'published') {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ error: 'Registration is closed for this event' }) };
+               body: JSON.stringify({ error: 'Registration is not open for this event' }) };
     }
 
     // Check for duplicate registration
@@ -64,7 +73,7 @@ module.exports = async function (request, context) {
     const alreadyRegistered = existingRegs.find(r => r.userId === user.userId);
     if (alreadyRegistered) {
       return { status: 409, headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ error: 'You are already registered for this event', ticketCode: alreadyRegistered.ticketCode }) };
+               body: JSON.stringify({ error: 'You are already registered for this event' }) };
     }
 
     // Check capacity
@@ -107,11 +116,11 @@ module.exports = async function (request, context) {
     await storeDemographics({
       eventId,
       registrationId,
-      employmentStatus: employmentStatus || '',
-      industry: industry || '',
+      employmentStatus: stripHtml(employmentStatus || ''),
+      industry: stripHtml(industry || ''),
       jobTitle: safe.jobTitle || '',
-      companySize: companySize || '',
-      experienceLevel: experienceLevel || ''
+      companySize: stripHtml(companySize || ''),
+      experienceLevel: stripHtml(experienceLevel || '')
     });
 
     // Generate QR code

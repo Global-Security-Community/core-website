@@ -65,7 +65,11 @@
         // Render rich HTML description from API (overrides SSR plain text)
         if (data.description) {
           var descEl = document.getElementById('event-description');
-          if (descEl) descEl.innerHTML = data.description;
+          if (descEl) {
+            descEl.innerHTML = typeof DOMPurify !== 'undefined'
+              ? DOMPurify.sanitize(data.description)
+              : GSC.esc(data.description);
+          }
         }
         // Render volunteer cards
         if (data.volunteers && data.volunteers.length > 0) {
@@ -112,7 +116,7 @@
             var tag = p.website ? 'a' : 'div';
             var href = p.website ? ' href="' + GSC.esc(GSC.safeUrl(p.website)) + '" target="_blank" rel="noopener noreferrer"' : '';
             html += '<' + tag + ' class="partner-logo"' + href + '>';
-            if (p.logoDataUrl) html += '<img src="' + p.logoDataUrl + '" alt="' + GSC.esc(p.name) + '">';
+            if (p.logoDataUrl && p.logoDataUrl.indexOf('data:image/') === 0) html += '<img src="' + GSC.esc(p.logoDataUrl) + '" alt="' + GSC.esc(p.name) + '">';
             html += '<span class="partner-name">' + GSC.esc(p.name) + '</span>';
             html += '</' + tag + '>';
           });

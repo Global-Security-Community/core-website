@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { getApprovedApplicationBySlug, updateApplicationStatus } = require('../helpers/tableStorage');
-const { stripHtml } = require('../helpers/sanitise');
+const { stripHtml, sanitiseUrl } = require('../helpers/sanitise');
 const { Octokit } = require('@octokit/rest');
 const { createAppAuth } = require('@octokit/auth-app');
 const { logAudit } = require('../helpers/auditLog');
@@ -63,10 +63,10 @@ module.exports = async function (request, context) {
     const sanitisedLeads = leads.map(lead => ({
       name: stripHtml(lead.name).trim(),
       email: stripHtml(lead.email).trim().toLowerCase(),
-      github: stripHtml(lead.github || '').trim(),
-      linkedin: stripHtml(lead.linkedin || '').trim(),
-      twitter: stripHtml(lead.twitter || '').trim(),
-      website: stripHtml(lead.website || '').trim()
+      github: sanitiseUrl(lead.github || ''),
+      linkedin: sanitiseUrl(lead.linkedin || ''),
+      twitter: sanitiseUrl(lead.twitter || ''),
+      website: sanitiseUrl(lead.website || '')
     }));
 
     // Update the application record with leads JSON

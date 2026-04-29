@@ -1,4 +1,4 @@
-const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess, verifyCsrfHeader } = require('../helpers/auth');
+const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess, verifyCsrfHeader, isSuperAdmin, resolveEmail } = require('../helpers/auth');
 const { getRegistrationsByEvent, countRegistrations, getEvent, getEventById, listEvents, updateEvent, getApprovedApplicationByEmail } = require('../helpers/tableStorage');
 const { logAudit } = require('../helpers/auditLog');
 
@@ -53,7 +53,7 @@ module.exports = async function (request, context) {
           draft: ['published'],
           published: ['closed', 'completed'],
           closed: ['published', 'completed'],
-          completed: ['published']
+          completed: [] // Reopening completed events is not allowed (use direct DB fix if needed)
         };
         if (validTransitions[current] && !validTransitions[current].includes(status)) {
           return { status: 400, headers: { 'Content-Type': 'application/json' },
