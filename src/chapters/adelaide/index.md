@@ -4,7 +4,7 @@ title: "Global Security Community Adelaide"
 city: "Adelaide"
 country: "Australia"
 tags: chapter
-discord_channel_id: "1491033291049013300"
+discord_channel_id: ""
 discord_guild_id: ""
 leads:
   - name: "Andrew O'Young"
@@ -13,4 +13,7 @@ leads:
   - name: "Mathew Clark"
     email_hash: "209e4f97c983d51f106e8cfbaccda552"
     linkedin: "https://www.linkedin.com/in/mathewclarkau/"
+  - name: "Shehan Perera"
+    email_hash: "732c877850724b1f41073596b123e00e"
+    linkedin: "https://www.linkedin.com/in/shehanperera85/"
 ---
