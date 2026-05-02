@@ -10,5 +10,5 @@ leads:
   - name: "Pathum Udana"
     email_hash: "fb030bc68d1232dca61e76e362027650"
     linkedin: "https://www.linkedin.com/in/pathumudana/"
-    website: "https://microsoftitpro.lk/"
+    website: "http://pathumudana.com/"
 ---
