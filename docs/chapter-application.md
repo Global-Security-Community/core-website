@@ -28,10 +28,11 @@ Applicants provide the following information:
 2. **Notification** — The application is stored in the database and a notification is posted to the GSC Discord server
 3. **Review** — GSC administrators receive the application with approve/reject links
 4. **Approval** — If approved:
-   - A chapter page is automatically generated at `/chapters/{city-slug}/`
+   - The chapter city is geocoded via Nominatim API (OpenStreetMap) to get latitude/longitude
+   - A chapter page is automatically generated at `/chapters/{city-slug}/` with coordinates in frontmatter
    - A Discord channel is created for the chapter
    - The chapter lead's email is registered for the admin role
-   - The chapter appears on the Chapters listing page
+   - The chapter appears on the Chapters listing page with a map marker
 5. **Rejection** — If rejected, a notification is sent to Discord
 
 ## Chapter Page

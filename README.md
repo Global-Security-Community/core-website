@@ -32,6 +32,7 @@ Copy API secrets into `api/local.settings.json` (gitignored). See `.github/copil
 
 - **Frontend:** Eleventy 3.1.2 (Nunjucks + Markdown), vanilla JavaScript
 - **Rich Text:** Quill.js 2.0 (CDN, dashboard only)
+- **Maps:** Leaflet.js 1.9.4 + OpenStreetMap (CDN, chapters page)
 - **Backend:** Azure Functions v4 (Node.js)
 - **Data:** Azure Table Storage
 - **Email:** Azure Communication Services

@@ -111,6 +111,7 @@ NoSQL key-value store. Six tables cover all platform data:
 | **Discord** | Community communication | Bot creates chapter channels on approval |
 | **GitHub Actions** | CI/CD & page generation | Deploys site; generates chapter/event pages on demand |
 | **Cloudflare** | DNS, WAF, DDoS protection | Proxied DNS, SSL strict, HSTS, bot protection |
+| **OpenStreetMap** | Chapter map tiles | Leaflet.js renders interactive map on chapters page; Nominatim geocodes new chapters |
 | **AI Image Generation** | Badge & chapter artwork | Modular provider (`api/src/helpers/aiProvider.js`): OpenAI or Azure AI Foundry. Currently disabled. |
 
 ---
