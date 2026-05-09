@@ -1,9 +1,14 @@
 (async function() {
   var container = document.getElementById('events-list');
+  var isHomepagePreview = false;
+  if (!container) {
+    container = document.getElementById('home-events-list');
+    isHomepagePreview = !!container;
+  }
   if (!container) return;
   var hasServerRenderedEvents = !!container.querySelector('.event-card, .events-empty');
   try {
-    var res = await fetch('/api/getEvent?action=list');
+    var res = await GSC.fetch('/api/getEvent?action=list');
     if (!res.ok) throw new Error('Failed to load events');
     var events = await res.json();
 
@@ -21,6 +26,14 @@
     }).sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
 
     var html = '';
+
+    if (isHomepagePreview) {
+      html = upcoming.length
+        ? '<div class="events-grid home-events-grid">' + upcoming.slice(0, 3).map(function(e) { return renderEventCard(e); }).join('') + '</div>'
+        : '<div class="card events-empty"><h3>Events Coming Soon</h3><p>We are planning future community events. Explore local chapters to stay connected and get notified when new events are announced.</p><a href="/chapters/" class="btn-primary">Find a Chapter</a></div>';
+      container.innerHTML = html;
+      return;
+    }
 
     if (upcoming.length) {
       html += '<h2 class="section-title">Upcoming Events</h2>';
