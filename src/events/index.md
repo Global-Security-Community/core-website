@@ -2,12 +2,14 @@
 layout: base.njk
 title: Events
 description: "Browse upcoming and past Global Security Community events — workshops, bootcamps, and networking for cybersecurity professionals."
+templateEngineOverride: njk
 ---
 
 <div class="container">
-  <h1>Events</h1>
-
-  <p>Join us at upcoming events where security professionals gather to learn, network, and share insights.</p>
+  <header class="page-header">
+    <h1>Events</h1>
+    <p class="page-lede">Join us at upcoming events where security professionals gather to learn, network, and share insights.</p>
+  </header>
 
   <div id="events-list">
     {% set upcoming = [] %}
@@ -28,6 +30,7 @@ description: "Browse upcoming and past Global Security Community events — work
     {% endfor %}
 
     {% if upcoming.length > 0 %}
+    <h2 class="section-title">Upcoming Events</h2>
     <div class="events-grid">
       {% for e in upcoming %}
       <a href="/events/{{ e.slug }}/" class="event-card">
@@ -55,7 +58,7 @@ description: "Browse upcoming and past Global Security Community events — work
     {% endif %}
 
     {% if past.length > 0 %}
-    <h2>Past Events</h2>
+    <h2 class="events-past-heading">Past Events</h2>
     <div class="events-grid">
       {% for e in past %}
       <a href="/events/{{ e.slug }}/" class="event-card event-card--past">

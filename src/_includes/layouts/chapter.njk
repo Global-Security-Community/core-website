@@ -6,76 +6,87 @@ layout: base.njk
   <div id="chapter-banner" data-chapter-slug="{{ city | lower | replace(" ", "-") }}" class="chapter-banner is-hidden">
     <img id="chapter-banner-img" alt="{{ city }} Chapter Banner" class="chapter-banner-img">
   </div>
-  <h1>Global Security Community {{ city }}</h1>
-  <p class="chapter-subtitle">{{ city }}, {{ country }}</p>
+  <header class="chapter-page-header">
+    <p class="page-kicker">Local chapter</p>
+    <h1>Global Security Community {{ city }}</h1>
+    <p class="chapter-subtitle">{{ city }}, {{ country }}</p>
+  </header>
 
-  <h2>About This Chapter</h2>
-  <p>Welcome to the Global Security Community chapter in {{ city }}! We bring together security professionals and enthusiasts in the {{ city }} area to share knowledge, network, and grow together.</p>
+  <section class="page-section">
+    <h2>About This Chapter</h2>
+    <p>Welcome to the Global Security Community chapter in {{ city }}! We bring together security professionals and enthusiasts in the {{ city }} area to share knowledge, network, and grow together.</p>
+  </section>
 
-  <h2>Chapter Leads</h2>
-  <div class="leads-grid">
-  {% for lead in leads %}
-    <div class="lead-compact">
-      <img src="https://www.gravatar.com/avatar/{{ lead.email_hash }}?s=120&d=mp" alt="{{ lead.name }}" class="lead-compact-avatar">
-      <h3 class="lead-compact-name">{{ lead.name }}</h3>
-      <div class="lead-socials">
-        {% if lead.github %}
-        <a href="{{ lead.github }}" target="_blank" rel="noopener noreferrer" class="lead-social-link" aria-label="{{ lead.name }} on GitHub">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-        </a>
-        {% endif %}
-        {% if lead.linkedin %}
-        <a href="{{ lead.linkedin }}" target="_blank" rel="noopener noreferrer" class="lead-social-link" aria-label="{{ lead.name }} on LinkedIn">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-        </a>
-        {% endif %}
-        {% if lead.twitter %}
-        <a href="{{ lead.twitter }}" target="_blank" rel="noopener noreferrer" class="lead-social-link" aria-label="{{ lead.name }} on X/Twitter">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-        </a>
-        {% endif %}
-        {% if lead.website %}
-        <a href="{{ lead.website }}" target="_blank" rel="noopener noreferrer" class="lead-social-link" aria-label="{{ lead.name }}'s website">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-        </a>
-        {% endif %}
+  <section class="page-section">
+    <h2>Chapter Leads</h2>
+    <div class="leads-grid">
+    {% for lead in leads %}
+      <div class="lead-compact">
+        <img src="https://www.gravatar.com/avatar/{{ lead.email_hash }}?s=120&d=mp" alt="{{ lead.name }}" class="lead-compact-avatar">
+        <h3 class="lead-compact-name">{{ lead.name }}</h3>
+        <div class="lead-socials">
+          {% if lead.github %}
+          <a href="{{ lead.github }}" target="_blank" rel="noopener noreferrer" class="lead-social-link" aria-label="{{ lead.name }} on GitHub">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          </a>
+          {% endif %}
+          {% if lead.linkedin %}
+          <a href="{{ lead.linkedin }}" target="_blank" rel="noopener noreferrer" class="lead-social-link" aria-label="{{ lead.name }} on LinkedIn">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          </a>
+          {% endif %}
+          {% if lead.twitter %}
+          <a href="{{ lead.twitter }}" target="_blank" rel="noopener noreferrer" class="lead-social-link" aria-label="{{ lead.name }} on X/Twitter">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+          {% endif %}
+          {% if lead.website %}
+          <a href="{{ lead.website }}" target="_blank" rel="noopener noreferrer" class="lead-social-link" aria-label="{{ lead.name }}'s website">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+    </div>
+  </section>
+
+  <section class="page-section">
+    <h2>Events</h2>
+    <div id="chapter-events" data-chapter-slug="{{ city | lower | replace(" ", "-") }}">
+      <div class="skeleton-grid">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
       </div>
     </div>
-  {% endfor %}
-  </div>
-
-  <h2>Events</h2>
-  <div id="chapter-events" data-chapter-slug="{{ city | lower | replace(" ", "-") }}">
-    <div class="skeleton-grid">
-      <div class="skeleton skeleton-card"></div>
-      <div class="skeleton skeleton-card"></div>
-      <div class="skeleton skeleton-card"></div>
-    </div>
-  </div>
+  </section>
 
   <script src="/js/chapter-events.js?v={{ cacheBust }}"></script>
 
-  <h2>Get Involved</h2>
-  <div class="card" id="subscribe-card" data-chapter-slug="{{ city | lower | replace(" ", "-") }}">
-    <h3><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z"/><path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10"/></svg></span> Chapter Event Notifications</h3>
-    <p id="subscribe-msg" class="subscribe-message">Get an email when new events are announced for this chapter.</p>
-    <button id="btn-subscribe" class="is-hidden">Subscribe</button>
-    <p id="subscribe-login-hint" class="text-muted-sm">
-      <a href="/.auth/login/ciam?post_login_redirect_uri={{ page.url }}">Log in</a> to subscribe to event notifications.
-    </p>
-  </div>
-  <script src="/js/chapter-subscribe.js?v={{ cacheBust }}"></script>
-  {% if discord_channel_id and discord_guild_id %}
-  <div class="card discord-card">
-    <span class="discord-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></span></span>
-    <div>
-      <h3>Join Us on Discord</h3>
-      <p>Connect with the {{ city }} chapter on our Discord server.</p>
-      <a href="https://discord.com/channels/{{ discord_guild_id }}/{{ discord_channel_id }}" target="_blank" rel="noopener noreferrer" class="btn-discord">Open Discord Channel</a>
+  <section class="page-section">
+    <h2>Get Involved</h2>
+    <div class="card" id="subscribe-card" data-chapter-slug="{{ city | lower | replace(" ", "-") }}">
+      <h3><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z"/><path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10"/></svg></span> Chapter Event Notifications</h3>
+      <p id="subscribe-msg" class="subscribe-message">Get an email when new events are announced for this chapter.</p>
+      <button id="btn-subscribe" class="is-hidden">Subscribe</button>
+      <p id="subscribe-login-hint" class="text-muted-sm">
+        <a href="/.auth/login/ciam?post_login_redirect_uri={{ page.url }}">Log in</a> to subscribe to event notifications.
+      </p>
     </div>
-  </div>
-  {% endif %}
-  <p>Interested in joining the {{ city }} chapter? Stay tuned for upcoming events and opportunities to connect with the local security community.</p>
+    <script src="/js/chapter-subscribe.js?v={{ cacheBust }}"></script>
+    {% if discord_channel_id and discord_guild_id %}
+    <div class="card discord-card">
+      <span class="discord-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></span></span>
+      <div>
+        <h3>Join Us on Discord</h3>
+        <p>Connect with the {{ city }} chapter on our Discord server.</p>
+        <a href="https://discord.com/channels/{{ discord_guild_id }}/{{ discord_channel_id }}" target="_blank" rel="noopener noreferrer" class="btn-discord">Open Discord Channel</a>
+      </div>
+    </div>
+    {% endif %}
+    <p>Interested in joining the {{ city }} chapter? Stay tuned for upcoming events and opportunities to connect with the local security community.</p>
+  </section>
 
   <div id="chapter-partners" class="partners-section is-hidden">
     <h2>Community Partners</h2>
