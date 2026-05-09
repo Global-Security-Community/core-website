@@ -3,6 +3,8 @@ layout: chapter.njk
 title: "Global Security Community Perth"
 city: "Perth"
 country: "Australia"
+latitude: -31.9505
+longitude: 115.8605
 tags: chapter
 discord_channel_id: ""
 discord_guild_id: ""

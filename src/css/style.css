@@ -264,6 +264,20 @@ a.card-link h3 {
 }
 
 /* Chapter grid */
+.chapter-map {
+  height: 420px;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 0;
+}
+
+.chapter-marker {
+  background: none;
+  border: none;
+}
+
 .chapter-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -356,6 +370,12 @@ a.card-link h3 {
 
 .chapter-card:hover .chapter-card-btn {
   background-color: var(--color-primary-navy);
+}
+
+.chapter-card--active {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(32, 178, 170, 0.3);
+  border-color: var(--color-primary-teal);
 }
 
 
@@ -621,6 +641,10 @@ button:not(.nav-toggle):hover {
 }
 
 @media (max-width: 768px) {
+  .chapter-map {
+    height: 300px;
+  }
+
   .chapter-grid {
     grid-template-columns: 1fr;
   }

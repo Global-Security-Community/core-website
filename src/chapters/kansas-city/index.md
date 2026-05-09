@@ -3,6 +3,8 @@ layout: chapter.njk
 title: "Global Security Community Kansas City"
 city: "Kansas City"
 country: "United States"
+latitude: 39.0997
+longitude: -94.5786
 tags: chapter
 discord_channel_id: "1497514202753925254"
 discord_guild_id: ""

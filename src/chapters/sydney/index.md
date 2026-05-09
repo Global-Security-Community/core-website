@@ -3,6 +3,8 @@ layout: chapter.njk
 title: "Global Security Community Sydney"
 city: "Sydney"
 country: "Australia"
+latitude: -33.8688
+longitude: 151.2093
 tags: chapter
 discord_channel_id: "1502310530583629824"
 discord_guild_id: ""

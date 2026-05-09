@@ -17,6 +17,30 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Geocode chapter location
+        run: |
+          # Look up coordinates from city and country using OpenStreetMap Nominatim
+          QUERY=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${CITY}, ${COUNTRY}'))")
+          RESPONSE=$(curl -s -H "User-Agent: GSC-ChapterGenerator/1.0" \
+            "https://nominatim.openstreetmap.org/search?q=${QUERY}&format=json&limit=1")
+
+          LATITUDE=$(echo "$RESPONSE" | python3 -c "import sys,json; r=json.load(sys.stdin); print(r[0]['lat'] if r else '')" 2>/dev/null || echo "")
+          LONGITUDE=$(echo "$RESPONSE" | python3 -c "import sys,json; r=json.load(sys.stdin); print(r[0]['lon'] if r else '')" 2>/dev/null || echo "")
+
+          if [ -z "$LATITUDE" ] || [ -z "$LONGITUDE" ]; then
+            echo "::warning::Could not geocode ${CITY}, ${COUNTRY} — coordinates will need to be added manually"
+            LATITUDE="0"
+            LONGITUDE="0"
+          else
+            echo "Geocoded ${CITY}, ${COUNTRY} → ${LATITUDE}, ${LONGITUDE}"
+          fi
+
+          echo "LATITUDE=${LATITUDE}" >> "$GITHUB_ENV"
+          echo "LONGITUDE=${LONGITUDE}" >> "$GITHUB_ENV"
+        env:
+          CITY: ${{ github.event.client_payload.chapter_city }}
+          COUNTRY: ${{ github.event.client_payload.chapter_country }}
+
       - name: Generate chapter page
         env:
           CITY: ${{ github.event.client_payload.chapter_city }}
@@ -63,6 +87,8 @@ jobs:
             printf 'title: "Global Security Community %s"\n' "${CITY}"
             printf 'city: "%s"\n' "${CITY}"
             printf 'country: "%s"\n' "${COUNTRY}"
+            printf 'latitude: %s\n' "${LATITUDE}"
+            printf 'longitude: %s\n' "${LONGITUDE}"
             echo "tags: chapter"
             printf 'discord_channel_id: "%s"\n' "${DISCORD_CHANNEL_ID}"
             printf 'discord_guild_id: "%s"\n' "${DISCORD_GUILD_ID}"

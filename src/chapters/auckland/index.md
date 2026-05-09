@@ -3,6 +3,8 @@ layout: chapter.njk
 title: "Global Security Community Auckland"
 city: "Auckland"
 country: "New Zealand"
+latitude: -36.8485
+longitude: 174.7633
 tags: chapter
 discord_channel_id: "1498933726933942362"
 discord_guild_id: ""

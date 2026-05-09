@@ -4,15 +4,23 @@ title: Chapters
 description: "Find your local Global Security Community chapter. Connect with cybersecurity professionals in your city."
 ---
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
+
 <div class="container">
   <h1>Global Chapters</h1>
 
-  <p>Our chapters are the foundation of the Global Security Community. Find your local chapter or start one in your city.</p>
+  <p>Our chapters are the foundation of the Global Security Community. Find your local chapter on the map or browse the list below.</p>
 
   {% if collections.chapter and collections.chapter.length > 0 %}
+  <div id="chapter-map" class="chapter-map" aria-label="Map showing chapter locations"></div>
+
   <div class="chapter-grid">
     {%- for chapter in collections.chapter | sort(false, false, "data.city") %}
-    <a href="{{ chapter.url }}" class="chapter-card">
+    <a href="{{ chapter.url }}" class="chapter-card" 
+       data-lat="{{ chapter.data.latitude }}" 
+       data-lng="{{ chapter.data.longitude }}" 
+       data-city="{{ chapter.data.city }}"
+       id="chapter-{{ chapter.data.city | lower | replace(' ', '-') }}">
       <div class="chapter-card-banner">
         <img src="/assets/GSC-Shield-Transparent.png" 
              alt="{{ chapter.data.city }} Chapter" class="chapter-card-logo">
@@ -38,3 +46,6 @@ description: "Find your local Global Security Community chapter. Connect with cy
     <a href="/chapters/apply/" class="btn-cta">Apply to Lead a Chapter</a>
   </p>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+<script src="/js/chapter-map.js?v={{ cacheBust }}"></script>

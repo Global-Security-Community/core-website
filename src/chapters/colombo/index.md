@@ -3,6 +3,8 @@ layout: chapter.njk
 title: "Global Security Community Colombo"
 city: "Colombo"
 country: "Sri Lanka"
+latitude: 6.9271
+longitude: 79.8612
 tags: chapter
 discord_channel_id: ""
 discord_guild_id: ""

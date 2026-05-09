@@ -41,3 +41,4 @@ playwright-report/
 e2e/audit-screenshots/
 test-perth-images.js
 perth-*.png
+temp/

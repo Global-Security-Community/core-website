@@ -3,6 +3,8 @@ layout: chapter.njk
 title: "Global Security Community Wellington"
 city: "Wellington"
 country: "New Zealand"
+latitude: -41.2866
+longitude: 174.7756
 tags: chapter
 discord_channel_id: "1498867374055489596"
 discord_guild_id: ""

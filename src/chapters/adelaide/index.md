@@ -3,6 +3,8 @@ layout: chapter.njk
 title: "Global Security Community Adelaide"
 city: "Adelaide"
 country: "Australia"
+latitude: -34.9285
+longitude: 138.6007
 tags: chapter
 discord_channel_id: ""
 discord_guild_id: ""

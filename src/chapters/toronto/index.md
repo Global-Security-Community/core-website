@@ -3,6 +3,8 @@ layout: chapter.njk
 title: "Global Security Community Toronto"
 city: "Toronto"
 country: "Canada"
+latitude: 43.6532
+longitude: -79.3832
 tags: chapter
 discord_channel_id: "1502475544225386526"
 discord_guild_id: ""
