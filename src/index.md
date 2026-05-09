@@ -40,18 +40,4 @@ description: "Join the Global Security Community — connecting cybersecurity pr
     </a>
   </div>
 
-  <div class="stats-bar">
-    <div class="stat-item">
-      <span class="stat-value">1+</span>
-      <span class="stat-desc">Active Chapters</span>
-    </div>
-    <div class="stat-item">
-      <span class="stat-value">1+</span>
-      <span class="stat-desc">Events Held</span>
-    </div>
-    <div class="stat-item">
-      <span class="stat-value">200+</span>
-      <span class="stat-desc">Community Members</span>
-    </div>
-  </div>
 </div>
