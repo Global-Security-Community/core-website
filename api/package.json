@@ -21,7 +21,7 @@
     "sharp": "^0.34.5"
   },
   "devDependencies": {
-    "azure-functions-core-tools": "^4.9.0",
+    "azure-functions-core-tools": "^4.10.0",
     "jest": "^30.3.0"
   }
 }
