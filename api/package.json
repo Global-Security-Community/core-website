@@ -14,7 +14,7 @@
     "@azure/data-tables": "^13.3.0",
     "@azure/functions": "^4.14.0",
     "@azure/storage-blob": "^12.31.0",
-    "@octokit/auth-app": "^7.1.5",
+    "@octokit/auth-app": "^8.2.0",
     "@octokit/rest": "^22.0.1",
     "qrcode": "^1.5.4",
     "sanitize-html": "^2.17.3",
