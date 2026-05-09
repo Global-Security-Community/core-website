@@ -92,8 +92,8 @@ title: Dashboard
         </li>
       </ul>
       <p class="pipeline-note">Page generation typically takes 1–2 minutes. You can navigate away — the pipeline will continue in the background.</p>
-      <a id="create-progress-link" href="#" class="btn is-hidden" style="margin-top:1rem;">View Event Page →</a>
-      <button id="create-another-btn" type="button" class="is-hidden" style="margin-top:0.5rem;">Create Another Event</button>
+      <a id="create-progress-link" href="#" class="btn is-hidden inline-mt">View Event Page →</a>
+      <button id="create-another-btn" type="button" class="is-hidden inline-mt-sm">Create Another Event</button>
     </div>
   </div>
 
@@ -101,7 +101,7 @@ title: Dashboard
   <div id="section-detail" class="is-hidden">
     <div class="detail-actions">
       <button id="btn-back-events" class="btn-outline">&larr; Back to Events</button>
-      <button id="btn-edit-event" class="btn-outline" style="margin-left:0.5rem;"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span> Edit Event</button>
+      <button id="btn-edit-event" class="btn-outline inline-ml-sm"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span> Edit Event</button>
     </div>
     <h2 id="detail-title">Event Details</h2>
     <p id="detail-subtitle" class="subtitle-muted"></p>
@@ -196,7 +196,7 @@ title: Dashboard
         <input type="number" id="edit-cap" value="0" min="0">
       </div>
       <button id="edit-save-btn" type="button">Save Changes</button>
-      <button id="edit-delete-btn" type="button" class="btn-danger" style="margin-left:1rem;">Delete Event</button>
+      <button id="edit-delete-btn" type="button" class="btn-danger inline-ml">Delete Event</button>
     </div>
   </div>
 

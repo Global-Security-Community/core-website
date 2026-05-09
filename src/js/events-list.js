@@ -1,6 +1,7 @@
 (async function() {
   var container = document.getElementById('events-list');
   if (!container) return;
+  var hasServerRenderedEvents = !!container.querySelector('.event-card, .events-empty');
   try {
     var res = await fetch('/api/getEvent?action=list');
     if (!res.ok) throw new Error('Failed to load events');
@@ -22,6 +23,7 @@
     var html = '';
 
     if (upcoming.length) {
+      html += '<h2 class="section-title">Upcoming Events</h2>';
       html += '<div class="events-grid">' + upcoming.map(function(e) { return renderEventCard(e); }).join('') + '</div>';
     } else {
       html += '<div class="card events-empty"><h3>Events Coming Soon</h3><p>We\'re planning exciting events. Check back soon or <a href="/chapters/">find your chapter</a> to get notified!</p></div>';
@@ -34,6 +36,8 @@
 
     container.innerHTML = html;
   } catch (err) {
+    console.warn('Unable to load dynamic events list; keeping server-rendered events if available.', err);
+    if (hasServerRenderedEvents) return;
     container.innerHTML = '<p>Unable to load events. Please try again later.</p>';
   }
 

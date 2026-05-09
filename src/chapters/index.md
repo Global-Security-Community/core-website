@@ -40,8 +40,8 @@ description: "Find your local Global Security Community chapter. Connect with cy
   <p>We're currently building our global chapter network. Our first chapters are launching soon.</p>
   {% endif %}
 
-  <h2>Interested in Starting a Chapter?</h2>
-  <p>If you're passionate about building a security community in your city, we'd love to hear from you. We provide resources, guidance, and support to help your chapter thrive.</p>
+  <h2 id="start-chapter">Interested in Starting a Chapter?</h2>
+  <p>Check the map and chapter list first to see whether there is already a community near you. If your city or region is not represented and you're passionate about building a local security community, we'd love to hear from you.</p>
   <p class="mt-section">
     <a href="/chapters/apply/" class="btn-cta">Apply to Lead a Chapter</a>
   </p>
