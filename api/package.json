@@ -17,11 +17,11 @@
     "@octokit/auth-app": "^8.2.0",
     "@octokit/rest": "^22.0.1",
     "qrcode": "^1.5.4",
-    "sanitize-html": "^2.17.3",
+    "sanitize-html": "^2.17.4",
     "sharp": "^0.34.5"
   },
   "devDependencies": {
     "azure-functions-core-tools": "^4.10.0",
-    "jest": "^30.3.0"
+    "jest": "^30.4.2"
   }
 }
