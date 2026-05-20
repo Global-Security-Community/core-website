@@ -71,21 +71,7 @@
               : GSC.esc(data.description);
           }
         }
-        // Render volunteer cards
-        if (data.volunteers && data.volunteers.length > 0) {
-          var volEl = document.getElementById('volunteer-cards');
-          if (volEl) {
-            var html = '';
-            data.volunteers.forEach(function(v) {
-              html += '<div class="volunteer-card">';
-              html += '<div class="volunteer-name">' + GSC.esc(v.name) + '</div>';
-              if (v.company) html += '<div class="volunteer-company">' + GSC.esc(v.company) + '</div>';
-              html += '</div>';
-            });
-            volEl.innerHTML = html;
-            volEl.style.display = 'flex';
-          }
-        }
+        renderRecognition(data.volunteers);
         // Load community partners
         if (data.id) { loadPartners(data.id); }
       })
@@ -93,6 +79,48 @@
         var el = document.getElementById('reg-count');
         if (el) el.textContent = '—';
       });
+  }
+
+  function renderRecognition(volunteers) {
+    var section = document.getElementById('volunteer-cards');
+    var groupsEl = document.getElementById('recognition-groups');
+    if (!section || !groupsEl || !volunteers || volunteers.length === 0) return;
+
+    var groups = {
+      organiser: [],
+      volunteer: []
+    };
+
+    volunteers.forEach(function(person) {
+      var role = person.role === 'organiser' ? 'organiser' : person.role === 'volunteer' ? 'volunteer' : '';
+      if (!role || !person.name) return;
+      groups[role].push(person);
+    });
+
+    var html = '';
+    html += renderRecognitionGroup('organiser', 'Organisers', groups.organiser);
+    html += renderRecognitionGroup('volunteer', 'Volunteers', groups.volunteer);
+
+    if (!html) return;
+    groupsEl.innerHTML = html;
+    section.classList.remove('is-hidden');
+  }
+
+  function renderRecognitionGroup(role, heading, people) {
+    if (!people || people.length === 0) return '';
+
+    var html = '<div class="recognition-group recognition-group--' + role + '">';
+    html += '<h3>' + heading + '</h3>';
+    html += '<div class="volunteer-cards">';
+    people.forEach(function(person) {
+      html += '<article class="volunteer-card">';
+      html += '<span class="role-badge role-badge--' + role + '">' + GSC.esc(role) + '</span>';
+      html += '<div class="volunteer-name">' + GSC.esc(person.name) + '</div>';
+      if (person.company) html += '<div class="volunteer-company">' + GSC.esc(person.company) + '</div>';
+      html += '</article>';
+    });
+    html += '</div></div>';
+    return html;
   }
 
   function loadPartners(eventId) {
