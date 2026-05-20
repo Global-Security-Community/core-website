@@ -94,15 +94,28 @@ module.exports = async function (request, context) {
 
     const registrationCount = await countRegistrations(event.rowKey);
 
-    // Fetch volunteers (public-safe info only)
+    // Fetch public recognition data (public-safe info only)
     let volunteers = [];
     try {
-      const volRegs = await getRegistrationsByRole(event.rowKey, 'volunteer');
-      volunteers = volRegs.map(v => ({
-        name: v.fullName,
-        company: v.company || ''
-      }));
-    } catch { /* non-critical */ }
+      const [organiserRegs, volunteerRegs] = await Promise.all([
+        getRegistrationsByRole(event.rowKey, 'organiser'),
+        getRegistrationsByRole(event.rowKey, 'volunteer')
+      ]);
+      volunteers = [
+        ...organiserRegs.map(v => ({
+          name: v.fullName,
+          company: v.company || '',
+          role: 'organiser'
+        })),
+        ...volunteerRegs.map(v => ({
+          name: v.fullName,
+          company: v.company || '',
+          role: 'volunteer'
+        }))
+      ].filter(v => v.name);
+    } catch (error) {
+      context.log(`getEvent recognition lookup error: ${error.message}`);
+    }
 
     return {
       status: 200,
