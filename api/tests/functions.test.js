@@ -150,6 +150,40 @@ describe('getEvent function', () => {
     expect(body.registrationCount).toBe(42);
     expect(body.registrationCap).toBe(100);
   });
+
+  test('returns public organiser and volunteer recognition details', async () => {
+    storage.getEventBySlug.mockResolvedValueOnce({
+      rowKey: 'ev-1',
+      title: 'Test Event',
+      slug: 'test-event',
+      chapterSlug: 'perth',
+      date: '2026-05-15',
+      endDate: '',
+      location: 'Perth',
+      description: 'A test event',
+      sessionizeApiId: '',
+      registrationCap: 100,
+      status: 'published'
+    });
+    storage.getRegistrationsByRole
+      .mockResolvedValueOnce([
+        { fullName: 'Olivia Organiser', company: 'GSC', email: 'olivia@example.com', ticketCode: 'ORG123' }
+      ])
+      .mockResolvedValueOnce([
+        { fullName: 'Victor Volunteer', company: 'Community Co', email: 'victor@example.com', ticketCode: 'VOL123' }
+      ]);
+
+    const req = { ...makeRequest('GET'), url: 'https://example.com/api/getEvent?slug=test-event' };
+    const res = await getEvent(req, context);
+    expect(res.status).toBe(200);
+
+    expect(storage.getRegistrationsByRole).toHaveBeenCalledWith('ev-1', 'organiser');
+    expect(storage.getRegistrationsByRole).toHaveBeenCalledWith('ev-1', 'volunteer');
+    expect(JSON.parse(res.body).volunteers).toEqual([
+      { name: 'Olivia Organiser', company: 'GSC', role: 'organiser' },
+      { name: 'Victor Volunteer', company: 'Community Co', role: 'volunteer' }
+    ]);
+  });
 });
 
 describe('checkIn function', () => {

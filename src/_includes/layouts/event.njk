@@ -38,9 +38,12 @@ layout: base.njk
   <h2>About This Event</h2>
   <div id="event-description" class="event-description">{{ description }}</div>
 
-  <div id="volunteer-cards" class="volunteer-cards is-hidden">
-    <h3>Event Volunteers</h3>
-  </div>
+  <section id="volunteer-cards" class="recognition-section is-hidden" aria-labelledby="recognition-heading">
+    <p class="section-kicker">Community recognition</p>
+    <h2 id="recognition-heading">Event Team</h2>
+    <p class="recognition-intro">Thank you to the people helping make this event possible.</p>
+    <div id="recognition-groups" class="recognition-groups"></div>
+  </section>
 
   {% if sessionizeApiId %}
   <h2>Agenda</h2>
