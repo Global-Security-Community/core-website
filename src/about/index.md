@@ -1,45 +1,77 @@
 ---
 layout: base.njk
 title: About Us
-description: "Learn about the Global Security Community, our mission, values, and how we unite security professionals across borders."
+description: "Learn about the Global Security Community — who we are, why we exist, and the people behind the mission."
 ---
 
 <div class="container">
-  <h1>About Global Security Community</h1>
-
-  <p>The Global Security Community is an international organization dedicated to advancing cybersecurity through collaboration, education, and professional development.</p>
-
-  <h2>Our Vision</h2>
-  <p>A world where security professionals work together across borders and organizations to create a safer digital ecosystem for everyone.</p>
-
-  <h2>Our Mission</h2>
-  <p>We unite security professionals globally to share knowledge, build stronger communities, and advance cybersecurity practices. By fostering an inclusive environment where voices from all backgrounds and experience levels are valued, we create a collaborative network committed to securing the digital world. Aligned with Microsoft's commitment to security excellence, we promote best practices and emerging technologies that protect organizations and individuals worldwide.</p>
-
-  <h2>Our Values</h2>
-  <div class="cards">
-    <div class="card">
-      <h3>Collaboration</h3>
-      <p>We believe in the power of sharing knowledge and experiences across our global network. Together, we're stronger and more resilient.</p>
-    </div>
-    <div class="card">
-      <h3>Inclusivity</h3>
-      <p>Our community welcomes security professionals at all levels and backgrounds. Diversity of perspective strengthens our collective security posture.</p>
-    </div>
-    <div class="card">
-      <h3>Community</h3>
-      <p>We foster genuine connections and local chapters where professionals support one another, mentor emerging talent, and build lasting relationships.</p>
-    </div>
-    <div class="card">
-      <h3>Excellence</h3>
-      <p>We're committed to advancing security practices and maintaining the highest professional standards in everything we do.</p>
-    </div>
-    <div class="card">
-      <h3>Innovation</h3>
-      <p>We foster creative thinking and the adoption of new security approaches and technologies that address emerging threats.</p>
-    </div>
+  <div class="page-header">
+    <h1>About Global Security Community</h1>
+    <p class="page-lede">A grassroots network of cybersecurity professionals building local communities with global reach — chapter-based, volunteer-run, and driven by a shared belief that security is stronger together.</p>
   </div>
 
-  <h2>History</h2>
-  <p>Founded in 2025, the Global Security Community ran its first event, the Global Security Bootcamp Perth 2025 to great success.  It aims to grow to include chapters in major cities worldwide, enabling thousands of active members to learn and grow through community learning, creating a safer society for all.</p>
+  <section class="about-section">
+    <h2>Why We Exist</h2>
+    <p>Cybersecurity can be isolating. You're often the only security person on a team, in a company, sometimes in a whole city. We started this community because we believe practitioners learn best from each other — in person, in their own city, with people who understand the work.</p>
+    <p>Every chapter is led by local volunteers who organise events, build connections, and share practical knowledge. No corporate agenda. No gatekeeping. Just security people helping security people.</p>
+  </section>
+
+  <section class="about-section">
+    <h2>Our Values</h2>
+    <div class="about-values">
+      <div class="about-value">
+        <strong>Collaboration over competition</strong>
+        <span>We share knowledge freely. The security community is stronger when we work together across organisations and borders.</span>
+      </div>
+      <div class="about-value">
+        <strong>Inclusive by default</strong>
+        <span>Every experience level. Every background. Diversity of perspective strengthens our collective security posture.</span>
+      </div>
+      <div class="about-value">
+        <strong>Local first, globally connected</strong>
+        <span>Real relationships happen face-to-face. Our chapters create local communities backed by a worldwide network.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-section">
+    <h2>Our Story</h2>
+    <p>Founded in 2025 by <strong>George Coldham</strong> and <strong>Anthony Porter</strong> in Perth, Australia, the Global Security Community began with a simple idea: bring security professionals together to learn from each other.</p>
+    <p>Our first event — the Global Security Bootcamp Perth 2025 — proved there was real appetite for practitioner-led, community-driven security education. From that single event, we've grown to <strong>8 chapters across 5 countries</strong>, with volunteer leads running events in their own cities.</p>
+  </section>
+
+  <section class="about-section about-founders">
+    <h2>Founders</h2>
+    <div class="founders-grid">
+      <div class="founder-card">
+        <img src="https://www.gravatar.com/avatar/7c2a2c2ac0adbd8a9ea55753a2ad4093?s=120&d=mp" alt="George Coldham" class="founder-avatar">
+        <strong>George Coldham</strong>
+        <span>Co-founder & Perth Chapter Lead</span>
+        <div class="founder-links">
+          <a href="https://github.com/anothergeorgecoldham/" target="_blank" rel="noopener noreferrer" aria-label="George's GitHub">GitHub</a>
+          <a href="https://www.linkedin.com/in/georgecoldham/" target="_blank" rel="noopener noreferrer" aria-label="George's LinkedIn">LinkedIn</a>
+        </div>
+      </div>
+      <div class="founder-card">
+        <img src="https://www.gravatar.com/avatar/0372ec0437fd2099f34b68da28660323?s=120&d=mp" alt="Anthony Porter" class="founder-avatar">
+        <strong>Anthony Porter</strong>
+        <span>Co-founder & Perth Chapter Lead</span>
+        <div class="founder-links">
+          <a href="https://github.com/AntoPorter" target="_blank" rel="noopener noreferrer" aria-label="Anthony's GitHub">GitHub</a>
+          <a href="https://www.linkedin.com/in/anthonyantoporter/" target="_blank" rel="noopener noreferrer" aria-label="Anthony's LinkedIn">LinkedIn</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-section about-cta">
+    <h2>Get Involved</h2>
+    <p>Whether you're looking to attend your first event, share a talk, or start a chapter in your city — there's a place for you here.</p>
+    <div class="about-cta-actions">
+      <a href="/events/" class="btn-primary">View Events</a>
+      <a href="/chapters/" class="btn-secondary">Find a Chapter</a>
+      <a href="https://discord.gg/qVRPXJuEYb" class="btn-secondary" target="_blank" rel="noopener noreferrer">Join Discord</a>
+    </div>
+  </section>
 </div>
 
