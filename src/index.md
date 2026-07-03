@@ -31,8 +31,17 @@ templateEngineOverride: njk
     </div>
     <div class="hero-visual" aria-hidden="true">
       <img src="/assets/GSC-Shield-Transparent.png" alt="" class="hero-shield">
+      <div class="hero-visual-copy">
+        <span>Local chapters</span>
+        <span>Community events</span>
+        <span>Security knowledge sharing</span>
+      </div>
     </div>
   </div>
+
+  <section class="home-ethos">
+    <p>Chapter-based. Volunteer-run. Driven by a shared passion for building stronger security practices together.</p>
+  </section>
 
   <section class="home-section" aria-labelledby="home-events-heading">
     <div class="home-section-header">
