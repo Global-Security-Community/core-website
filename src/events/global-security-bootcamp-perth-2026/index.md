@@ -8,4 +8,6 @@ description: "Global Security Bootcamp Perth 2026 is a one-day,  in-person commu
 sessionizeApiId: "3u5z80ci"
 registrationCap: 200
 chapterSlug: "perth"
+latitude: -31.9544714
+longitude: 115.8577352
 ---

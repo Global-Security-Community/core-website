@@ -17,6 +17,29 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Geocode event location
+        run: |
+          # Look up coordinates from the event location using OpenStreetMap Nominatim
+          QUERY=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "${LOCATION}")
+          RESPONSE=$(curl -s -H "User-Agent: GSC-EventGenerator/1.0" \
+            "https://nominatim.openstreetmap.org/search?q=${QUERY}&format=json&limit=1")
+
+          LATITUDE=$(echo "$RESPONSE" | python3 -c "import sys,json; r=json.load(sys.stdin); print(r[0]['lat'] if r else '')" 2>/dev/null || echo "")
+          LONGITUDE=$(echo "$RESPONSE" | python3 -c "import sys,json; r=json.load(sys.stdin); print(r[0]['lon'] if r else '')" 2>/dev/null || echo "")
+
+          if [ -z "$LATITUDE" ] || [ -z "$LONGITUDE" ]; then
+            echo "::warning::Could not geocode '${LOCATION}' — coordinates will need to be added manually"
+            LATITUDE=""
+            LONGITUDE=""
+          else
+            echo "Geocoded '${LOCATION}' → ${LATITUDE}, ${LONGITUDE}"
+          fi
+
+          echo "LATITUDE=${LATITUDE}" >> "$GITHUB_ENV"
+          echo "LONGITUDE=${LONGITUDE}" >> "$GITHUB_ENV"
+        env:
+          LOCATION: ${{ github.event.client_payload.event_location }}
+
       - name: Generate event page
         env:
           SLUG: ${{ github.event.client_payload.event_slug }}
@@ -66,6 +89,10 @@ jobs:
             printf 'sessionizeApiId: "%s"\n' "${SESSIONIZE_ID}"
             printf 'registrationCap: %s\n' "${REG_CAP:-0}"
             printf 'chapterSlug: "%s"\n' "${CHAPTER_SLUG}"
+            if [ -n "${LATITUDE}" ] && [ -n "${LONGITUDE}" ]; then
+              printf 'latitude: %s\n' "${LATITUDE}"
+              printf 'longitude: %s\n' "${LONGITUDE}"
+            fi
             echo "---"
           } >> "${TARGET_DIR}/index.md"
 

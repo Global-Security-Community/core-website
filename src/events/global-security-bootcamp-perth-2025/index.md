@@ -9,4 +9,6 @@ sessionizeApiId: "2arq0ql8"
 registrationCap: 200
 attendeeCount: 200
 chapterSlug: "perth"
+latitude: -31.9544714
+longitude: 115.8577352
 ---

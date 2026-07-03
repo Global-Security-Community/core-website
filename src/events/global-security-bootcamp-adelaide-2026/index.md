@@ -8,4 +8,6 @@ description: "Join us for Global Security Bootcamp Adelaide 2026,  a free,  full
 sessionizeApiId: "siequu91"
 registrationCap: 100
 chapterSlug: "adelaide"
+latitude: -34.9257481
+longitude: 138.6050915
 ---
