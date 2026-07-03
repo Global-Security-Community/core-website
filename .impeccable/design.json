@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-03T13:00:00.000Z",
+  "title": "Design System: Global Security Community",
+  "extensions": {
+    "colorMeta": {
+      "primary-teal": { "role": "primary", "displayName": "Commons Teal", "canonical": "#0e8c84", "tonalRamp": ["#042e2b", "#065450", "#0a7a75", "#0e8c84", "#3aada6", "#6fc9c4", "#a8e2df", "#d9f3f2"] },
+      "primary-navy": { "role": "primary", "displayName": "Authority Navy", "canonical": "#001f3f", "tonalRamp": ["#000a14", "#001529", "#001f3f", "#0a3a6b", "#1a5a96", "#3a7ab6", "#6a9fd6", "#a8c8e8"] },
+      "accent-orange": { "role": "secondary", "displayName": "Alert Orange", "canonical": "#c47600", "tonalRamp": ["#3d2500", "#6b4200", "#9a5d00", "#c47600", "#e09030", "#f0b060", "#f8d090", "#fceccc"] },
+      "surface": { "role": "neutral", "displayName": "Surface White", "canonical": "#ffffff", "tonalRamp": ["#333333", "#666666", "#999999", "#bbbbbb", "#dddddd", "#eeeeee", "#f5f5f5", "#ffffff"] },
+      "text": { "role": "neutral", "displayName": "Ink", "canonical": "#333333", "tonalRamp": ["#111111", "#222222", "#333333", "#555555", "#777777", "#999999", "#bbbbbb", "#dddddd"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero headlines only. White on navy." },
+      "headline": { "displayName": "Headline", "purpose": "Page h1 headings. Navy." },
+      "title": { "displayName": "Title", "purpose": "Section h2 headings. Navy." },
+      "body": { "displayName": "Body", "purpose": "Prose and descriptions. Ink on white." },
+      "label": { "displayName": "Label", "purpose": "Metadata, kickers, categories. Uppercase tracked." }
+    },
+    "shadows": [
+      { "name": "sm", "value": "0 2px 8px rgba(0,0,0,0.08)", "purpose": "Cards and containers at rest." },
+      { "name": "md", "value": "0 4px 12px rgba(0,0,0,0.1)", "purpose": "Hover state for buttons and interactive cards." },
+      { "name": "lg", "value": "0 8px 24px rgba(0,0,0,0.15)", "purpose": "Chapter cards hover and modals." },
+      { "name": "card-hover", "value": "0 6px 16px rgba(0,0,0,0.12)", "purpose": "Linked card hover state." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "ease", "purpose": "Default easing for color/shadow transitions (0.2s)." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "768px" },
+      { "name": "tablet", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main CTA button — teal with white text, lifts on hover.",
+      "html": "<button class=\"ds-btn-primary\">View Events</button>",
+      "css": ".ds-btn-primary { display: inline-block; padding: 0.75rem 1.5rem; background-color: #0e8c84; color: #fff; border: 1px solid #0e8c84; border-radius: 8px; font-weight: 600; font-size: 1rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; cursor: pointer; transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; } .ds-btn-primary:hover { background-color: #001f3f; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); } .ds-btn-primary:focus-visible { outline: 2px solid #0e8c84; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outline button — teal border and text, transparent fill.",
+      "html": "<button class=\"ds-btn-secondary\">Find Your Chapter</button>",
+      "css": ".ds-btn-secondary { display: inline-block; padding: 0.75rem 1.5rem; background-color: transparent; color: #0e8c84; border: 1px solid #0e8c84; border-radius: 8px; font-weight: 600; font-size: 1rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; cursor: pointer; transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; } .ds-btn-secondary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); } .ds-btn-secondary:focus-visible { outline: 2px solid #0e8c84; outline-offset: 2px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Standard content card — white surface, subtle border, lifts on hover.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">London Chapter</h3><p class=\"ds-card-text\">Monthly meetups for security professionals in the London area.</p></div>",
+      "css": ".ds-card { padding: 2rem; background: #fff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: box-shadow 0.2s ease, transform 0.2s ease; } .ds-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); } .ds-card-title { margin: 0 0 0.5rem; color: #001f3f; font-size: 1.25rem; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; } .ds-card-text { margin: 0; color: #666; font-size: 1rem; line-height: 1.7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }"
+    },
+    {
+      "name": "Navigation Link",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Top navigation link — ink text, teal on hover/active with bottom border.",
+      "html": "<a href=\"#\" class=\"ds-nav-link\">Events</a><a href=\"#\" class=\"ds-nav-link ds-nav-link--active\">Chapters</a>",
+      "css": ".ds-nav-link { color: #333; text-decoration: none; font-weight: 500; font-size: 1rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 0.25rem 0; transition: color 0.2s ease; } .ds-nav-link:hover { color: #0e8c84; } .ds-nav-link--active { color: #0e8c84; border-bottom: 2px solid #0e8c84; padding-bottom: 2px; }"
+    },
+    {
+      "name": "Label/Kicker",
+      "kind": "custom",
+      "refersTo": "label",
+      "description": "Uppercase tracked label for metadata and section kickers.",
+      "html": "<span class=\"ds-label\">Upcoming Event</span>",
+      "css": ".ds-label { display: inline-block; margin: 0 0 0.5rem; color: #0e8c84; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; line-height: 1.3; text-transform: uppercase; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Secure Commons",
+    "overview": "An open, trusted, community-owned space. The design communicates professional credibility without gatekeeping — a town square for cybersecurity defenders, not a locked vault. The visual language is clean, confident, and grounded: navy anchors authority, teal signals openness and action, and generous white space gives content room to breathe.",
+    "keyCharacteristics": [
+      "Clean white surfaces with restrained teal accent (≤15% of surface area)",
+      "Deep navy as the authority/heading color",
+      "System font stack for instant loading and platform familiarity",
+      "Responsive card grids for events and chapters",
+      "Subtle hover lifts and shadow transitions for interactivity",
+      "Professional without being corporate"
+    ],
+    "rules": [
+      { "name": "The Teal Restraint Rule", "body": "Teal appears as interactive elements (links, buttons, active borders) and h3 headings only. It never fills large surfaces. Its power comes from restraint.", "section": "colors" },
+      { "name": "The Weight-Over-Style Rule", "body": "Hierarchy is achieved through weight (400→600→700) and scale, never through font-family changes. One family, one voice.", "section": "typography" },
+      { "name": "The Lift-On-Intent Rule", "body": "Shadows only appear as a response to user intent (hover, focus). No static elevated surfaces — everything starts flat and rises when reached for.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use teal exclusively for interactive elements and h3 headings — its power is in restraint.",
+      "Do pair shadow lifts with translateY transforms for tactile hover feedback.",
+      "Do use the navy→deep navy gradient for hero and footer surfaces only.",
+      "Do maintain ≥4.5:1 contrast ratio for all body text.",
+      "Do use repeat(auto-fit, minmax(300px, 1fr)) for responsive grids.",
+      "Do use the label pattern (uppercase, tracked, 700 weight, xs size) sparingly for metadata."
+    ],
+    "donts": [
+      "Don't use dark mode with terminal aesthetics, green-on-black, or hacker iconography.",
+      "Don't mimic Microsoft's Fluent design language or Azure portal patterns.",
+      "Don't use gradient text or background-clip effects.",
+      "Don't add side-stripe borders (border-left > 1px as accent).",
+      "Don't use teal as a large surface fill.",
+      "Don't introduce a second typeface.",
+      "Don't use arbitrary z-index values."
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "files": ["_site/**/*.html"],
+  "insertBefore": "</head>",
+  "commentSyntax": "html",
+  "cspChecked": true
+}
