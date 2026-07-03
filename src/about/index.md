@@ -36,17 +36,18 @@ description: "Learn about the Global Security Community — who we are, why we e
 
   <section class="about-section">
     <h2>Our Story</h2>
-    <p>Founded in 2025 by <strong>George Coldham</strong> and <strong>Anthony Porter</strong> in Perth, Australia, the Global Security Community began with a simple idea: bring security professionals together to learn from each other.</p>
+    <p>The Global Security Community began in Perth, Australia in 2025 with a simple idea: bring security professionals together to learn from each other.</p>
     <p>Our first event — the Global Security Bootcamp Perth 2025 — proved there was real appetite for practitioner-led, community-driven security education. From that single event, we've grown to <strong>8 chapters across 5 countries</strong>, with volunteer leads running events in their own cities.</p>
+    <p><em>A fuller origin story is coming soon — one that properly acknowledges everyone who was instrumental in getting this community off the ground.</em></p>
   </section>
 
   <section class="about-section about-founders">
-    <h2>Founders</h2>
+    <h2>Community Organisers</h2>
     <div class="founders-grid">
       <div class="founder-card">
         <img src="https://www.gravatar.com/avatar/7c2a2c2ac0adbd8a9ea55753a2ad4093?s=120&d=mp" alt="George Coldham" class="founder-avatar">
         <strong>George Coldham</strong>
-        <span>Co-founder & Perth Chapter Lead</span>
+        <span>Community Organiser & Perth Chapter Lead</span>
         <div class="founder-links">
           <a href="https://github.com/anothergeorgecoldham/" target="_blank" rel="noopener noreferrer" aria-label="George's GitHub">GitHub</a>
           <a href="https://www.linkedin.com/in/georgecoldham/" target="_blank" rel="noopener noreferrer" aria-label="George's LinkedIn">LinkedIn</a>
@@ -55,7 +56,7 @@ description: "Learn about the Global Security Community — who we are, why we e
       <div class="founder-card">
         <img src="https://www.gravatar.com/avatar/0372ec0437fd2099f34b68da28660323?s=120&d=mp" alt="Anthony Porter" class="founder-avatar">
         <strong>Anthony Porter</strong>
-        <span>Co-founder & Perth Chapter Lead</span>
+        <span>Community Organiser & Perth Chapter Lead</span>
         <div class="founder-links">
           <a href="https://github.com/AntoPorter" target="_blank" rel="noopener noreferrer" aria-label="Anthony's GitHub">GitHub</a>
           <a href="https://www.linkedin.com/in/anthonyantoporter/" target="_blank" rel="noopener noreferrer" aria-label="Anthony's LinkedIn">LinkedIn</a>
