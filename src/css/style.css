@@ -613,6 +613,15 @@ a.card-link h3 {
   border: none;
 }
 
+.event-map {
+  height: 320px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-subtle);
+  margin: var(--space-lg) 0 var(--space-2xl);
+  box-shadow: var(--shadow-sm);
+  z-index: 0;
+}
+
 .chapter-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -979,6 +988,10 @@ button:not(.nav-toggle):hover,
 @media (max-width: 768px) {
   .chapter-map {
     height: 300px;
+  }
+
+  .event-map {
+    height: 260px;
   }
 
   .chapter-grid {
@@ -1568,6 +1581,105 @@ thead tr:hover {
 .agenda-session-speakers {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
+}
+
+.agenda-session--clickable {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  margin: -0.4rem;
+  padding: 0.4rem;
+  transition: background-color 0.15s ease;
+}
+
+.agenda-session--clickable:hover,
+.agenda-session--clickable:focus-visible {
+  background: var(--color-surface-tint);
+  outline: none;
+}
+
+.agenda-session--clickable .agenda-session-title::after {
+  content: ' \2192';
+  color: var(--color-primary-teal);
+  font-weight: 400;
+}
+
+/* ─── Session Detail Modal ─── */
+
+.session-modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 23, 44, 0.6);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+}
+
+.session-modal-backdrop.is-open {
+  display: flex;
+}
+
+.session-modal {
+  position: relative;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-width: 640px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: var(--space-2xl) var(--space-xl) var(--space-xl);
+}
+
+.session-modal-close {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  background: none;
+  border: none;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+}
+
+.session-modal-close:hover,
+.session-modal-close:focus-visible {
+  color: var(--color-primary-navy);
+}
+
+.session-modal-body h3 {
+  color: var(--color-primary-navy);
+  margin-top: 0;
+  padding-right: var(--space-xl);
+}
+
+.session-modal-meta {
+  color: var(--color-primary-teal);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  margin-bottom: 0.25rem;
+}
+
+.session-modal-speakers {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-md);
+}
+
+.session-modal-description p {
+  margin: 0 0 var(--space-md);
+  line-height: 1.6;
+}
+
+.session-modal-description p:last-child {
+  margin-bottom: 0;
+}
+
+body.modal-open {
+  overflow: hidden;
 }
 
 @media (max-width: 600px) {

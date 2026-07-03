@@ -238,12 +238,17 @@
     }
   }
 
+  // Lookup of session id -> session object, populated while rendering the agenda,
+  // so the modal can show full details without a second fetch.
+  var sessionsById = {};
+
   function renderAgenda(data) {
             if (!data || data.length === 0) {
               agendaEl.innerHTML = '<p>Agenda coming soon.</p>';
               return;
             }
 
+            sessionsById = {};
             var html = '';
             data.forEach(function(day) {
               var slots = day.timeSlots || [];
@@ -308,17 +313,117 @@
             });
 
             agendaEl.innerHTML = html;
+
+            // Add click and keyboard handlers to open the session detail modal
+            var sessionEls = agendaEl.querySelectorAll('.agenda-session[data-session-id]');
+            for (var i = 0; i < sessionEls.length; i++) {
+              sessionEls[i].addEventListener('click', onSessionActivate);
+              sessionEls[i].addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSessionActivate.call(this);
+                }
+              });
+            }
+  }
+
+  function onSessionActivate() {
+    var id = this.getAttribute('data-session-id');
+    var s = sessionsById[id];
+    if (s) openSessionModal(s);
   }
 
   function renderSession(s) {
     if (!s) return '';
-    var h = '<div class="agenda-session">';
+    var hasDetail = !!(s.description || (s.speakers && s.speakers.length));
+    if (s.id != null) sessionsById[s.id] = s;
+    var attrs = hasDetail && s.id != null
+      ? ' tabindex="0" role="button" data-session-id="' + GSC.esc(String(s.id)) + '" aria-label="' + GSC.esc(s.title) + ' — click for session details"'
+      : '';
+    var h = '<div class="agenda-session' + (hasDetail ? ' agenda-session--clickable' : '') + '"' + attrs + '>';
     h += '<div class="agenda-session-title">' + GSC.esc(s.title) + '</div>';
     if (s.speakers && s.speakers.length) {
       h += '<div class="agenda-session-speakers">' + s.speakers.map(function(sp) { return GSC.esc(sp.name); }).join(', ') + '</div>';
     }
     h += '</div>';
     return h;
+  }
+
+  // ─── Session Detail Modal ───
+  var sessionModal = null;
+  var sessionModalTrigger = null;
+
+  function openSessionModal(s) {
+    if (!sessionModal) {
+      sessionModal = document.createElement('div');
+      sessionModal.className = 'session-modal-backdrop';
+      sessionModal.innerHTML =
+        '<div class="session-modal" role="dialog" aria-modal="true" aria-labelledby="session-modal-title">' +
+          '<button type="button" class="session-modal-close" aria-label="Close">&times;</button>' +
+          '<div class="session-modal-body"></div>' +
+        '</div>';
+      document.body.appendChild(sessionModal);
+
+      sessionModal.addEventListener('click', function(e) {
+        if (e.target === sessionModal) closeSessionModal();
+      });
+      sessionModal.querySelector('.session-modal-close').addEventListener('click', closeSessionModal);
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && sessionModal.classList.contains('is-open')) closeSessionModal();
+      });
+    }
+
+    sessionModalTrigger = document.activeElement;
+
+    var body = sessionModal.querySelector('.session-modal-body');
+    var html = '<h3 id="session-modal-title">' + GSC.esc(s.title) + '</h3>';
+
+    var timeRange = formatTimeRange(s.startsAt, s.endsAt);
+    var meta = [];
+    if (timeRange) meta.push(timeRange);
+    if (s.room) meta.push(s.room);
+    if (meta.length) html += '<p class="session-modal-meta">' + meta.map(GSC.esc).join(' &middot; ') + '</p>';
+
+    if (s.speakers && s.speakers.length) {
+      html += '<p class="session-modal-speakers">' + s.speakers.map(function(sp) { return GSC.esc(sp.name); }).join(', ') + '</p>';
+    }
+
+    if (s.description) {
+      html += '<div class="session-modal-description">' + formatMultiline(s.description) + '</div>';
+    }
+
+    body.innerHTML = html;
+    sessionModal.classList.add('is-open');
+    document.body.classList.add('modal-open');
+    sessionModal.querySelector('.session-modal-close').focus();
+  }
+
+  function closeSessionModal() {
+    if (!sessionModal) return;
+    sessionModal.classList.remove('is-open');
+    document.body.classList.remove('modal-open');
+    if (sessionModalTrigger && typeof sessionModalTrigger.focus === 'function') sessionModalTrigger.focus();
+  }
+
+  // Escape and preserve line breaks / paragraph gaps in plain-text descriptions
+  function formatMultiline(text) {
+    return text.split(/\r?\n\r?\n/).map(function(para) {
+      return '<p>' + para.split(/\r?\n/).map(GSC.esc).join('<br>') + '</p>';
+    }).join('');
+  }
+
+  function formatTimeRange(startsAt, endsAt) {
+    if (!startsAt) return '';
+    var start = formatIsoTime(startsAt);
+    var end = endsAt ? formatIsoTime(endsAt) : '';
+    return end ? start + ' – ' + end : start;
+  }
+
+  function formatIsoTime(iso) {
+    // iso is "YYYY-MM-DDTHH:MM:SS"
+    var timePart = iso.split('T')[1];
+    if (!timePart) return '';
+    return formatTime(timePart, '');
   }
 
   function formatTime(slotStart, dayDate) {
