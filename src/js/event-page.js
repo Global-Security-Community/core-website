@@ -95,6 +95,14 @@
               : GSC.esc(data.description);
           }
         }
+        // Refresh location text from the API (dashboard edits update Table
+        // Storage immediately; the SSR frontmatter only updates on next deploy)
+        if (data.location) {
+          var cardLocEl = document.getElementById('location-card-text');
+          if (cardLocEl) cardLocEl.innerHTML = GSC.formatLocation(data.location);
+          var fullLocEl = document.getElementById('location-full-text');
+          if (fullLocEl) fullLocEl.innerHTML = GSC.formatLocation(data.location);
+        }
         renderRecognition(data.volunteers);
         // Load community partners
         if (data.id) { loadPartners(data.id); }
