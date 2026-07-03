@@ -408,7 +408,7 @@ body {
   justify-content: center;
   gap: var(--space-3xl);
   padding: var(--space-2xl) var(--space-xl);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background:
     radial-gradient(circle at 30% 50%, var(--color-hero-glow), transparent 50%),
     linear-gradient(135deg, var(--color-primary-navy-deep) 0%, var(--color-primary-navy) 100%);
@@ -465,6 +465,13 @@ body {
     radial-gradient(circle at 95% 0%, var(--color-teal-tint), transparent 34%),
     linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-muted) 100%);
   box-shadow: var(--shadow-sm);
+}
+
+/* Stats + feature panel joined as one visual block */
+.home-section:has(.stats-bar) + .home-section.home-feature {
+  margin-top: 0;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  border-top: none;
 }
 
 .home-feature h2 {
