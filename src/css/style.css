@@ -603,6 +603,8 @@ body {
 .about-section {
   margin-top: var(--space-3xl);
   max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .about-section h2 {
