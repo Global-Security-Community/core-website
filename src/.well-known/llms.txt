@@ -1,0 +1,20 @@
+# Global Security Community
+
+> Connecting cybersecurity professionals worldwide through local chapters, events, and knowledge sharing.
+
+The Global Security Community (GSC) is a nonprofit platform that brings together cybersecurity professionals through local chapters and in-person events. We foster knowledge sharing, networking, and professional development across the global security community.
+
+## Key Pages
+
+- [Home](https://globalsecurity.community/): Upcoming events and community overview
+- [About](https://globalsecurity.community/about/): Mission, values, and team information
+- [Chapters](https://globalsecurity.community/chapters/): Local community chapters worldwide
+- [Events](https://globalsecurity.community/events/): Community events and meetups
+- [Contact](https://globalsecurity.community/contact/): Get in touch with the community
+- [Privacy Policy](https://globalsecurity.community/privacy/): How we handle your data
+- [Terms of Service](https://globalsecurity.community/terms/): Usage terms and conditions
+
+## Community
+
+- Website: https://globalsecurity.community
+- GitHub: https://github.com/Global-Security-Community
