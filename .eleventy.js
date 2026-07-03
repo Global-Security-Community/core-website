@@ -75,6 +75,18 @@ module.exports = function(eleventyConfig) {
     return text;
   });
 
+  // Truncate location to venue name for info cards (first line or first comma segment)
+  eleventyConfig.addFilter("truncateLocation", function(value) {
+    if (!value) return '';
+    var text = String(value);
+    // If multi-line (from API), take first line
+    if (text.includes('\n')) return text.split('\n')[0].trim();
+    // If comma-separated, take first segment (venue name)
+    var parts = text.split(',');
+    if (parts.length > 2) return parts[0].trim();
+    return text;
+  });
+
   // Cache-busting version string (changes each build)
   eleventyConfig.addGlobalData("cacheBust", Date.now().toString(36));
 

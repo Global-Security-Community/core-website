@@ -179,7 +179,7 @@
           html += '</div></div>';
         });
         content.innerHTML = html;
-        section.style.display = 'block';
+        section.classList.remove('is-hidden');
       })
       .catch(function() {});
   }
@@ -203,7 +203,7 @@
             fetchWithTimeout('https://sessionize.com/api/v2/' + sessionizeId + '/view/GridSmart', FETCH_TIMEOUT)
               .then(function(r) { return r.json(); })
               .then(function(data) { renderAgenda(data); })
-              .catch(function() { agendaEl.innerHTML = '<p class="load-error">Could not load agenda. <button type="button" class="btn-retry" onclick="location.reload()">Retry</button></p>'; });
+              .catch(function() { showLoadError(agendaEl, 'Could not load agenda.'); });
           });
       }
 
@@ -216,7 +216,7 @@
             fetchWithTimeout('https://sessionize.com/api/v2/' + sessionizeId + '/view/Speakers', FETCH_TIMEOUT)
               .then(function(r) { return r.json(); })
               .then(function(speakers) { renderSpeakers(speakers); })
-              .catch(function() { speakersEl.innerHTML = '<p class="load-error">Could not load speakers. <button type="button" class="btn-retry" onclick="location.reload()">Retry</button></p>'; });
+              .catch(function() { showLoadError(speakersEl, 'Could not load speakers.'); });
           });
       }
     } else {
@@ -541,5 +541,48 @@
 
   function escapeIcs(str) {
     return (str || '').replace(/[\\;,]/g, function(c) { return '\\' + c; }).replace(/\n/g, '\\n');
+  }
+
+  // ─── Load Error with Retry (CSP-safe, no inline onclick) ───
+  function showLoadError(el, message) {
+    el.innerHTML = '<p class="load-error">' + GSC.esc(message) + ' <button type="button" class="btn-retry">Retry</button></p>';
+    el.querySelector('.btn-retry').addEventListener('click', function() {
+      location.reload();
+    });
+  }
+
+  // ─── Share Button (Web Share API with copy-link fallback) ───
+  var shareBtn = document.getElementById('share-btn');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', function() {
+      var title = document.querySelector('h1') ? document.querySelector('h1').textContent.trim() : document.title;
+      var url = window.location.href;
+
+      if (navigator.share) {
+        navigator.share({ title: title, url: url }).catch(function() {});
+      } else {
+        // Fallback: copy URL to clipboard
+        navigator.clipboard.writeText(url).then(function() {
+          var textEl = shareBtn.querySelector('.btn-share-text');
+          if (textEl) {
+            textEl.textContent = 'Copied!';
+            setTimeout(function() { textEl.textContent = 'Share'; }, 2000);
+          }
+        }).catch(function() {
+          // Final fallback for older browsers
+          var input = document.createElement('input');
+          input.value = url;
+          document.body.appendChild(input);
+          input.select();
+          document.execCommand('copy');
+          document.body.removeChild(input);
+          var textEl = shareBtn.querySelector('.btn-share-text');
+          if (textEl) {
+            textEl.textContent = 'Copied!';
+            setTimeout(function() { textEl.textContent = 'Share'; }, 2000);
+          }
+        });
+      }
+    });
   }
 })();
