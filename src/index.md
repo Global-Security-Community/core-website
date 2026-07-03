@@ -40,7 +40,9 @@ templateEngineOverride: njk
   </div>
 
   <section class="home-ethos">
-    <p>Chapter-based. Volunteer-run. Driven by a shared passion for building stronger security practices together.</p>
+    <h2>Chapter-based. Volunteer-run. Driven by passion.</h2>
+    <p>Every chapter is led by local volunteers who organise events, build connections, and share knowledge — because stronger security starts with people helping people. Whether you're looking to learn, teach, or simply connect with like-minded professionals, there's a place for you here.</p>
+    <a href="/chapters/" class="home-ethos-cta">Find your community →</a>
   </section>
 
   <section class="home-section" aria-labelledby="home-events-heading">
@@ -134,29 +136,26 @@ templateEngineOverride: njk
         <p class="home-section-intro">Choose the level of participation that fits where you are now, then grow with the community.</p>
       </div>
     </div>
-    <ol class="involvement-steps">
-      <li class="involvement-step">
-        <a href="/events/" class="involvement-step-link">
-          <span class="involvement-step-label">Attend</span>
-          <strong>Join an Event</strong>
-          <span class="involvement-step-desc">Meet practitioners, learn from real-world experience, and build your local security network.</span>
-        </a>
-      </li>
-      <li class="involvement-step">
-        <a href="https://discord.gg/qVRPXJuEYb" class="involvement-step-link" target="_blank" rel="noopener noreferrer">
-          <span class="involvement-step-label">Contribute</span>
-          <strong>Speak or Volunteer</strong>
-          <span class="involvement-step-desc">Join the Discord community to share a talk idea, help run events, or contribute practical security knowledge.</span>
-        </a>
-      </li>
-      <li class="involvement-step">
-        <a href="/chapters/#start-chapter" class="involvement-step-link">
-          <span class="involvement-step-label">Lead</span>
-          <strong>Find or Start a Chapter</strong>
-          <span class="involvement-step-desc">Check whether your region already has a chapter, then apply to start one if there is not a local community yet.</span>
-        </a>
-      </li>
-    </ol>
+    <div class="involvement-grid">
+      <a href="/events/" class="involvement-card">
+        <span class="involvement-card-number">1</span>
+        <span class="involvement-card-label">Attend</span>
+        <strong>Join an Event</strong>
+        <span class="involvement-card-desc">Meet practitioners, learn from real-world experience, and build your local security network.</span>
+      </a>
+      <a href="https://discord.gg/qVRPXJuEYb" class="involvement-card" target="_blank" rel="noopener noreferrer">
+        <span class="involvement-card-number">2</span>
+        <span class="involvement-card-label">Contribute</span>
+        <strong>Speak or Volunteer</strong>
+        <span class="involvement-card-desc">Join the Discord community to share a talk idea, help run events, or contribute practical security knowledge.</span>
+      </a>
+      <a href="/chapters/#start-chapter" class="involvement-card">
+        <span class="involvement-card-number">3</span>
+        <span class="involvement-card-label">Lead</span>
+        <strong>Find or Start a Chapter</strong>
+        <span class="involvement-card-desc">Check whether your region already has a chapter, then apply to start one if there is not a local community yet.</span>
+      </a>
+    </div>
   </section>
 
   <script src="/js/scroll-reveal.js?v={{ cacheBust }}"></script>
