@@ -1,4 +1,20 @@
 (function() {
+  var FETCH_TIMEOUT = 10000; // 10s timeout for API calls
+
+  // Timeout wrapper for fetch — rejects after ms if not resolved
+  function fetchWithTimeout(url, ms) {
+    return new Promise(function(resolve, reject) {
+      var timer = setTimeout(function() { reject(new Error('timeout')); }, ms);
+      fetch(url).then(function(r) {
+        clearTimeout(timer);
+        resolve(r);
+      }).catch(function(e) {
+        clearTimeout(timer);
+        reject(e);
+      });
+    });
+  }
+
   // Get event slug from the page's data attribute or URL
   var slug = document.querySelector('[data-event-slug]');
   var eventSlug = slug ? slug.getAttribute('data-event-slug') : '';
@@ -28,9 +44,9 @@
       .catch(function() {});
   }
 
-  // Fetch registration count
+  // Fetch event data with timeout
   if (eventSlug) {
-    fetch('/api/getEvent?slug=' + encodeURIComponent(eventSlug))
+    fetchWithTimeout('/api/getEvent?slug=' + encodeURIComponent(eventSlug), FETCH_TIMEOUT)
       .then(function(r) { return r.json(); })
       .then(function(data) {
         var el = document.getElementById('reg-count');
@@ -39,27 +55,35 @@
         // Use front-matter attendeeCount override for legacy events (pre-platform)
         var override = slug ? slug.getAttribute('data-attendee-count') : null;
         if (override) count = parseInt(override);
+
+        // Show registration status with capacity context
         if (el && data.status === 'completed') {
           el.textContent = count + ' attended';
         } else if (el && cap > 0) {
-          el.textContent = count + ' / ' + cap + ' registered';
+          var spotsLeft = cap - count;
+          if (spotsLeft <= 0) {
+            el.innerHTML = '<span class="reg-full">' + count + ' / ' + cap + '</span> <span class="reg-status reg-status--full">Full</span>';
+          } else if (spotsLeft <= Math.ceil(cap * 0.15)) {
+            el.innerHTML = count + ' / ' + cap + ' <span class="reg-status reg-status--low">' + spotsLeft + ' spot' + (spotsLeft === 1 ? '' : 's') + ' left</span>';
+          } else {
+            el.textContent = count + ' / ' + cap + ' registered';
+          }
         } else if (el) {
           el.textContent = count + ' registered';
         }
+
         if (data.status === 'closed' || data.status === 'completed') {
           var btn = document.getElementById('register-btn');
           if (btn) {
             btn.textContent = 'Registration Closed';
-            btn.style.backgroundColor = '#767676';
-            btn.style.pointerEvents = 'none';
+            btn.classList.add('btn-cta--disabled');
           }
         }
         if (data.registrationCap > 0 && data.registrationCount >= data.registrationCap) {
           var btn = document.getElementById('register-btn');
           if (btn) {
             btn.textContent = 'Event Full';
-            btn.style.backgroundColor = '#767676';
-            btn.style.pointerEvents = 'none';
+            btn.classList.add('btn-cta--disabled');
           }
         }
         // Render rich HTML description from API (overrides SSR plain text)
@@ -83,9 +107,13 @@
         // Load community partners
         if (data.id) { loadPartners(data.id); }
       })
-      .catch(function() {
+      .catch(function(err) {
         var el = document.getElementById('reg-count');
-        if (el) el.textContent = '—';
+        if (el) {
+          el.textContent = err.message === 'timeout'
+            ? 'Unable to load'
+            : '—';
+        }
       });
   }
 
@@ -159,7 +187,7 @@
           html += '</div></div>';
         });
         content.innerHTML = html;
-        section.style.display = 'block';
+        section.classList.remove('is-hidden');
       })
       .catch(function() {});
   }
@@ -174,31 +202,35 @@
     if (metaEl) sessionizeId = metaEl.getAttribute('data-sessionize-id');
 
     if (sessionizeId) {
-      // Agenda: try cache then live
+      // Agenda: try cache then live, with timeout
       if (agendaEl) {
-        fetch('/api/getSessionizeData?sessionizeId=' + encodeURIComponent(sessionizeId) + '&type=agenda')
+        fetchWithTimeout('/api/getSessionizeData?sessionizeId=' + encodeURIComponent(sessionizeId) + '&type=agenda', FETCH_TIMEOUT)
           .then(function(r) { return r.ok ? r.json() : Promise.reject('no cache'); })
           .then(function(res) { renderAgenda(res.data); })
           .catch(function() {
-            fetch('https://sessionize.com/api/v2/' + sessionizeId + '/view/GridSmart')
+            fetchWithTimeout('https://sessionize.com/api/v2/' + sessionizeId + '/view/GridSmart', FETCH_TIMEOUT)
               .then(function(r) { return r.json(); })
               .then(function(data) { renderAgenda(data); })
-              .catch(function() { agendaEl.innerHTML = '<p>Could not load agenda.</p>'; });
+              .catch(function() { showLoadError(agendaEl, 'Could not load agenda.'); });
           });
       }
 
-      // Speakers: try cache then live
+      // Speakers: try cache then live, with timeout
       if (speakersEl) {
-        fetch('/api/getSessionizeData?sessionizeId=' + encodeURIComponent(sessionizeId) + '&type=speakers')
+        fetchWithTimeout('/api/getSessionizeData?sessionizeId=' + encodeURIComponent(sessionizeId) + '&type=speakers', FETCH_TIMEOUT)
           .then(function(r) { return r.ok ? r.json() : Promise.reject('no cache'); })
           .then(function(res) { renderSpeakers(res.data); })
           .catch(function() {
-            fetch('https://sessionize.com/api/v2/' + sessionizeId + '/view/Speakers')
+            fetchWithTimeout('https://sessionize.com/api/v2/' + sessionizeId + '/view/Speakers', FETCH_TIMEOUT)
               .then(function(r) { return r.json(); })
               .then(function(speakers) { renderSpeakers(speakers); })
-              .catch(function() { speakersEl.innerHTML = '<p>Could not load speakers.</p>'; });
+              .catch(function() { showLoadError(speakersEl, 'Could not load speakers.'); });
           });
       }
+    } else {
+      // No sessionize ID — clear skeleton placeholders
+      if (agendaEl) agendaEl.innerHTML = '<p>Agenda coming soon.</p>';
+      if (speakersEl) speakersEl.innerHTML = '<p>Speakers to be announced.</p>';
     }
   }
 
@@ -442,5 +474,123 @@
     var ampm = h >= 12 ? 'PM' : 'AM';
     var h12 = h % 12 || 12;
     return h12 + ':' + m + ' ' + ampm;
+  }
+
+  // ─── Add to Calendar (.ics download) ───
+  var calBtn = document.getElementById('add-to-calendar');
+  if (calBtn && slug) {
+    var eventTitle = document.querySelector('h1') ? document.querySelector('h1').textContent.trim() : '';
+    var eventDate = slug.getAttribute('data-event-slug') ? '' : ''; // read from rendered date
+    // Extract date from the info card (already formatted by humanDate filter)
+    var dateCell = calBtn.closest('.card');
+    var dateText = dateCell ? dateCell.querySelector('.text-semibold').textContent.trim() : '';
+    // Extract location from the second info card
+    var locationCards = document.querySelectorAll('.cards--info .card--centered');
+    var eventLocation = locationCards.length > 1 ? locationCards[1].querySelector('.text-semibold').textContent.trim() : '';
+
+    calBtn.addEventListener('click', function() {
+      // Parse the human-readable date back to YYYYMMDD
+      var icsDate = parseHumanDate(dateText);
+      if (!icsDate) return;
+
+      // Build .ics content (all-day event)
+      var nextDay = incrementDate(icsDate);
+      var ics = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Global Security Community//Event//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        'BEGIN:VEVENT',
+        'DTSTART;VALUE=DATE:' + icsDate,
+        'DTEND;VALUE=DATE:' + nextDay,
+        'SUMMARY:' + escapeIcs(eventTitle),
+        'LOCATION:' + escapeIcs(eventLocation),
+        'URL:' + window.location.href,
+        'UID:' + eventSlug + '@globalsecurity.community',
+        'END:VEVENT',
+        'END:VCALENDAR'
+      ].join('\r\n');
+
+      var blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = (eventSlug || 'event') + '.ics';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    });
+  }
+
+  function parseHumanDate(str) {
+    // Parse "1 August 2026" → "20260801"
+    var months = { january:'01', february:'02', march:'03', april:'04', may:'05', june:'06',
+                   july:'07', august:'08', september:'09', october:'10', november:'11', december:'12' };
+    var parts = str.split(' ');
+    if (parts.length < 3) return null;
+    var day = parts[0].padStart(2, '0');
+    var month = months[parts[1].toLowerCase()];
+    var year = parts[2];
+    if (!month) return null;
+    return year + month + day;
+  }
+
+  function incrementDate(yyyymmdd) {
+    var y = parseInt(yyyymmdd.slice(0, 4), 10);
+    var m = parseInt(yyyymmdd.slice(4, 6), 10) - 1;
+    var d = parseInt(yyyymmdd.slice(6, 8), 10);
+    var date = new Date(y, m, d + 1);
+    var ny = date.getFullYear().toString();
+    var nm = (date.getMonth() + 1).toString().padStart(2, '0');
+    var nd = date.getDate().toString().padStart(2, '0');
+    return ny + nm + nd;
+  }
+
+  function escapeIcs(str) {
+    return (str || '').replace(/[\\;,]/g, function(c) { return '\\' + c; }).replace(/\n/g, '\\n');
+  }
+
+  // ─── Load Error with Retry (CSP-safe, no inline onclick) ───
+  function showLoadError(el, message) {
+    el.innerHTML = '<p class="load-error">' + GSC.esc(message) + ' <button type="button" class="btn-retry">Retry</button></p>';
+    el.querySelector('.btn-retry').addEventListener('click', function() {
+      location.reload();
+    });
+  }
+
+  // ─── Share Button (Web Share API with copy-link fallback) ───
+  var shareBtn = document.getElementById('share-btn');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', function() {
+      var title = document.querySelector('h1') ? document.querySelector('h1').textContent.trim() : document.title;
+      var url = window.location.href;
+
+      if (navigator.share) {
+        navigator.share({ title: title, url: url }).catch(function() {});
+      } else {
+        // Fallback: copy URL to clipboard
+        navigator.clipboard.writeText(url).then(function() {
+          var textEl = shareBtn.querySelector('.btn-share-text');
+          if (textEl) {
+            textEl.textContent = 'Copied!';
+            setTimeout(function() { textEl.textContent = 'Share'; }, 2000);
+          }
+        }).catch(function() {
+          // Final fallback for older browsers
+          var input = document.createElement('input');
+          input.value = url;
+          document.body.appendChild(input);
+          input.select();
+          document.execCommand('copy');
+          document.body.removeChild(input);
+          var textEl = shareBtn.querySelector('.btn-share-text');
+          if (textEl) {
+            textEl.textContent = 'Copied!';
+            setTimeout(function() { textEl.textContent = 'Share'; }, 2000);
+          }
+        });
+      }
+    });
   }
 })();
