@@ -1,0 +1,7 @@
+# Global Security Community
+# https://globalsecurity.community
+
+User-agent: *
+Allow: /
+
+Sitemap: https://globalsecurity.community/sitemap.xml
