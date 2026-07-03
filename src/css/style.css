@@ -2348,6 +2348,35 @@ a.event-card:hover { color: inherit; }
 }
 .breadcrumb-divider { color: var(--color-border-strong); }
 
+/* ─── Event Page: Section Rhythm ─── */
+
+.event-detail .event-description {
+  margin-bottom: var(--space-3xl);
+  padding-bottom: var(--space-3xl);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+/* Programme cluster (Agenda + Speakers) — tighter internal spacing */
+.event-detail .event-programme {
+  margin-bottom: var(--space-3xl);
+  padding-bottom: var(--space-2xl);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.event-detail .event-programme h2:first-child { margin-top: 0; }
+.event-detail .event-programme h2 + div { margin-bottom: var(--space-2xl); }
+.event-detail .event-programme h2:last-of-type + div { margin-bottom: 0; }
+
+/* Recognition and partners — grouped zone */
+.event-detail .recognition-section { margin-top: var(--space-2xl); }
+.event-detail .partners-section { margin-top: var(--space-2xl); }
+
+/* Location section — final zone, generous breathing room */
+.event-detail > h2:last-of-type {
+  margin-top: var(--space-3xl);
+  padding-top: var(--space-2xl);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
 /* ─── Component: Info Cards (event page 3-col) ─── */
 
 .cards--info { grid-template-columns: 1fr 1fr 1fr; margin-bottom: var(--space-2xl); }

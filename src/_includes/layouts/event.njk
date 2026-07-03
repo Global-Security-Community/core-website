@@ -53,21 +53,23 @@ layout: base.njk
   <div id="event-description" class="event-description">{{ description | descriptionToHtml | safe }}</div>
 
   {% if sessionizeApiId %}
-  <h2>Agenda</h2>
-  <div id="sessionize-agenda">
-    <div class="skeleton skeleton-text" style="width:80%"></div>
-    <div class="skeleton skeleton-text" style="width:60%"></div>
-    <div class="skeleton skeleton-text" style="width:70%"></div>
-  </div>
-
-  <h2>Speakers</h2>
-  <div id="sessionize-speakers">
-    <div class="skeleton-grid">
-      <div class="skeleton skeleton-card"></div>
-      <div class="skeleton skeleton-card"></div>
-      <div class="skeleton skeleton-card"></div>
+  <section class="event-programme" aria-label="Programme">
+    <h2>Agenda</h2>
+    <div id="sessionize-agenda">
+      <div class="skeleton skeleton-text" style="width:80%"></div>
+      <div class="skeleton skeleton-text" style="width:60%"></div>
+      <div class="skeleton skeleton-text" style="width:70%"></div>
     </div>
-  </div>
+
+    <h2>Speakers</h2>
+    <div id="sessionize-speakers">
+      <div class="skeleton-grid">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+    </div>
+  </section>
   {% endif %}
 
   <section id="volunteer-cards" class="recognition-section is-hidden" aria-labelledby="recognition-heading">
