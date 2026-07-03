@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ title }} | Global Security Community</title>
-  <meta name="description" content="{{ description or 'Global Security Community — connecting cybersecurity professionals worldwide through local chapters, events, and knowledge sharing.' }}">
+  <meta name="description" content="{{ (description | metaDescription) or 'Global Security Community — connecting cybersecurity professionals worldwide through local chapters, events, and knowledge sharing.' }}">
   <meta property="og:title" content="{{ title }} | Global Security Community">
-  <meta property="og:description" content="{{ description or 'Connecting cybersecurity professionals worldwide through local chapters, events, and knowledge sharing.' }}">
+  <meta property="og:description" content="{{ (description | metaDescription) or 'Connecting cybersecurity professionals worldwide through local chapters, events, and knowledge sharing.' }}">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://globalsecurity.community">
   <meta property="og:image" content="https://globalsecurity.community/assets/GlobalSecurityCommunityLogo2.png">
