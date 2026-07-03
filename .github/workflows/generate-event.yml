@@ -78,14 +78,16 @@ jobs:
           FRONTMATTER
 
           # Use printf to safely write fields that may contain special characters
-          # Replace newlines with ", " and escape double quotes for valid YAML
-          safe_yaml() { echo "$1" | tr '\n' ',' | sed 's/,/, /g; s/, $//; s/"/\\"/g'; }
+          # Escape double quotes for valid YAML inline strings
+          safe_yaml_inline() { echo "$1" | tr '\n' ' ' | sed 's/  */ /g; s/^ //; s/ $//; s/"/\\"/g'; }
+          # Write multi-line description as YAML block scalar (preserves paragraphs)
           {
-            printf 'title: "%s"\n' "$(safe_yaml "${TITLE}")"
+            printf 'title: "%s"\n' "$(safe_yaml_inline "${TITLE}")"
             printf 'slug: "%s"\n' "${SLUG}"
             printf 'date: "%s"\n' "${DATE}"
-            printf 'location: "%s"\n' "$(safe_yaml "${LOCATION}")"
-            printf 'description: "%s"\n' "$(safe_yaml "${DESCRIPTION}")"
+            printf 'location: "%s"\n' "$(safe_yaml_inline "${LOCATION}")"
+            printf 'description: |\n'
+            echo "${DESCRIPTION}" | sed 's/^/  /'
             printf 'sessionizeApiId: "%s"\n' "${SESSIONIZE_ID}"
             printf 'registrationCap: %s\n' "${REG_CAP:-0}"
             printf 'chapterSlug: "%s"\n' "${CHAPTER_SLUG}"
