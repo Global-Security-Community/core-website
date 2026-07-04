@@ -5,8 +5,10 @@ description: "Terms of service for the Global Security Community website."
 ---
 
 <div class="container">
-  <h1>Terms of Service</h1>
-  <p><em>Last updated: April 2026</em></p>
+  <header class="page-header">
+    <h1>Terms of Service</h1>
+    <p class="page-lede"><em>Last updated: April 2026</em></p>
+  </header>
 
   <p>By accessing or using the Global Security Community ("GSC", "we", "us", or "our") website and services, you agree to be bound by these Terms of Service. Please read them carefully before using the platform.</p>
 

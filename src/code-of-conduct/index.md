@@ -5,7 +5,9 @@ description: "Code of conduct for all Global Security Community events and commu
 ---
 
 <div class="container">
-  <h1>Code of Conduct</h1>
+  <header class="page-header">
+    <h1>Code of Conduct</h1>
+  </header>
 
   <h2>Our Pledge</h2>
   <p>We as members, contributors, and leaders of the Global Security Community pledge to make participation in our community and events a harassment-free experience for everyone, regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, caste, color, religion, or sexual identity and orientation.</p>
