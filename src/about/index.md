@@ -5,6 +5,10 @@ description: "Learn about the Global Security Community — who we are, why we e
 ---
 
 <div class="container">
+  <div class="about-hero">
+    <img src="/assets/about-hero.webp" alt="Global Security Community — Local Chapters, Shared Knowledge, Stronger Together, Global Impact" class="about-hero-img">
+  </div>
+
   <div class="page-header">
     <h1>About Global Security Community</h1>
     <p class="page-lede">A grassroots network of cybersecurity professionals building local communities with global reach — chapter-based, volunteer-run, and driven by a shared belief that security is stronger together.</p>
@@ -36,9 +40,12 @@ description: "Learn about the Global Security Community — who we are, why we e
 
   <section class="about-section reveal-on-scroll">
     <h2>Our Story</h2>
-    <p>The Global Security Community began in Perth, Australia in 2025 with a simple idea: bring security professionals together to learn from each other.</p>
-    <p>Our first event — the Global Security Bootcamp Perth 2025 — proved there was real appetite for practitioner-led, community-driven security education. From that single event, we've grown to <strong>8 chapters across 5 countries</strong>, with volunteer leads running events in their own cities.</p>
-    <p><em>A fuller origin story is coming soon — one that properly acknowledges everyone who was instrumental in getting this community off the ground.</em></p>
+    <p>The Global Security Community started as a shameless rip-off — and we're proud of it.</p>
+    <p>In early 2025, George Coldham co-organised the Global AI Bootcamp in Perth with Michelle Sandford. The one-day, community-driven format was electric — practitioners learning from practitioners, no corporate overhead, just people sharing what they know. It worked so well that George asked Michelle to help him do the same thing for security.</p>
+    <p>Michelle didn't just encourage the idea — she helped build it. She volunteered her time, helped run the day, and brought the energy and experience that made the first Global Security Bootcamp Perth actually happen. She continues to volunteer for Perth events to this day, and we wouldn't be here without her belief in what this could become.</p>
+    <p>That first event validated everything. Anthony Porter, already a driving force behind Perth's Microsoft Security Meetup, was instrumental in making the day land. His energy was infectious — so George recruited him as co-founder to build something bigger together.</p>
+    <p>Now in our second year, we've grown from a single event in Perth to chapters across multiple countries, each running their own events and building their own local communities. <strong>From a local bootcamp to a global community.</strong></p>
+    <p>If that story resonates with you — <a href="/chapters/">join your local chapter</a>, or <a href="/chapters/apply/">be the one to start one</a>.</p>
   </section>
 
   <section class="about-section about-founders reveal-on-scroll reveal-delay-2">
