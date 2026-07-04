@@ -10,13 +10,13 @@ description: "Learn about the Global Security Community — who we are, why we e
     <p class="page-lede">A grassroots network of cybersecurity professionals building local communities with global reach — chapter-based, volunteer-run, and driven by a shared belief that security is stronger together.</p>
   </div>
 
-  <section class="about-section">
+  <section class="about-section reveal-on-scroll">
     <h2>Why We Exist</h2>
     <p>Cybersecurity can be isolating. You're often the only security person on a team, in a company, sometimes in a whole city. We started this community because we believe practitioners learn best from each other — in person, in their own city, with people who understand the work.</p>
     <p>Every chapter is led by local volunteers who organise events, build connections, and share practical knowledge. No corporate agenda. No gatekeeping. Just security people helping security people.</p>
   </section>
 
-  <section class="about-section">
+  <section class="about-section reveal-on-scroll reveal-delay-1">
     <h2>Our Values</h2>
     <div class="about-values">
       <div class="about-value">
@@ -34,14 +34,14 @@ description: "Learn about the Global Security Community — who we are, why we e
     </div>
   </section>
 
-  <section class="about-section">
+  <section class="about-section reveal-on-scroll">
     <h2>Our Story</h2>
     <p>The Global Security Community began in Perth, Australia in 2025 with a simple idea: bring security professionals together to learn from each other.</p>
     <p>Our first event — the Global Security Bootcamp Perth 2025 — proved there was real appetite for practitioner-led, community-driven security education. From that single event, we've grown to <strong>8 chapters across 5 countries</strong>, with volunteer leads running events in their own cities.</p>
     <p><em>A fuller origin story is coming soon — one that properly acknowledges everyone who was instrumental in getting this community off the ground.</em></p>
   </section>
 
-  <section class="about-section about-founders">
+  <section class="about-section about-founders reveal-on-scroll reveal-delay-2">
     <h2>Community Organisers</h2>
     <div class="founders-grid">
       <div class="founder-card">
@@ -65,7 +65,7 @@ description: "Learn about the Global Security Community — who we are, why we e
     </div>
   </section>
 
-  <section class="about-section about-cta">
+  <section class="about-section about-cta reveal-on-scroll reveal-delay-3">
     <h2>Get Involved</h2>
     <p>Whether you're looking to attend your first event, share a talk, or start a chapter in your city — there's a place for you here.</p>
     <div class="about-cta-actions">
@@ -74,5 +74,6 @@ description: "Learn about the Global Security Community — who we are, why we e
       <a href="https://discord.gg/qVRPXJuEYb" class="btn-secondary" target="_blank" rel="noopener noreferrer">Join Discord</a>
     </div>
   </section>
-</div>
 
+  <script src="/js/scroll-reveal.js?v={{ cacheBust }}"></script>
+</div>

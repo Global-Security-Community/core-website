@@ -79,8 +79,11 @@ templateEngineOverride: njk
     {% endif %}
   </div>
 
-  <h2>Host an Event</h2>
-  <p>Is your chapter planning an event? Chapter leads can create events from the <a href="/dashboard/">Dashboard</a>.</p>
+  <section class="about-cta reveal-on-scroll">
+    <h2>Host an Event</h2>
+    <p>Is your chapter planning an event? Chapter leads can create events from the <a href="/dashboard/">Dashboard</a>.</p>
+  </section>
 </div>
 
+<script src="/js/scroll-reveal.js?v={{ cacheBust }}"></script>
 <script src="/js/events-list.js?v={{ cacheBust }}"></script>
