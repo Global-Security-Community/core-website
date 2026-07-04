@@ -756,6 +756,36 @@ body {
   border-bottom: 1px solid var(--color-border-subtle);
 }
 
+/* Dark hero banner for event page top */
+.event-hero-banner {
+  background: linear-gradient(135deg, var(--color-primary-navy) 0%, var(--color-primary-navy-deep) 60%, var(--color-primary-navy-soft) 100%);
+  margin: calc(-1 * var(--space-3xl)) -20px var(--space-2xl);
+  padding: var(--space-2xl) 20px var(--space-2xl);
+}
+
+.event-hero-banner .breadcrumb-row a {
+  color: var(--color-text-inverse-muted);
+}
+
+.event-hero-banner .breadcrumb-row .breadcrumb-divider {
+  color: var(--color-text-inverse-muted);
+}
+
+.event-hero-banner .event-page-header {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.event-hero-banner .event-page-header h1 {
+  color: var(--color-text-inverse);
+}
+
+.event-hero-banner .page-kicker {
+  color: var(--color-primary-teal);
+  opacity: 0.9;
+}
+
 .event-page-header .btn-cta {
   flex-shrink: 0;
 }
@@ -933,6 +963,13 @@ a.card-link h3 {
   margin: var(--space-lg) 0 var(--space-2xl);
   box-shadow: var(--shadow-sm);
   z-index: 0;
+  filter: grayscale(0.85) contrast(1.05);
+  transition: filter 0.3s ease;
+}
+
+.event-map:hover,
+.event-map:focus-within {
+  filter: grayscale(0) contrast(1);
 }
 
 .chapter-grid {
@@ -1837,7 +1874,8 @@ thead tr:hover {
   border-spacing: 0;
   border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
+  background: var(--color-surface);
 }
 
 .agenda-table thead th {
@@ -1870,11 +1908,11 @@ thead tr:hover {
 }
 
 .agenda-row-service td {
-  background: var(--color-surface-muted);
+  background: var(--color-surface-code);
 }
 
 .agenda-row-service .agenda-session-title {
-  color: var(--color-text-muted);
+  color: var(--color-text);
   font-style: italic;
   font-weight: 400;
 }
@@ -2036,7 +2074,7 @@ body.modal-open {
 
 .speaker-card-wrap {
   perspective: 800px;
-  height: 280px;
+  height: 360px;
 }
 
 .speaker-card {
@@ -2090,6 +2128,7 @@ body.modal-open {
   margin: 0 0 var(--space-xs) 0;
   color: var(--color-primary-navy);
   font-size: var(--text-base);
+  max-width: 100%;
 }
 
 .speaker-card-front .speaker-tagline {
@@ -2097,15 +2136,25 @@ body.modal-open {
   font-size: var(--text-xs);
   margin: 0;
   line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  width: 100%;
 }
 
 .speaker-card-front .speaker-session {
-  margin-top: auto;
-  padding-top: var(--space-sm);
+  margin-top: var(--space-sm);
+  padding-top: 0;
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   font-weight: 500;
   font-style: italic;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  width: 100%;
 }
 
 .speaker-card-back {
@@ -2623,9 +2672,12 @@ a.event-card:hover { color: inherit; }
 
 /* Programme cluster (Agenda + Speakers) — tighter internal spacing */
 .event-detail .event-programme {
-  margin-bottom: var(--space-3xl);
-  padding-bottom: var(--space-2xl);
-  border-bottom: 1px solid var(--color-border-subtle);
+  margin: var(--space-2xl) 0 var(--space-3xl);
+  padding: var(--space-2xl);
+  background: var(--color-surface-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
 }
 .event-detail .event-programme h2:first-child { margin-top: 0; }
 .event-detail .event-programme h2 + div { margin-bottom: var(--space-2xl); }
@@ -2644,7 +2696,17 @@ a.event-card:hover { color: inherit; }
 
 /* ─── Component: Info Cards (event page 3-col) ─── */
 
-.cards--info { grid-template-columns: 1fr 1fr 1fr; margin-bottom: var(--space-2xl); }
+.cards--info {
+  grid-template-columns: 1fr 1fr 1fr;
+  margin-bottom: var(--space-2xl);
+  position: relative;
+  z-index: 1;
+}
+
+.event-detail .cards--info .card {
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
 .card--centered { text-align: center; }
 .icon-xl { font-size: var(--text-3xl); margin: 0; }
 
