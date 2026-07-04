@@ -963,7 +963,7 @@ a.card-link h3 {
   margin: var(--space-lg) 0 var(--space-2xl);
   box-shadow: var(--shadow-sm);
   z-index: 0;
-  filter: grayscale(0.85) contrast(1.05);
+  filter: grayscale(1) contrast(1.05);
   transition: filter 0.3s ease;
 }
 
