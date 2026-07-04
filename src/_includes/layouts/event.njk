@@ -7,25 +7,27 @@ layout: base.njk
 {% endif %}
 
 <div class="container event-detail" data-event-slug="{{ slug }}"{% if sessionizeApiId %} data-sessionize-id="{{ sessionizeApiId }}"{% endif %}{% if attendeeCount %} data-attendee-count="{{ attendeeCount }}"{% endif %} data-event-date="{{ date }}" data-event-location="{{ location }}">
-  <div class="breadcrumb-row">
-    <a href="/events/">&larr; All Events</a>
-    <span class="breadcrumb-divider">|</span>
-    <a href="/chapters/{{ chapterSlug }}/">{{ chapterSlug | capitalize }} Chapter</a>
-  </div>
-
-  <header class="event-page-header">
-    <div>
-      <p class="page-kicker">Community event</p>
-      <h1>{{ title }}</h1>
+  <div class="event-hero-banner">
+    <div class="breadcrumb-row">
+      <a href="/events/">&larr; All Events</a>
+      <span class="breadcrumb-divider">|</span>
+      <a href="/chapters/{{ chapterSlug }}/">{{ chapterSlug | capitalize }} Chapter</a>
     </div>
-    <div class="event-header-actions">
-      <a href="/register/?event={{ slug }}" class="btn-cta" id="register-btn">Register Now</a>
-      <button type="button" class="btn-share" id="share-btn" aria-label="Share this event" title="Share this event">
+
+    <header class="event-page-header">
+      <div>
+        <p class="page-kicker">Community event</p>
+        <h1>{{ title }}</h1>
+      </div>
+      <div class="event-header-actions">
+        <a href="/register/?event={{ slug }}" class="btn-cta" id="register-btn">Register Now</a>
+        <button type="button" class="btn-share" id="share-btn" aria-label="Share this event" title="Share this event">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         <span class="btn-share-text">Share</span>
-      </button>
-    </div>
-  </header>
+        </button>
+      </div>
+    </header>
+  </div>
 
   <div class="cards cards--info">
     <div class="card card--centered">
