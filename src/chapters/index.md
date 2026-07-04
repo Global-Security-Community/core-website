@@ -7,14 +7,15 @@ description: "Find your local Global Security Community chapter. Connect with cy
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
 
 <div class="container">
-  <h1>Global Chapters</h1>
-
-  <p>Our chapters are the foundation of the Global Security Community. Find your local chapter on the map or browse the list below.</p>
+  <header class="page-header">
+    <h1>Global Chapters</h1>
+    <p class="page-lede">Our chapters are the foundation of the Global Security Community. Find your local chapter on the map or browse the list below.</p>
+  </header>
 
   {% if collections.chapter and collections.chapter.length > 0 %}
   <div id="chapter-map" class="chapter-map" aria-label="Map showing chapter locations"></div>
 
-  <div class="chapter-grid">
+  <div class="chapter-grid reveal-on-scroll">
     {%- for chapter in collections.chapter | sort(false, false, "data.city") %}
     <a href="{{ chapter.url }}" class="chapter-card" 
        data-lat="{{ chapter.data.latitude }}" 
@@ -40,11 +41,15 @@ description: "Find your local Global Security Community chapter. Connect with cy
   <p>We're currently building our global chapter network. Our first chapters are launching soon.</p>
   {% endif %}
 
-  <h2 id="start-chapter">Interested in Starting a Chapter?</h2>
-  <p>Check the map and chapter list first to see whether there is already a community near you. If your city or region is not represented and you're passionate about building a local security community, we'd love to hear from you.</p>
-  <p class="mt-section">
-    <a href="/chapters/apply/" class="btn-cta">Apply to Lead a Chapter</a>
-  </p>
+  <section class="about-cta reveal-on-scroll">
+    <h2 id="start-chapter">Interested in Starting a Chapter?</h2>
+    <p>Check the map and chapter list first to see whether there is already a community near you. If your city or region is not represented and you're passionate about building a local security community, we'd love to hear from you.</p>
+    <p class="mt-section">
+      <a href="/chapters/apply/" class="btn-cta">Apply to Lead a Chapter</a>
+    </p>
+  </section>
+
+  <script src="/js/scroll-reveal.js?v={{ cacheBust }}"></script>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>

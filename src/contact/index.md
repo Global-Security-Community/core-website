@@ -5,11 +5,12 @@ description: "Get in touch with the Global Security Community. Ask questions, su
 ---
 
 <div class="container">
-  <h1>Contact Us</h1>
+  <header class="page-header">
+    <h1>Contact Us</h1>
+    <p class="page-lede">Have questions, want to start a chapter, or interested in partnering with us? We'd love to hear from you.</p>
+  </header>
 
-  <p>Have questions, want to start a chapter, or interested in partnering with us? We'd love to hear from you.</p>
-
-  <div class="narrow-content">
+  <div class="narrow-content form-panel">
     <div id="form-message" role="alert" class="form-message is-hidden"></div>
     <form id="contact-form">
       <div class="form-group">

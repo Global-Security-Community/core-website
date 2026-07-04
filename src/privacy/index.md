@@ -5,8 +5,10 @@ description: "Privacy policy for the Global Security Community website."
 ---
 
 <div class="container">
-  <h1>Privacy Policy</h1>
-  <p><em>Last updated: April 2026</em></p>
+  <header class="page-header">
+    <h1>Privacy Policy</h1>
+    <p class="page-lede"><em>Last updated: April 2026</em></p>
+  </header>
 
   <p>The Global Security Community ("GSC", "we", "us", or "our") is committed to protecting your personal information. This policy explains what data we collect, how we use it, and your rights regarding that data.</p>
 
