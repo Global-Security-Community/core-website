@@ -793,7 +793,7 @@ body {
 /* Event header actions (CTA + share) */
 .event-header-actions {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: var(--space-md);
   flex-shrink: 0;
 }
@@ -802,9 +802,11 @@ body {
 .btn-share {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-xs);
-  padding: var(--space-sm) var(--space-md);
-  font-size: var(--text-sm);
+  padding: var(--space-md) var(--space-xl);
+  font-size: var(--text-base);
+  line-height: 1.6;
   font-weight: 600;
   color: var(--color-text-muted);
   background: var(--color-surface-muted);
@@ -927,9 +929,9 @@ a.card-link h3 {
 .btn-cta {
   display: inline-block;
   padding: var(--space-md) var(--space-xl);
-  background-color: var(--color-primary-teal);
+  background-color: var(--color-accent-orange);
   color: var(--color-text-inverse);
-  border: 1px solid var(--color-primary-teal);
+  border: 1px solid var(--color-accent-orange);
   border-radius: var(--radius-md);
   text-decoration: none;
   font-weight: 600;
@@ -938,6 +940,7 @@ a.card-link h3 {
 
 .btn-cta:hover {
   background-color: var(--color-primary-navy);
+  border-color: var(--color-primary-navy);
   color: var(--color-text-inverse);
 }
 
@@ -2692,6 +2695,18 @@ a.event-card:hover { color: inherit; }
   margin-top: var(--space-3xl);
   padding-top: var(--space-2xl);
   border-top: 1px solid var(--color-border-subtle);
+}
+
+.event-bottom-cta {
+  text-align: center;
+  margin-top: var(--space-2xl);
+  padding-top: var(--space-xl);
+}
+
+.event-bottom-cta-subtext {
+  margin-top: var(--space-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
 }
 
 /* ─── Component: Info Cards (event page 3-col) ─── */
