@@ -17,7 +17,6 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-          token: ${{ secrets.GH_PAT }}
 
       - name: Geocode event location
         run: |
@@ -127,10 +126,14 @@ jobs:
           git push origin "${BRANCH}"
           echo "BRANCH=${BRANCH}" >> "$GITHUB_ENV"
 
-      - name: Create PR and enable auto-merge
+      # main is protected and requires the "Build & Test" check to pass. A PR
+      # opened with the default GITHUB_TOKEN won't auto-trigger that check
+      # (GitHub suppresses recursive triggers from the built-in token), so we
+      # kick it off explicitly, then let auto-merge complete once it passes.
+      - name: Open PR and wait for merge
         if: env.BRANCH != ''
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           EVENT_TITLE: ${{ github.event.client_payload.event_title }}
         run: |
           gh pr create \
@@ -140,5 +143,40 @@ jobs:
             --body "Auto-generated event page.
 
           Triggered by \`event-created\` repository dispatch."
-          gh pr merge "${BRANCH}" --auto --squash || echo "::warning::Auto-merge could not be enabled — please merge the PR manually once CI passes"
-          echo "✅ PR created — will merge to main once CI passes"
+          PR_NUMBER=$(gh pr view "${BRANCH}" --json number -q .number)
+
+          gh workflow run ci.yml --ref "${BRANCH}"
+          gh pr merge "$PR_NUMBER" --auto --squash
+
+          echo "Waiting for PR #$PR_NUMBER to merge..."
+          for i in $(seq 1 40); do
+            STATE=$(gh pr view "$PR_NUMBER" --json state -q .state)
+            if [ "$STATE" = "MERGED" ]; then
+              echo "✅ PR #$PR_NUMBER merged"
+              exit 0
+            fi
+            if [ "$STATE" = "CLOSED" ]; then
+              echo "::error::PR #$PR_NUMBER was closed without merging"
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "::error::Timed out waiting for PR #$PR_NUMBER to merge (CI may have failed)"
+          exit 1
+
+      - name: Deploy to production
+        if: env.BRANCH != ''
+        run: |
+          git fetch origin main live-version-swa
+          git checkout live-version-swa
+          git merge origin/main --no-edit
+          git push origin live-version-swa
+          echo "✅ Event page merged to live-version-swa"
+
+      - name: Trigger SWA deploy
+        if: env.BRANCH != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run azure-static-web-apps-lively-desert-0f1f18c10.yml --ref live-version-swa
+          echo "✅ SWA deploy triggered"
