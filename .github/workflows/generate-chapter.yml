@@ -7,6 +7,7 @@ on:
 permissions:
   contents: write
   actions: write
+  pull-requests: write
 
 jobs:
   generate-chapter:
@@ -125,26 +126,32 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Pull latest changes before branching
+          git pull --rebase origin main
           git add "src/chapters/${SLUG}/index.md"
+          git diff --cached --quiet && echo "No changes" && exit 0
+          BRANCH="auto/chapter-${SLUG}"
+          git checkout -b "${BRANCH}"
           git commit -m "Add chapter page for ${CITY}
 
           Auto-generated from approved chapter application.
 
           Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          git push origin "${BRANCH}"
+          echo "BRANCH=${BRANCH}" >> "$GITHUB_ENV"
 
-      - name: Deploy to production
-        run: |
-          git fetch origin live-version-swa
-          git checkout live-version-swa
-          git merge main --no-edit
-          git push origin live-version-swa
-          echo "✅ Chapter page merged to live-version-swa"
-
-      - name: Trigger SWA deploy
+      - name: Create PR and enable auto-merge
+        if: env.BRANCH != ''
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          CITY: ${{ github.event.client_payload.chapter_city }}
         run: |
-          gh workflow run azure-static-web-apps-lively-desert-0f1f18c10.yml --ref live-version-swa
-          echo "✅ SWA deploy triggered"
+          gh pr create \
+            --base main \
+            --head "${BRANCH}" \
+            --title "Add chapter page for ${CITY}" \
+            --body "Auto-generated chapter page.
+
+          Triggered by \`chapter-approved\` repository dispatch."
+          gh pr merge "${BRANCH}" --auto --squash || echo "::warning::Auto-merge could not be enabled — please merge the PR manually once CI passes"
+          echo "✅ PR created — will merge to main once CI passes"

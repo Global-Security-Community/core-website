@@ -11,6 +11,7 @@ on:
 permissions:
   contents: write
   actions: write
+  pull-requests: write
 
 jobs:
   delete-chapter:
@@ -91,24 +92,27 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
+          git diff --cached --quiet && echo "No changes" && exit 0
+          BRANCH="auto/delete-chapter-${SLUG}"
+          git checkout -b "${BRANCH}"
           git commit -m "Remove chapter page: ${SLUG}
 
           Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-          git push origin HEAD:main
+          git push origin "${BRANCH}"
+          echo "BRANCH=${BRANCH}" >> "$GITHUB_ENV"
 
-      - name: Deploy to production
+      - name: Create PR and enable auto-merge
+        if: env.BRANCH != ''
         env:
-          SLUG: ${{ github.event.client_payload.chapter_slug }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          SLUG: ${{ inputs.chapter_slug }}
         run: |
-          git fetch origin live-version-swa
-          git checkout live-version-swa
-          git merge main --no-edit
-          git push origin live-version-swa
-          echo "✅ Chapter deletion merged to live-version-swa"
+          gh pr create \
+            --base main \
+            --head "${BRANCH}" \
+            --title "Remove chapter page: ${SLUG}" \
+            --body "Removes the chapter page for \`${SLUG}\`.
 
-      - name: Trigger SWA deploy
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh workflow run azure-static-web-apps-lively-desert-0f1f18c10.yml --ref live-version-swa
-          echo "✅ SWA deploy triggered"
+          Triggered by \`delete-chapter\` workflow dispatch."
+          gh pr merge "${BRANCH}" --auto --squash || echo "::warning::Auto-merge could not be enabled — please merge the PR manually once CI passes"
+          echo "✅ PR created — will merge to main once CI passes"
