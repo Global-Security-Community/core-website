@@ -11,6 +11,7 @@ on:
 permissions:
   contents: write
   actions: write
+  pull-requests: write
 
 jobs:
   delete-chapter:
@@ -21,7 +22,6 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-          token: ${{ secrets.GH_PAT }}
 
       - name: Verify chapter exists
         env:
@@ -84,25 +84,68 @@ jobs:
           rm -rf "src/chapters/${SLUG}"
           echo "Deleted src/chapters/${SLUG}/"
 
-      - name: Commit and push
+      - name: Create branch and commit
+        id: commit
         env:
           SLUG: ${{ inputs.chapter_slug }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
+          if git diff --cached --quiet; then
+            echo "No changes"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          BRANCH="bot/delete-chapter-${SLUG}-${GITHUB_RUN_ID}"
+          git checkout -b "$BRANCH"
           git commit -m "Remove chapter page: ${SLUG}
 
           Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-          git push origin HEAD:main
+          git push origin "$BRANCH"
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      # main is protected and requires the "Build & Test" check to pass. A PR
+      # opened with the default GITHUB_TOKEN won't auto-trigger that check
+      # (GitHub suppresses recursive triggers from the built-in token), so we
+      # kick it off explicitly, then let auto-merge complete once it passes.
+      - name: Open PR and wait for merge
+        if: steps.commit.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ steps.commit.outputs.branch }}
+          SLUG: ${{ inputs.chapter_slug }}
+        run: |
+          gh pr create --base main --head "$BRANCH" \
+            --title "Remove chapter page: ${SLUG}" \
+            --body "Automated chapter deletion. Auto-merges once CI passes."
+          PR_NUMBER=$(gh pr view "$BRANCH" --json number -q .number)
+
+          gh workflow run ci.yml --ref "$BRANCH"
+          gh pr merge "$PR_NUMBER" --auto --squash
+
+          echo "Waiting for PR #$PR_NUMBER to merge..."
+          for i in $(seq 1 40); do
+            STATE=$(gh pr view "$PR_NUMBER" --json state -q .state)
+            if [ "$STATE" = "MERGED" ]; then
+              echo "✅ PR #$PR_NUMBER merged"
+              exit 0
+            fi
+            if [ "$STATE" = "CLOSED" ]; then
+              echo "::error::PR #$PR_NUMBER was closed without merging"
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "::error::Timed out waiting for PR #$PR_NUMBER to merge (CI may have failed)"
+          exit 1
 
       - name: Deploy to production
-        env:
-          SLUG: ${{ github.event.client_payload.chapter_slug }}
         run: |
-          git fetch origin live-version-swa
+          git fetch origin main live-version-swa
           git checkout live-version-swa
-          git merge main --no-edit
+          git merge origin/main --no-edit
           git push origin live-version-swa
           echo "✅ Chapter deletion merged to live-version-swa"
 
