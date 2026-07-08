@@ -21,6 +21,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
 
       - name: Verify chapter exists
         env:
@@ -93,7 +94,7 @@ jobs:
           git commit -m "Remove chapter page: ${SLUG}
 
           Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-          git push
+          git push origin HEAD:main
 
       - name: Deploy to production
         env:
