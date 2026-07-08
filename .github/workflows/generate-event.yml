@@ -7,6 +7,7 @@ on:
 permissions:
   contents: write
   actions: write
+  pull-requests: write
 
 jobs:
   generate:
@@ -106,11 +107,16 @@ jobs:
           EVENT_TITLE: ${{ github.event.client_payload.event_title }}
           EVENT_DATE: ${{ github.event.client_payload.event_date }}
           CHAPTER_SLUG: ${{ github.event.client_payload.chapter_slug }}
+          SLUG: ${{ github.event.client_payload.event_slug }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Pull latest changes before branching
+          git pull --rebase origin main
           git add .
           git diff --cached --quiet && echo "No changes" && exit 0
+          BRANCH="auto/event-${SLUG}"
+          git checkout -b "${BRANCH}"
           git commit -m "Add event page: ${EVENT_TITLE}
 
           Event: ${EVENT_TITLE}
@@ -118,21 +124,21 @@ jobs:
           Chapter: ${CHAPTER_SLUG}
 
           Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-          # Pull latest changes before pushing to avoid rejection
-          git pull --rebase origin main
-          git push origin HEAD:main
+          git push origin "${BRANCH}"
+          echo "BRANCH=${BRANCH}" >> "$GITHUB_ENV"
 
-      - name: Deploy to production
-        run: |
-          git fetch origin live-version-swa
-          git checkout live-version-swa
-          git merge main --no-edit
-          git push origin live-version-swa
-          echo "✅ Event page merged to live-version-swa"
-
-      - name: Trigger SWA deploy
+      - name: Create PR and enable auto-merge
+        if: env.BRANCH != ''
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          EVENT_TITLE: ${{ github.event.client_payload.event_title }}
         run: |
-          gh workflow run azure-static-web-apps-lively-desert-0f1f18c10.yml --ref live-version-swa
-          echo "✅ SWA deploy triggered"
+          gh pr create \
+            --base main \
+            --head "${BRANCH}" \
+            --title "Add event page: ${EVENT_TITLE}" \
+            --body "Auto-generated event page.
+
+          Triggered by \`event-created\` repository dispatch."
+          gh pr merge "${BRANCH}" --auto --squash || echo "::warning::Auto-merge could not be enabled — please merge the PR manually once CI passes"
+          echo "✅ PR created — will merge to main once CI passes"
