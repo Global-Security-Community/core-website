@@ -107,7 +107,10 @@ jobs:
       - name: Open PR and wait for merge
         if: env.BRANCH != ''
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Org policy blocks the default GITHUB_TOKEN from creating/approving
+          # PRs, so this uses a fine-grained PAT scoped to this repo only,
+          # with Pull requests: read & write permission (no contents access).
+          GH_TOKEN: ${{ secrets.GH_PR_TOKEN }}
           SLUG: ${{ inputs.chapter_slug }}
         run: |
           gh pr create \
