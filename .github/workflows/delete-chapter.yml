@@ -122,7 +122,9 @@ jobs:
           Triggered by \`delete-chapter\` workflow dispatch."
           PR_NUMBER=$(gh pr view "${BRANCH}" --json number -q .number)
 
-          gh workflow run ci.yml --ref "${BRANCH}"
+          # The PR-scoped PAT can't dispatch workflow runs, so use the
+          # default token (which has Actions access) just for this call.
+          GH_TOKEN="${{ secrets.GITHUB_TOKEN }}" gh workflow run ci.yml --ref "${BRANCH}"
           gh pr merge "$PR_NUMBER" --auto --squash
 
           echo "Waiting for PR #$PR_NUMBER to merge..."
