@@ -32,6 +32,7 @@ jest.mock('../src/helpers/tableStorage', () => ({
   updateRegistration: jest.fn().mockResolvedValue({}),
   deleteRegistration: jest.fn().mockResolvedValue({}),
   storeDemographics: jest.fn().mockResolvedValue({}),
+  getDemographicsByEvent: jest.fn().mockResolvedValue([]),
   deleteDemographics: jest.fn().mockResolvedValue({}),
   storeBadge: jest.fn().mockResolvedValue({}),
   getBadge: jest.fn(),
@@ -919,6 +920,94 @@ describe('eventAttendance function', () => {
     expect(res.headers['Content-Type']).toBe('text/csv');
     expect(res.body).toContain('Name,Email');
     expect(res.body).toContain('Alice');
+  });
+});
+
+// ─── registrationReport ──────────────────────────────────────────────
+
+describe('registrationReport function', () => {
+  const registrationReport = require('../src/functions/registrationReport');
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env.SUPER_ADMIN_EMAILS = 'test@example.com';
+  });
+
+  afterEach(() => {
+    delete process.env.SUPER_ADMIN_EMAILS;
+  });
+
+  test('rejects non-community organisers', async () => {
+    process.env.SUPER_ADMIN_EMAILS = 'other@example.com';
+    const req = makeAuthRequest('GET', null, ['admin']);
+    req.url = 'https://example.com/api/registrationReport?action=events';
+
+    const res = await registrationReport(req, context);
+
+    expect(res.status).toBe(403);
+  });
+
+  test('returns event summaries for community organisers', async () => {
+    storage.listEvents.mockResolvedValueOnce([
+      { rowKey: 'ev-1', title: 'Perth Event', chapterSlug: 'perth', date: '2026-05-15' },
+      { rowKey: 'ev-2', title: 'Sydney Event', chapterSlug: 'sydney', date: '2026-06-20' }
+    ]);
+    storage.getRegistrationsByEvent
+      .mockResolvedValueOnce([{ rowKey: 'r1' }])
+      .mockResolvedValueOnce([{ rowKey: 'r2' }, { rowKey: 'r3' }]);
+
+    const req = makeAuthRequest('GET', null, ['admin']);
+    req.url = 'https://example.com/api/registrationReport?action=events';
+    const res = await registrationReport(req, context);
+
+    expect(res.status).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.totalEvents).toBe(2);
+    expect(body.totalRegistrations).toBe(3);
+    expect(body.events[0].id).toBe('ev-2');
+  });
+
+  test('returns per-event CSV with demographics for community organisers', async () => {
+    storage.getEventById.mockResolvedValueOnce({
+      rowKey: 'ev-1',
+      title: 'Perth Event',
+      chapterSlug: 'perth',
+      date: '2026-05-15'
+    });
+    storage.getRegistrationsByEvent.mockResolvedValueOnce([
+      {
+        rowKey: 'r1',
+        fullName: 'Alice',
+        email: 'alice@example.com',
+        company: 'Example Co',
+        role: 'attendee',
+        volunteerInterest: true,
+        checkedIn: false,
+        registeredAt: '2026-05-01T00:00:00Z'
+      }
+    ]);
+    storage.getDemographicsByEvent.mockResolvedValueOnce([
+      {
+        rowKey: 'r1',
+        employmentStatus: 'Employed',
+        industry: 'Cybersecurity',
+        jobTitle: 'Analyst',
+        companySize: '51-200',
+        experienceLevel: 'Intermediate'
+      }
+    ]);
+
+    const req = makeAuthRequest('GET', null, ['admin']);
+    req.url = 'https://example.com/api/registrationReport?eventId=ev-1&format=csv';
+    const res = await registrationReport(req, context);
+
+    expect(res.status).toBe(200);
+    expect(res.headers['Content-Type']).toBe('text/csv');
+    expect(res.headers['Content-Disposition']).toContain('registration-report-ev-1.csv');
+    expect(res.body).toContain('"Perth Event"');
+    expect(res.body).toContain('"Alice"');
+    expect(res.body).toContain('"Cybersecurity"');
+    expect(res.body).toContain('"Intermediate"');
   });
 });
 

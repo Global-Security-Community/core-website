@@ -164,6 +164,11 @@
       "headers": { "Cache-Control": "private, no-store" }
     },
     {
+      "route": "/api/registrationReport",
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
+    },
+    {
       "route": "/api/*",
       "allowedRoles": ["anonymous"],
       "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }
