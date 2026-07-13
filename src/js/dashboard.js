@@ -228,6 +228,8 @@
 
     html += '<div class="report-chart-grid">';
     html += barChart('Registrations by chapter', countBy(rows, 'chapterSlug'), total);
+    html += barChart('Companies', countBy(rows, 'company'), total);
+    html += barChart('Position titles', countBy(rows, 'jobTitle'), total);
     html += barChart('Employment status', countBy(rows, 'employmentStatus'), total);
     html += barChart('Industry', countBy(rows, 'industry'), total);
     html += barChart('Experience level', countBy(rows, 'experienceLevel'), total);
