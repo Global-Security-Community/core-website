@@ -3,6 +3,7 @@
   var currentEventId = '';
   var currentChapterSlug = '';
   var eventsLoadedPromise = null;
+  var communityReportEvents = [];
 
   // Quill rich text editor configuration
   var quillToolbar = [
@@ -32,13 +33,13 @@
   function showSection(s) {
     currentSection = s;
     history.replaceState(null, '', '#' + s);
-    ['events','create','detail','edit-event','chapter'].forEach(function(id) {
+    ['events','create','detail','edit-event','chapter','reports'].forEach(function(id) {
       document.getElementById('section-' + id).style.display = id === s ? 'block' : 'none';
     });
   }
 
   // Restore section from URL hash
-  var validSections = ['events','create','detail','edit-event','chapter'];
+  var validSections = ['events','create','detail','edit-event','chapter','reports'];
   var initialHash = location.hash.replace('#', '');
   if (validSections.indexOf(initialHash) !== -1) {
     showSection(initialHash);
@@ -61,6 +62,10 @@
   });
   document.getElementById('btn-chapter').addEventListener('click', function() { showSection('chapter'); loadChapterEdit(); });
   document.getElementById('btn-back-events').addEventListener('click', function() { showSection('events'); });
+  document.getElementById('btn-reports').addEventListener('click', function() { showSection('reports'); loadCommunityReports(); });
+  document.getElementById('btn-back-reports').addEventListener('click', function() { showSection('events'); });
+  document.getElementById('report-download-btn').addEventListener('click', downloadCommunityReport);
+  document.getElementById('report-event').addEventListener('change', loadSelectedCommunityReport);
 
   // Check auth — assign to eventsLoadedPromise so loadChapterEdit() can wait for it
   eventsLoadedPromise = fetch('/.auth/me')
@@ -68,7 +73,9 @@
     .then(function(d) {
       if (d.clientPrincipal) {
         document.getElementById('dash-user').textContent = 'Welcome, ' + (d.clientPrincipal.userDetails || 'Admin');
-        return loadEvents();
+        return loadEvents().then(function() {
+          return initCommunityReports();
+        });
       }
     })
     .catch(function() {
@@ -123,6 +130,161 @@
       .catch(function(err) {
         document.getElementById('events-list').innerHTML = '<p>' + GSC.esc(err.message || 'Failed to load events.') + '</p>';
       });
+  }
+
+  function initCommunityReports() {
+    return GSC.fetch('/api/registrationReport?action=events')
+      .then(function(r) {
+        if (!r.ok) return null;
+        return r.json();
+      })
+      .then(function(data) {
+        if (!data) return;
+        communityReportEvents = data.events || [];
+        document.getElementById('btn-reports').classList.remove('is-hidden');
+      })
+      .catch(function() {
+        document.getElementById('btn-reports').classList.add('is-hidden');
+      });
+  }
+
+  function loadCommunityReports() {
+    var msg = document.getElementById('reports-message');
+    msg.style.display = 'none';
+    GSC.fetch('/api/registrationReport?action=events')
+      .then(function(r) {
+        if (!r.ok) {
+          throw new Error(r.status === 403 ? 'Only community organisers can access reports.' : 'Failed to load reports.');
+        }
+        return r.json();
+      })
+      .then(function(data) {
+        communityReportEvents = data.events || [];
+        document.getElementById('reports-summary').innerHTML =
+          '<div class="card stat-card"><p class="stat-number">' + (data.totalEvents || 0) + '</p><p class="stat-label">Events</p></div>' +
+          '<div class="card stat-card"><p class="stat-number">' + (data.totalRegistrations || 0) + '</p><p class="stat-label">Registrations</p></div>';
+
+        var select = document.getElementById('report-event');
+        var html = '<option value="">All events</option>';
+        communityReportEvents.forEach(function(ev) {
+          var label = (ev.date ? ev.date + ' - ' : '') + ev.title + ' (' + ev.registrationCount + ')';
+          html += '<option value="' + GSC.esc(ev.id) + '">' + GSC.esc(label) + '</option>';
+        });
+        select.innerHTML = html;
+        loadSelectedCommunityReport();
+      })
+      .catch(function(err) {
+        msg.style.display = 'block';
+        msg.style.backgroundColor = '#f8d7da';
+        msg.style.color = '#721c24';
+        msg.textContent = err.message || 'Failed to load reports.';
+      });
+  }
+
+  function loadSelectedCommunityReport() {
+    var eventId = document.getElementById('report-event').value;
+    var visuals = document.getElementById('reports-visuals');
+    var url = '/api/registrationReport';
+    if (eventId) url += '?eventId=' + encodeURIComponent(eventId);
+
+    visuals.innerHTML = '<p class="text-muted">Loading report data...</p>';
+    GSC.fetch(url)
+      .then(function(r) {
+        if (!r.ok) throw new Error('Failed to load report data.');
+        return r.json();
+      })
+      .then(renderReportVisuals)
+      .catch(function(err) {
+        visuals.innerHTML = '<p class="text-muted">' + GSC.esc(err.message || 'Failed to load report data.') + '</p>';
+      });
+  }
+
+  function downloadCommunityReport() {
+    var eventId = document.getElementById('report-event').value;
+    var url = '/api/registrationReport?format=csv';
+    if (eventId) url += '&eventId=' + encodeURIComponent(eventId);
+    window.open(url, '_blank');
+  }
+
+  function renderReportVisuals(data) {
+    var rows = data.rows || [];
+    var total = rows.length;
+    var checkedIn = rows.filter(function(r) { return r.checkedIn; }).length;
+    var volunteers = rows.filter(function(r) { return r.volunteerInterest; }).length;
+    var chapters = uniqueCount(rows, 'chapterSlug');
+    var html = '';
+
+    if (total === 0) {
+      document.getElementById('reports-visuals').innerHTML = '<p class="text-muted">No registrations found for this selection.</p>';
+      return;
+    }
+
+    html += '<div class="report-kpi-grid">';
+    html += reportKpi('Registrations', total);
+    html += reportKpi('Checked In', checkedIn + ' (' + percentage(checkedIn, total) + '%)');
+    html += reportKpi('Volunteer Interest', volunteers + ' (' + percentage(volunteers, total) + '%)');
+    html += reportKpi('Chapters', chapters);
+    html += '</div>';
+
+    html += '<div class="report-chart-grid">';
+    html += barChart('Registrations by chapter', countBy(rows, 'chapterSlug'), total);
+    html += barChart('Employment status', countBy(rows, 'employmentStatus'), total);
+    html += barChart('Industry', countBy(rows, 'industry'), total);
+    html += barChart('Experience level', countBy(rows, 'experienceLevel'), total);
+    html += barChart('Company size', countBy(rows, 'companySize'), total);
+    html += barChart('Role', countBy(rows, 'role'), total);
+    html += '</div>';
+
+    document.getElementById('reports-visuals').innerHTML = html;
+  }
+
+  function reportKpi(label, value) {
+    return '<div class="card report-kpi"><p class="stat-number">' + GSC.esc(String(value)) + '</p><p class="stat-label">' + GSC.esc(label) + '</p></div>';
+  }
+
+  function countBy(rows, field) {
+    var counts = {};
+    rows.forEach(function(row) {
+      var value = row[field] || 'Not provided';
+      counts[value] = (counts[value] || 0) + 1;
+    });
+    return Object.keys(counts).map(function(label) {
+      return { label: label, count: counts[label] };
+    }).sort(function(a, b) {
+      if (b.count !== a.count) return b.count - a.count;
+      return a.label.localeCompare(b.label);
+    }).slice(0, 8);
+  }
+
+  function barChart(title, items, total) {
+    var html = '<div class="card report-chart"><h3>' + GSC.esc(title) + '</h3>';
+    if (!items.length) {
+      html += '<p class="text-muted">No data.</p></div>';
+      return html;
+    }
+    html += '<div class="report-bars">';
+    items.forEach(function(item) {
+      var pct = percentage(item.count, total);
+      html += '<div class="report-bar-row">';
+      html += '<div class="report-bar-label"><span>' + GSC.esc(item.label) + '</span><strong>' + item.count + '</strong></div>';
+      html += '<div class="report-bar-track"><div class="report-bar-fill" style="width:' + pct + '%"></div></div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+    return html;
+  }
+
+  function percentage(value, total) {
+    if (!total) return 0;
+    return Math.round((value / total) * 100);
+  }
+
+  function uniqueCount(rows, field) {
+    var seen = {};
+    rows.forEach(function(row) {
+      if (row[field]) seen[row[field]] = true;
+    });
+    return Object.keys(seen).length;
   }
 
   function viewEvent(eventId, chapterSlug, eventTitle, sessionizeApiId) {

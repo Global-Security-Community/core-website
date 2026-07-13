@@ -295,6 +295,18 @@ async function storeDemographics(demographics) {
   return entity;
 }
 
+async function getDemographicsByEvent(eventId) {
+  const client = getTableClient('EventDemographics');
+  const entities = client.listEntities({
+    queryOptions: { filter: `PartitionKey eq '${eventId.replace(/'/g, "''")}'` }
+  });
+  const results = [];
+  for await (const entity of entities) {
+    results.push(entity);
+  }
+  return results;
+}
+
 // ─── Badges ───
 
 async function storeBadge(badge) {
@@ -649,7 +661,7 @@ module.exports = {
   storeRegistration, getRegistrationByTicketCode, getRegistrationsByUser,
   getRegistrationsByEvent, countRegistrations, updateRegistration,
   deleteRegistration, deleteDemographics,
-  storeDemographics,
+  storeDemographics, getDemographicsByEvent,
   storeBadge, getBadge, getBadgesByEvent,
   storeVolunteer, getVolunteersByEvent, removeVolunteer, isVolunteerForAnyEvent,
   getRegistrationsByRole, isVolunteerOrOrganiserByRegistration, VALID_ROLES,

@@ -2933,6 +2933,74 @@ a.event-card:hover { color: inherit; }
 .dash-card-desc { font-size: var(--text-sm); color: var(--color-text-muted); margin: 0 0 var(--space-sm) 0; }
 .dash-card-info { font-size: var(--text-sm); color: var(--color-text-muted); margin: 0; }
 
+/* Dashboard — community reports */
+.reports-visuals {
+  margin-top: var(--space-xl);
+}
+
+.report-kpi-grid,
+.report-chart-grid {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.report-kpi-grid {
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: var(--space-lg);
+}
+
+.report-chart-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.report-kpi {
+  text-align: center;
+}
+
+.report-chart h3 {
+  margin: 0 0 var(--space-md) 0;
+  font-size: var(--text-lg);
+}
+
+.report-bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.report-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xs);
+  font-size: var(--text-sm);
+}
+
+.report-bar-label span {
+  overflow-wrap: anywhere;
+}
+
+.report-bar-track {
+  height: 0.7rem;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-code);
+}
+
+.report-bar-fill {
+  height: 100%;
+  min-width: 2px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--color-primary-teal), var(--color-primary-navy-soft));
+}
+
+@media (max-width: 768px) {
+  .report-kpi-grid,
+  .report-chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Dashboard — sessionize speakers */
 .dash-speakers-list { margin-top: var(--space-md); }
 .dash-speakers-label { font-size: var(--text-xs); color: var(--color-text-muted); margin: 0 0 var(--space-xs) 0; }

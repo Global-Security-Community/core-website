@@ -1,4 +1,4 @@
-const { getAuthUser, hasRole, unauthorised, forbidden } = require('../helpers/auth');
+const { isSuperAdmin } = require('../helpers/auth');
 const { getApprovedApplicationByEmail, isVolunteerForAnyEvent, isVolunteerOrOrganiserByRegistration, storeUserEmail } = require('../helpers/tableStorage');
 
 /**
@@ -54,9 +54,16 @@ module.exports = async function (request, context) {
 
     const roles = [];
 
+    // Community organisers are managed via SUPER_ADMIN_EMAILS and get admin access even without a chapter.
+    const superAdmin = isSuperAdmin(email);
+    if (superAdmin) {
+      roles.push('admin');
+      context.log(`Assigned admin role to ${email} (community organiser)`);
+    }
+
     // Check if this email belongs to an approved chapter lead
     const application = await getApprovedApplicationByEmail(email);
-    if (application) {
+    if (application && !roles.includes('admin')) {
       roles.push('admin');
       context.log(`Assigned admin role to ${email} (chapter lead for ${application.city})`);
     }

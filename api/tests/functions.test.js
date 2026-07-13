@@ -268,6 +268,7 @@ describe('roles function', () => {
   const roles = require('../src/functions/roles');
 
   beforeEach(() => jest.clearAllMocks());
+  afterEach(() => { delete process.env.SUPER_ADMIN_EMAILS; });
 
   test('returns empty roles for unknown email', async () => {
     storage.getApprovedApplicationByEmail.mockResolvedValueOnce(null);
@@ -280,6 +281,15 @@ describe('roles function', () => {
   test('returns admin role for approved chapter lead', async () => {
     storage.getApprovedApplicationByEmail.mockResolvedValueOnce({ city: 'Perth', email: 'lead@test.com' });
     const req = makeRequest('POST', { userId: 'u1', userDetails: 'lead@test.com' });
+    const res = await roles(req, context);
+    expect(res.status).toBe(200);
+    expect(JSON.parse(res.body).roles).toContain('admin');
+  });
+
+  test('returns admin role for community organiser email', async () => {
+    process.env.SUPER_ADMIN_EMAILS = 'community@test.com';
+    storage.getApprovedApplicationByEmail.mockResolvedValueOnce(null);
+    const req = makeRequest('POST', { userId: 'u1', userDetails: 'community@test.com' });
     const res = await roles(req, context);
     expect(res.status).toBe(200);
     expect(JSON.parse(res.body).roles).toContain('admin');

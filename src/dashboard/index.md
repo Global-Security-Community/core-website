@@ -13,6 +13,7 @@ title: Dashboard
     <button id="btn-events">My Events</button>
     <button id="btn-create" class="btn-navy">Create Event</button>
     <button id="btn-chapter" class="btn-outline">Edit Chapter</button>
+    <button id="btn-reports" class="btn-outline is-hidden">Community Reports</button>
   </div>
 
   <!-- Events List -->
@@ -95,6 +96,29 @@ title: Dashboard
       <a id="create-progress-link" href="#" class="btn is-hidden inline-mt">View Event Page →</a>
       <button id="create-another-btn" type="button" class="is-hidden inline-mt-sm">Create Another Event</button>
     </div>
+  </div>
+
+  <!-- Community Reports (super admin only) -->
+  <div id="section-reports" class="is-hidden">
+    <div class="detail-actions">
+      <button id="btn-back-reports" class="btn-outline">&larr; Back to Events</button>
+    </div>
+    <h2>Community Reports</h2>
+    <p class="text-muted">Download registration profile and demographics data. This section is only available to community organisers.</p>
+    <div id="reports-summary" class="detail-panel"></div>
+    <div class="reg-form-wrap">
+      <div class="form-group">
+        <label for="report-event">Event</label>
+        <select id="report-event">
+          <option value="">All events</option>
+        </select>
+      </div>
+      <button id="report-download-btn" type="button">Download CSV</button>
+    </div>
+    <div id="reports-visuals" class="reports-visuals" aria-live="polite">
+      <p class="text-muted">Loading report data...</p>
+    </div>
+    <div id="reports-message" class="form-message is-hidden" role="alert"></div>
   </div>
 
   <!-- Event Detail (attendance) -->
