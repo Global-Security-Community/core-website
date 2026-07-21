@@ -1,10 +1,12 @@
 const { randomUUID } = require('crypto');
-const { storeApplication } = require('../helpers/tableStorage');
+const { storeApplication, getApprovedApplicationBySlug } = require('../helpers/tableStorage');
 const { generateApprovalToken } = require('../helpers/tokenHelper');
 const { sendMessage } = require('../helpers/discordBot');
+const { sendChapterApplicationAdminEmail } = require('../helpers/emailService');
 const { sanitiseFields } = require('../helpers/sanitise');
 const { checkRateLimit, getClientIP } = require('../helpers/rateLimiter');
 const { verifyTurnstileToken } = require('../helpers/turnstile');
+const { cityToSlug } = require('../helpers/auth');
 
 const MAX_REQUESTS_PER_WINDOW = parseInt(process.env.MAX_CHAPTER_REQUESTS_PER_WINDOW || '3');
 
@@ -125,12 +127,25 @@ module.exports = async function (request, context) {
       }
     }
 
-    const applicationId = randomUUID();
     const sanitised = sanitiseFields(
       { fullName, email, city, country, linkedIn, github, whyLead, existingCommunity,
         secondLeadName, secondLeadEmail, secondLeadLinkedIn, secondLeadGitHub },
       ['fullName', 'city', 'country', 'whyLead', 'existingCommunity', 'secondLeadName', 'email', 'secondLeadEmail']
     );
+    const chapterSlug = cityToSlug(sanitised.city.trim());
+    const existingChapter = await getApprovedApplicationBySlug(chapterSlug);
+    if (existingChapter) {
+      return {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          existingChapter: true,
+          redirectUrl: `/chapters/${chapterSlug}/?application=existing`
+        })
+      };
+    }
+
+    const applicationId = randomUUID();
     const application = {
       id: applicationId,
       fullName: sanitised.fullName.trim(),
@@ -149,6 +164,12 @@ module.exports = async function (request, context) {
 
     // Store in Azure Table Storage
     await storeApplication(application);
+
+    try {
+      await sendChapterApplicationAdminEmail(application, context);
+    } catch (emailError) {
+      context.log(`Chapter application admin email failed: ${emailError.message}`);
+    }
 
     // Send Discord notification via bot
     const discordChannelId = process.env.DISCORD_NOTIFICATIONS_CHANNEL_ID;

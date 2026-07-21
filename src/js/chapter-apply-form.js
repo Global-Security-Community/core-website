@@ -55,7 +55,13 @@ document.getElementById('chapter-apply-form').addEventListener('submit', async f
 
     var data = await response.json();
 
-    if (response.ok) {
+    if (response.ok && data.existingChapter) {
+      if (/^\/chapters\/[a-z0-9-]+\/\?application=existing$/.test(data.redirectUrl || '')) {
+        window.location.assign(data.redirectUrl);
+        return;
+      }
+      GSC.showMessage(formMessage, 'error', 'This chapter already exists, but its page could not be opened. Please use the chapter directory.');
+    } else if (response.ok) {
       GSC.showMessage(formMessage, 'success', data.message || 'Application submitted successfully!');
       document.getElementById('chapter-apply-form').reset();
       if (typeof turnstile !== 'undefined') turnstile.reset();

@@ -1,5 +1,5 @@
-const { app } = require('@azure/functions');
 const { sendMessage } = require('../helpers/discordBot');
+const { sendContactSubmissionAdminEmail } = require('../helpers/emailService');
 const { stripHtml } = require('../helpers/sanitise');
 const { storeContactSubmission } = require('../helpers/tableStorage');
 const { verifyTurnstileToken } = require('../helpers/turnstile');
@@ -122,12 +122,16 @@ module.exports = async function (request, context) {
       };
     }
 
-    // Store in Table Storage (primary persistence)
+    const submission = { name: safeName, email, subject: safeSubject, message: safeMessage };
+
+    // Store before notifying so a successful response always means the submission is persisted.
+    await storeContactSubmission(submission);
+    context.log('Contact form stored in Table Storage');
+
     try {
-      await storeContactSubmission({ name: safeName, email, subject: safeSubject, message: safeMessage });
-      context.log('Contact form stored in Table Storage');
-    } catch (storeErr) {
-      context.log(`Table Storage error (non-blocking): ${storeErr.message}`);
+      await sendContactSubmissionAdminEmail(submission, context);
+    } catch (emailError) {
+      context.log(`Contact submission admin email failed: ${emailError.message}`);
     }
 
     // Get Discord channel ID from environment
