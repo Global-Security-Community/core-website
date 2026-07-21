@@ -304,4 +304,93 @@ async function sendEventNotificationEmail(subscriberEmail, event, context) {
   }
 }
 
-module.exports = { sendTicketEmail, sendBadgeEmail, sendCancellationEmail, sendEventNotificationEmail };
+function getSuperAdminEmails() {
+  return [...new Set(
+    (process.env.SUPER_ADMIN_EMAILS || '')
+      .split(',')
+      .map(email => email.trim().toLowerCase())
+      .filter(Boolean)
+  )];
+}
+
+async function sendSuperAdminEmail(subject, bodyHtml, context) {
+  const recipients = getSuperAdminEmails();
+  if (recipients.length === 0) {
+    if (context) context.log('SUPER_ADMIN_EMAILS is not configured — skipping admin email notification');
+    return [];
+  }
+
+  let client;
+  try {
+    client = getEmailClient();
+  } catch (err) {
+    if (context) context.log(`Admin email notification skipped: ${err.message}`);
+    return [];
+  }
+
+  const results = await Promise.allSettled(recipients.map(async recipient => {
+    const poller = await client.beginSend({
+      senderAddress: SENDER_ADDRESS,
+      content: {
+        subject,
+        html: emailLayout(bodyHtml)
+      },
+      recipients: {
+        to: [{ address: recipient }]
+      }
+    });
+    return poller.pollUntilDone();
+  }));
+
+  results.forEach((result, index) => {
+    if (!context) return;
+    if (result.status === 'fulfilled') {
+      context.log(`Admin email notification sent to ${recipients[index]}`);
+    } else {
+      context.log(`Admin email notification FAILED | to: ${recipients[index]} | error: ${result.reason.message}`);
+    }
+  });
+  return results;
+}
+
+async function sendChapterApplicationAdminEmail(application, context) {
+  const safeLocation = `${application.city}, ${application.country}`.replace(/[\r\n]+/g, ' ').trim();
+  const secondLead = application.secondLeadName
+    ? `<tr><td style="padding:6px 10px;font-weight:600;">Second lead</td><td style="padding:6px 10px;">${escapeHtml(application.secondLeadName)}${application.secondLeadEmail ? ` (${escapeHtml(application.secondLeadEmail)})` : ''}</td></tr>`
+    : '';
+  const bodyHtml = `
+    <h2 style="color:#001f3f;margin:0 0 16px 0;">New Chapter Application</h2>
+    <table style="width:100%;border-collapse:collapse;background:#f8f9fa;">
+      <tr><td style="padding:6px 10px;font-weight:600;">Location</td><td style="padding:6px 10px;">${escapeHtml(application.city)}, ${escapeHtml(application.country)}</td></tr>
+      <tr><td style="padding:6px 10px;font-weight:600;">Applicant</td><td style="padding:6px 10px;">${escapeHtml(application.fullName)} (${escapeHtml(application.email)})</td></tr>
+      ${secondLead}
+    </table>
+    <h3 style="color:#001f3f;margin:20px 0 8px 0;">Why they want to lead</h3>
+    <p style="color:#555;white-space:pre-wrap;">${escapeHtml(application.whyLead)}</p>
+    ${application.existingCommunity ? `<h3 style="color:#001f3f;margin:20px 0 8px 0;">Existing community</h3><p style="color:#555;white-space:pre-wrap;">${escapeHtml(application.existingCommunity)}</p>` : ''}
+    <p style="color:#777;font-size:0.9em;margin-top:24px;">Review and action this application from the configured Discord notifications channel.</p>`;
+  return sendSuperAdminEmail(`New chapter application: ${safeLocation}`, bodyHtml, context);
+}
+
+async function sendContactSubmissionAdminEmail(submission, context) {
+  const safeSubject = (submission.subject || '').replace(/[\r\n]+/g, ' ').trim();
+  const bodyHtml = `
+    <h2 style="color:#001f3f;margin:0 0 16px 0;">New Contact Request</h2>
+    <table style="width:100%;border-collapse:collapse;background:#f8f9fa;">
+      <tr><td style="padding:6px 10px;font-weight:600;">Name</td><td style="padding:6px 10px;">${escapeHtml(submission.name)}</td></tr>
+      <tr><td style="padding:6px 10px;font-weight:600;">Email</td><td style="padding:6px 10px;">${escapeHtml(submission.email)}</td></tr>
+      <tr><td style="padding:6px 10px;font-weight:600;">Subject</td><td style="padding:6px 10px;">${escapeHtml(submission.subject)}</td></tr>
+    </table>
+    <h3 style="color:#001f3f;margin:20px 0 8px 0;">Message</h3>
+    <p style="color:#555;white-space:pre-wrap;">${escapeHtml(submission.message)}</p>`;
+  return sendSuperAdminEmail(`New contact request: ${safeSubject}`, bodyHtml, context);
+}
+
+module.exports = {
+  sendTicketEmail,
+  sendBadgeEmail,
+  sendCancellationEmail,
+  sendEventNotificationEmail,
+  sendChapterApplicationAdminEmail,
+  sendContactSubmissionAdminEmail
+};
