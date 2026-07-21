@@ -43,7 +43,7 @@ jest.mock('../src/helpers/tableStorage', () => ({
   VALID_ROLES: ['attendee', 'volunteer', 'speaker', 'sponsor', 'organiser'],
   getApprovedApplicationByEmail: jest.fn(),
   getApprovedApplicationsByEmail: jest.fn().mockResolvedValue([{ city: 'Perth' }]),
-  getApprovedApplicationBySlug: jest.fn(),
+  getApprovedApplicationBySlug: jest.fn().mockResolvedValue(null),
   storeSessionizeCache: jest.fn().mockResolvedValue({}),
   getSessionizeCache: jest.fn(),
   storeSubscription: jest.fn().mockResolvedValue({}),
@@ -66,7 +66,9 @@ jest.mock('../src/helpers/emailService', () => ({
   sendTicketEmail: jest.fn().mockResolvedValue({}),
   sendBadgeEmail: jest.fn().mockResolvedValue({}),
   sendCancellationEmail: jest.fn().mockResolvedValue({}),
-  sendEventNotificationEmail: jest.fn().mockResolvedValue({})
+  sendEventNotificationEmail: jest.fn().mockResolvedValue({}),
+  sendChapterApplicationAdminEmail: jest.fn().mockResolvedValue([]),
+  sendContactSubmissionAdminEmail: jest.fn().mockResolvedValue([])
 }));
 
 jest.mock('../src/helpers/rateLimiter', () => ({
@@ -237,6 +239,21 @@ describe('contactForm function', () => {
     expect(res.status).toBe(200);
     expect(JSON.parse(res.body).success).toBe(true);
     expect(storage.storeContactSubmission).toHaveBeenCalled();
+    expect(emailService.sendContactSubmissionAdminEmail).toHaveBeenCalledWith({
+      name: 'Alice',
+      email: 'alice@test.com',
+      subject: 'Test',
+      message: 'Hello world'
+    }, context);
+  });
+
+  test('returns 500 when contact submission cannot be persisted', async () => {
+    storage.storeContactSubmission.mockRejectedValueOnce(new Error('storage unavailable'));
+    const res = await contactForm(contactRequest({
+      name: 'Alice', email: 'alice@test.com', subject: 'Test', message: 'Hello world'
+    }), context);
+    expect(res.status).toBe(500);
+    expect(emailService.sendContactSubmissionAdminEmail).not.toHaveBeenCalled();
   });
 
   test('rate limits after too many requests from same IP', async () => {
@@ -339,7 +356,29 @@ describe('chapterApplication function', () => {
     expect(res.status).toBe(200);
     expect(JSON.parse(res.body).success).toBe(true);
     expect(storage.storeApplication).toHaveBeenCalledTimes(1);
+    expect(emailService.sendChapterApplicationAdminEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ city: 'Perth', country: 'Australia', email: 'alice@test.com' }),
+      context
+    );
     expect(discord.sendMessage).toHaveBeenCalledWith('test-notif-channel', expect.any(Object), context);
+  });
+
+  test('redirects to an approved chapter without storing or notifying', async () => {
+    storage.getApprovedApplicationBySlug.mockResolvedValueOnce({ city: 'New York' });
+    const res = await chapterApplication(makeRequest('POST', {
+      ...validBody, city: ' New York!! '
+    }), context);
+    const body = JSON.parse(res.body);
+
+    expect(res.status).toBe(200);
+    expect(body).toEqual({
+      existingChapter: true,
+      redirectUrl: '/chapters/new-york/?application=existing'
+    });
+    expect(storage.getApprovedApplicationBySlug).toHaveBeenCalledWith('new-york');
+    expect(storage.storeApplication).not.toHaveBeenCalled();
+    expect(emailService.sendChapterApplicationAdminEmail).not.toHaveBeenCalled();
+    expect(discord.sendMessage).not.toHaveBeenCalled();
   });
 });
 

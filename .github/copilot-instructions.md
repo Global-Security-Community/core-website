@@ -214,7 +214,8 @@ The chapters listing page (`/chapters/`) features an interactive map powered by 
 - All email functions in `api/src/helpers/emailService.js`
 - Sender: `DoNotReply@globalsecurity.community`
 - ACS resource: `gsc-core-acs`, Email service: `gsc-core-ces`
-- Send emails as non-blocking fire-and-forget (don't fail the parent operation if email fails)
+- Await email delivery attempts, but catch failures so they do not fail the persisted parent operation
+- New chapter applications and contact requests email each address in `SUPER_ADMIN_EMAILS` privately after persistence
 - Ticket confirmation email includes: event details, QR code, "View Event" button (links to event page), "My Tickets" button, and Discord invite section with chapter name
 - All emails use `emailLayout()` wrapper for consistent GSC branding (dark header, teal accent gradient)
 
@@ -311,6 +312,7 @@ API secrets are stored in `api/local.settings.json` (gitignored). Required value
 | `CIAM_CLIENT_ID` | Azure AD B2C app client ID |
 | `CIAM_CLIENT_SECRET` | Azure AD B2C app client secret |
 | `AZURE_COMMUNICATION_CONNECTION_STRING` | ACS connection (optional — emails fail gracefully) |
+| `SUPER_ADMIN_EMAILS` | Comma-separated community organiser addresses used for admin access and submission notifications |
 | `DISCORD_BOT_TOKEN` | Discord bot token (optional — notifications fail gracefully) |
 | `DISCORD_CONTACT_CHANNEL_ID` | Discord channel ID for contact form submissions |
 | `DISCORD_NOTIFICATIONS_CHANNEL_ID` | Discord channel ID for chapter/event notifications |

@@ -12,6 +12,8 @@ layout: base.njk
     <p class="chapter-subtitle">{{ city }}, {{ country }}</p>
   </header>
 
+  <div id="existing-chapter-notice" class="form-message is-hidden" role="status"></div>
+
   <section class="page-section">
     <h2>About This Chapter</h2>
     <p>Welcome to the Global Security Community chapter in {{ city }}! We bring together security professionals and enthusiasts in the {{ city }} area to share knowledge, network, and grow together.</p>
@@ -96,3 +98,4 @@ layout: base.njk
 
 <script src="/js/scroll-reveal.js?v={{ cacheBust }}"></script>
 <script src="/js/chapter-partners.js?v={{ cacheBust }}"></script>
+<script src="/js/chapter-existing-notice.js?v={{ cacheBust }}"></script>
