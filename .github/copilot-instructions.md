@@ -273,7 +273,7 @@ The chapters listing page (`/chapters/`) features an interactive map powered by 
 
 - **Node.js 22** (Azure Functions Core Tools v4 requires ≤22)
 - **nvm** for switching Node versions: `nvm install 22`
-- Dev dependencies installed: `npm install` (includes SWA CLI and Azure Functions Core Tools)
+- Dev dependencies installed: `npm install` (the SWA CLI manages Azure Functions Core Tools when starting the local environment)
 
 ### Starting the Local Environment
 
