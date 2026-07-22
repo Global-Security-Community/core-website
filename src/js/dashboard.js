@@ -4,6 +4,12 @@
   var currentChapterSlug = '';
   var eventsLoadedPromise = null;
   var communityReportEvents = [];
+  var currentAttendees = [];
+  var currentEventTitle = '';
+  var postEventState = null;
+  var postEventDefaultTemplates = null;
+  var postEventSaveTimer = null;
+  var currentPostEventStatus = '';
 
   // Quill rich text editor configuration
   var quillToolbar = [
@@ -296,6 +302,11 @@
     document.getElementById('detail-title').textContent = eventTitle || 'Loading...';
     document.getElementById('detail-subtitle').textContent = '';
     document.getElementById('detail-attendees').innerHTML = '<p>Loading...</p>';
+    currentAttendees = [];
+    currentEventTitle = eventTitle || 'your event';
+    postEventState = null;
+    document.getElementById('post-event-communication-panel').style.display = 'none';
+    resetAttendeeEmailComposer();
 
     GSC.fetch('/api/eventAttendance?eventId=' + encodeURIComponent(eventId))
       .then(function(r) { return r.json(); })
@@ -329,10 +340,13 @@
           '</div>' +
           (isPublished ? '<div class="action-card card">' +
             '<button id="btn-close-reg" class="btn-warning btn-full">Close Registration</button>' +
-            '<button id="btn-complete" class="btn-danger btn-full">Mark Complete</button>' +
+            '<button id="btn-complete" class="btn-danger btn-full">Review &amp; Complete Event</button>' +
           '</div>' : '') +
           (isClosed ? '<div class="action-card card">' +
-            '<button id="btn-complete" class="btn-danger btn-full">Mark Complete</button>' +
+            '<button id="btn-complete" class="btn-danger btn-full">Review &amp; Complete Event</button>' +
+          '</div>' : '') +
+          (isCompleted ? '<div class="action-card card">' +
+            '<button id="btn-post-event" class="btn-full">Post-event Communications</button>' +
           '</div>' : '');
 
         var actionsEl = document.getElementById('detail-actions');
@@ -343,7 +357,14 @@
           document.getElementById('btn-close-reg').addEventListener('click', function() { closeReg(eventId, chapterSlug); });
         }
         if (isPublished || isClosed) {
-          document.getElementById('btn-complete').addEventListener('click', function() { completeEvent(eventId, chapterSlug); });
+          document.getElementById('btn-complete').addEventListener('click', function() {
+            openPostEventCommunication(eventId, chapterSlug, evtStatus);
+          });
+        }
+        if (isCompleted) {
+          document.getElementById('btn-post-event').addEventListener('click', function() {
+            openPostEventCommunication(eventId, chapterSlug, evtStatus);
+          });
         }
         if (needsPublish) {
           document.getElementById('btn-publish').addEventListener('click', function() { publishEvent(eventId, chapterSlug); });
@@ -404,18 +425,26 @@
           });
         }
 
-        // Regenerate image button — disabled until image generation workflow is finalised
+        // Badge artwork status
         var existingRegenCard = document.getElementById('card-event-badge');
         if (existingRegenCard) existingRegenCard.remove();
         var regenCard = document.createElement('div');
+        var themeYear = (data.eventDate || '').slice(0, 4) || new Date().getFullYear();
         regenCard.id = 'card-event-badge';
         regenCard.className = 'card';
         regenCard.style.cssText = 'margin-top:1rem;padding:1rem;';
         regenCard.innerHTML =
-          '<h4 class="dash-card-title"><span class="icon" aria-hidden="true">' + GSCIcons.image + '</span> Event Badge Image</h4>' +
-          '<p class="dash-card-info">Image generation is temporarily disabled while we improve the workflow.</p>';
+          '<h4 class="dash-card-title"><span class="icon" aria-hidden="true">' + GSCIcons.image + '</span> Attendee Badge</h4>' +
+          '<p class="dash-card-info">Apply the shared ' + GSC.esc(themeYear) + ' community theme with this chapter’s local variation to the attendee, speaker, and organiser badges.</p>' +
+          '<div id="badge-artwork-preview"></div>' +
+          '<button id="btn-generate-badge-artwork" class="btn-full">' + (data.hasBadgeArtwork ? 'Rebuild Badges from Community Theme' : 'Apply Community Theme') + '</button>' +
+          (data.hasBadgeArtwork ? '<p class="dash-card-info">Custom artwork is already saved for this event.</p>' : '') +
+          '<p id="badge-artwork-status" class="dash-form-msg" role="status" aria-live="polite"></p>';
         var actionsParent2 = document.getElementById('detail-actions').parentNode;
         actionsParent2.insertBefore(regenCard, document.getElementById('detail-attendees'));
+        document.getElementById('btn-generate-badge-artwork').addEventListener('click', function() {
+          generateBadgeArtwork(eventId, chapterSlug);
+        });
 
         // Community Partners management section
         var existingPartnerSection = document.getElementById('card-community-partners');
@@ -534,6 +563,7 @@
           document.getElementById('detail-attendees').innerHTML = '<p>No registrations yet.</p>';
           return;
         }
+        currentAttendees = data.attendees.slice();
         var html = '<table><thead><tr><th class="th-checkbox"><input type="checkbox" id="select-all"></th><th>Name</th><th>Email</th><th>Role</th><th>Ticket</th><th>Checked In</th></tr></thead><tbody>';
         data.attendees.forEach(function(a) {
           var role = a.role || 'attendee';
@@ -561,9 +591,15 @@
         });
 
         // Role apply button
-        document.getElementById('role-apply-btn').addEventListener('click', function() { applyRoleChange(eventId, eventTitle); });
+        document.getElementById('role-apply-btn').onclick = function() { applyRoleChange(eventId, eventTitle); };
         // Resend email button
-        document.getElementById('resend-email-btn').addEventListener('click', function() { resendTicketEmails(eventId, eventTitle); });
+        document.getElementById('resend-email-btn').onclick = function() { resendTicketEmails(eventId); };
+        document.getElementById('compose-email-btn').onclick = function() { showAttendeeEmailComposer(); };
+        document.getElementById('attendee-email-audience').onchange = function() {
+          updateAttendeeEmailAudience(true);
+        };
+        document.getElementById('cancel-attendee-email-btn').onclick = resetAttendeeEmailComposer;
+        document.getElementById('send-attendee-email-btn').onclick = function() { sendAttendeeEmails(eventId); };
       })
       .catch(function() {
         document.getElementById('detail-title').textContent = 'Error loading event details';
@@ -627,6 +663,51 @@
     .catch(function() { alert('Failed to publish event. Please try again.'); });
   }
 
+  function generateBadgeArtwork(eventId, chapterSlug) {
+    var btn = document.getElementById('btn-generate-badge-artwork');
+    var status = document.getElementById('badge-artwork-status');
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+    status.textContent = 'Azure OpenAI is creating the artwork. This can take up to a minute.';
+
+    GSC.fetch('/api/regenerateImage', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug })
+    })
+    .then(function(response) {
+      return response.json().then(function(data) {
+        if (!response.ok) throw new Error(data.error || 'Failed to generate artwork.');
+        return data;
+      });
+    })
+    .then(function(data) {
+      var preview = document.getElementById('badge-artwork-preview');
+      preview.innerHTML =
+        '<div class="badge-artwork-preview-grid">' +
+          '<figure><img src="' + GSC.esc(data.attendeeImageDataUrl) + '" alt="Generated attendee badge artwork" class="badge-artwork-preview"><figcaption>Attendee</figcaption></figure>' +
+          '<figure><img src="' + GSC.esc(data.speakerImageDataUrl) + '" alt="Generated speaker badge artwork" class="badge-artwork-preview"><figcaption>Speaker</figcaption></figure>' +
+          '<figure><img src="' + GSC.esc(data.organiserImageDataUrl) + '" alt="Generated organiser badge artwork" class="badge-artwork-preview"><figcaption>Organiser</figcaption></figure>' +
+        '</div>';
+      var annualStatus = data.themeCreated
+        ? 'The ' + data.themeYear + ' community theme was created. '
+        : 'The existing ' + data.themeYear + ' community theme was reused. ';
+      var chapterStatus = data.chapterThemeCreated
+        ? 'A local chapter variation was created from it. '
+        : 'The chapter’s existing local variation was reused. ';
+      status.textContent = annualStatus + chapterStatus + 'Event badge variants are saved.';
+      btn.textContent = 'Rebuild Badges from Community Theme';
+      loadAuditLog(eventId);
+    })
+    .catch(function(error) {
+      status.textContent = error.message;
+      btn.textContent = 'Try Again';
+    })
+    .finally(function() {
+      btn.disabled = false;
+    });
+  }
+
   function closeReg(eventId, chapterSlug) {
     if (!confirm('Close registration for this event?')) return;
     GSC.fetch('/api/eventAttendance', {
@@ -640,19 +721,363 @@
     .catch(function() { alert('Failed to close registration. Please try again.'); });
   }
 
-  function completeEvent(eventId, chapterSlug) {
-    if (!confirm('Are you sure you want to mark this event as complete?\n\nBadges will be automatically issued to all checked-in attendees.')) return;
-    GSC.fetch('/api/eventAttendance', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug, status: 'completed' })
-    }).then(function() {
-      return GSC.fetch('/api/issueBadges', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug })
+  function openPostEventCommunication(eventId, chapterSlug, eventStatus) {
+    var panel = document.getElementById('post-event-communication-panel');
+    var content = document.getElementById('post-event-content');
+    var status = document.getElementById('post-event-status');
+    currentPostEventStatus = eventStatus;
+    document.getElementById('post-event-heading').textContent = eventStatus === 'completed'
+      ? 'Thank event contributors'
+      : 'Complete event and thank contributors';
+    panel.style.display = 'block';
+    content.innerHTML = '<p class="text-muted">Loading recipients and message templates...</p>';
+    status.style.display = 'none';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('post-event-close-btn').onclick = function() {
+      panel.style.display = 'none';
+    };
+
+    GSC.fetch('/api/postEventCommunication?eventId=' + encodeURIComponent(eventId) +
+      '&chapterSlug=' + encodeURIComponent(chapterSlug))
+      .then(function(response) {
+        return response.json().then(function(data) {
+          if (!response.ok) throw new Error(data.error || 'Could not load post-event communications.');
+          return data;
+        });
+      })
+      .then(function(data) {
+        postEventState = data;
+        postEventDefaultTemplates = data.defaultTemplates;
+        currentPostEventStatus = data.eventStatus;
+        renderPostEventCommunication(eventId, chapterSlug);
+      })
+      .catch(function(error) {
+        content.innerHTML = '<p class="form-message form-message--error">' + GSC.esc(error.message) + '</p>';
       });
-    }).then(function(r) { return r.json(); })
-    .then(function(d) { alert('Event completed. ' + (d.issued || 0) + ' badges issued.'); loadEvents(); })
-    .catch(function() { alert('Failed to complete event. Please try again.'); });
+  }
+
+  function renderPostEventCommunication(eventId, chapterSlug) {
+    var content = document.getElementById('post-event-content');
+    document.getElementById('post-event-heading').textContent = currentPostEventStatus === 'completed'
+      ? 'Thank event contributors'
+      : 'Complete event and thank contributors';
+    var recipients = postEventState.recipients;
+    var job = postEventState.job;
+    var started = Boolean(job.startedAt);
+    var roleConfig = [
+      ['attendee', 'Attendees', 'Attendee'],
+      ['volunteer', 'Volunteers', 'Attendee'],
+      ['speaker', 'Speakers', 'Speaker'],
+      ['organiser', 'Organisers', 'Organiser'],
+      ['sponsor', 'Community Partners', 'Attendee']
+    ];
+    var html =
+      '<div class="post-event-guidance">' +
+        '<h4>What will happen</h4>' +
+        '<ul>' +
+          '<li>Only registrations marked as checked in will receive an email.</li>' +
+          '<li>Each person receives one message based on their assigned role.</li>' +
+          '<li>The appropriate community, Speaker, or Organiser badge is attached as a LinkedIn-ready PNG.</li>' +
+          '<li>Your messages are frozen when sending starts; successful deliveries are never repeated.</li>' +
+          '<li>Messages send in safe batches while this page is open. If interrupted, reopen this event and resume.</li>' +
+        '</ul>' +
+      '</div>' +
+      '<div class="post-event-recipient-summary">' +
+        roleConfig.map(function(config) {
+          return '<div><strong>' + recipients.roles[config[0]] + '</strong><span>' + config[1] + '</span></div>';
+        }).join('') +
+        '<div class="post-event-recipient-total"><strong>' + recipients.total + '</strong><span>Total recipients</span></div>' +
+      '</div>';
+
+    if (!postEventState.hasBadgeArtwork) {
+      html += '<p class="post-event-warning"><strong>Badge artwork has not been applied.</strong> You can still continue, but the standard fallback badge will be attached.</p>';
+    }
+
+    if (started) {
+      html += postEventProgressHtml(job.progress, job.status);
+    } else {
+      html += '<div class="post-event-template-list">';
+      roleConfig.forEach(function(config) {
+        var role = config[0];
+        var template = postEventState.templates[role];
+        var recipientCount = recipients.roles[role];
+        html +=
+          '<details class="post-event-template"' + (recipientCount > 0 ? ' open' : '') + '>' +
+            '<summary><span>' + config[1] + '</span><span>' + recipientCount + ' recipients · ' + config[2] + ' badge</span></summary>' +
+            '<div class="post-event-template__body">' +
+              '<div class="form-group">' +
+                '<label for="post-event-subject-' + role + '">Subject</label>' +
+                '<input id="post-event-subject-' + role + '" data-post-event-role="' + role + '" data-post-event-field="subject" maxlength="150" value="' + GSC.esc(template.subject) + '">' +
+              '</div>' +
+              '<div class="form-group">' +
+                '<label for="post-event-message-' + role + '">Message</label>' +
+                '<textarea id="post-event-message-' + role + '" data-post-event-role="' + role + '" data-post-event-field="message" rows="8" maxlength="5000">' + GSC.esc(template.message) + '</textarea>' +
+              '</div>' +
+              '<button type="button" class="btn-outline post-event-restore" data-role="' + role + '">Restore default</button>' +
+              '<div class="post-event-preview" id="post-event-preview-' + role + '" aria-label="' + config[1] + ' email preview"></div>' +
+            '</div>' +
+          '</details>';
+      });
+      html += '</div>' +
+        '<p class="char-hint">Available placeholders: ' + postEventState.placeholders.map(GSC.esc).join(', ') + '. Draft changes save automatically.</p>' +
+        '<div class="post-event-actions">' +
+          '<button id="post-event-save-btn" type="button" class="btn-outline">Save Draft</button>' +
+          '<button id="post-event-send-btn" type="button" class="btn-danger">' +
+            (currentPostEventStatus === 'completed' ? 'Approve &amp; Send' : 'Approve, Complete Event &amp; Send') +
+          '</button>' +
+        '</div>';
+    }
+
+    content.innerHTML = html;
+    if (started) {
+      wirePostEventProgressActions(eventId, chapterSlug);
+      return;
+    }
+
+    content.querySelectorAll('[data-post-event-field]').forEach(function(field) {
+      field.addEventListener('input', function() {
+        updatePostEventPreview(this.dataset.postEventRole);
+        clearTimeout(postEventSaveTimer);
+        postEventSaveTimer = setTimeout(function() {
+          savePostEventDraft(eventId, chapterSlug, true);
+        }, 1000);
+      });
+    });
+    content.querySelectorAll('.post-event-restore').forEach(function(button) {
+      button.addEventListener('click', function() {
+        var role = this.dataset.role;
+        document.getElementById('post-event-subject-' + role).value = postEventDefaultTemplates[role].subject;
+        document.getElementById('post-event-message-' + role).value = postEventDefaultTemplates[role].message;
+        updatePostEventPreview(role);
+        savePostEventDraft(eventId, chapterSlug, true);
+      });
+    });
+    roleConfig.forEach(function(config) { updatePostEventPreview(config[0]); });
+    document.getElementById('post-event-save-btn').onclick = function() {
+      savePostEventDraft(eventId, chapterSlug, false);
+    };
+    document.getElementById('post-event-send-btn').onclick = function() {
+      approveAndSendPostEvent(eventId, chapterSlug);
+    };
+  }
+
+  function collectPostEventTemplates() {
+    var templates = {};
+    ['attendee', 'volunteer', 'speaker', 'organiser', 'sponsor'].forEach(function(role) {
+      templates[role] = {
+        subject: document.getElementById('post-event-subject-' + role).value.trim(),
+        message: document.getElementById('post-event-message-' + role).value.trim()
+      };
+    });
+    return templates;
+  }
+
+  function updatePostEventPreview(role) {
+    var subject = document.getElementById('post-event-subject-' + role).value;
+    var message = document.getElementById('post-event-message-' + role).value;
+    var preview = document.getElementById('post-event-preview-' + role);
+    preview.innerHTML = '<strong>' + GSC.esc(subject) + '</strong><p>' +
+      GSC.esc(message).replace(/\n/g, '<br>') + '</p>';
+  }
+
+  function savePostEventDraft(eventId, chapterSlug, silent) {
+    var status = document.getElementById('post-event-status');
+    return postEventRequest({
+      action: 'saveDraft',
+      eventId: eventId,
+      chapterSlug: chapterSlug,
+      templates: collectPostEventTemplates()
+    }).then(function(data) {
+      postEventState.templates = data.templates;
+      status.textContent = silent ? 'Draft saved.' : 'Message draft saved.';
+      status.style.display = 'block';
+      if (silent) setTimeout(function() {
+        if (status.textContent === 'Draft saved.') status.style.display = 'none';
+      }, 1500);
+      return data;
+    }).catch(function(error) {
+      status.textContent = error.message;
+      status.style.display = 'block';
+      return null;
+    });
+  }
+
+  function approveAndSendPostEvent(eventId, chapterSlug) {
+    clearTimeout(postEventSaveTimer);
+    var total = postEventState.recipients.total;
+    if (total === 0) {
+      alert('No checked-in registrations are eligible for post-event communication.');
+      return;
+    }
+    if (!confirm(
+      'Complete this event and send role-specific thank-you emails to ' + total + ' checked-in recipient(s)?\n\n' +
+      'The messages and recipient list will be frozen. Sending cannot be recalled, but failed deliveries can be retried safely.'
+    )) return;
+
+    var templates = collectPostEventTemplates();
+    var status = document.getElementById('post-event-status');
+    status.textContent = 'Saving messages and preparing recipients...';
+    status.style.display = 'block';
+
+    var completePromise = currentPostEventStatus === 'completed'
+      ? Promise.resolve()
+      : GSC.fetch('/api/eventAttendance', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug, status: 'completed' })
+        }).then(function(response) {
+          if (!response.ok) throw new Error('The event could not be marked complete.');
+          currentPostEventStatus = 'completed';
+        });
+
+    completePromise
+      .then(function() {
+        return postEventRequest({
+          action: 'start',
+          eventId: eventId,
+          chapterSlug: chapterSlug,
+          templates: templates
+        });
+      })
+      .then(function(data) {
+        postEventState.job = {
+          status: 'processing',
+          startedAt: new Date().toISOString(),
+          completedAt: '',
+          progress: data.progress
+        };
+        renderPostEventCommunication(eventId, chapterSlug);
+        return processPostEventBatches(eventId, chapterSlug);
+      })
+      .catch(function(error) {
+        status.textContent = error.message;
+        status.style.display = 'block';
+      });
+  }
+
+  function processPostEventBatches(eventId, chapterSlug) {
+    var status = document.getElementById('post-event-status');
+    status.textContent = 'Sending the next safe batch. Keep this page open...';
+    status.style.display = 'block';
+    return postEventRequest({
+      action: 'processBatch',
+      eventId: eventId,
+      chapterSlug: chapterSlug
+    }).then(function(data) {
+      postEventState.job.status = data.jobStatus;
+      postEventState.job.progress = data.progress;
+      if (data.progress.pending > 0) {
+        renderPostEventCommunication(eventId, chapterSlug);
+        if (data.retryAfterMs) {
+          return new Promise(function(resolve) {
+            setTimeout(resolve, data.retryAfterMs);
+          }).then(function() {
+            return processPostEventBatches(eventId, chapterSlug);
+          });
+        }
+        return processPostEventBatches(eventId, chapterSlug);
+      }
+      renderPostEventCommunication(eventId, chapterSlug);
+      loadAuditLog(eventId);
+      status.textContent = data.progress.failed > 0
+        ? 'Sending finished with ' + data.progress.failed + ' failed recipient(s). Review and retry them below.'
+        : 'All ' + data.progress.sent + ' post-event messages were sent successfully.';
+      status.style.display = 'block';
+      return data;
+    }).catch(function(error) {
+      status.textContent = 'Sending paused: ' + error.message + ' Reopen this event and resume when ready.';
+      status.style.display = 'block';
+      return null;
+    });
+  }
+
+  function wirePostEventProgressActions(eventId, chapterSlug) {
+    var progress = postEventState.job.progress;
+    var prepareButton = document.getElementById('post-event-prepare-btn');
+    var resumeButton = document.getElementById('post-event-resume-btn');
+    var retryButton = document.getElementById('post-event-retry-btn');
+    if (prepareButton) prepareButton.onclick = function() {
+      var button = this;
+      button.disabled = true;
+      postEventRequest({
+        action: 'start',
+        eventId: eventId,
+        chapterSlug: chapterSlug,
+        templates: postEventState.templates
+      }).then(function(data) {
+        postEventState.job.status = 'processing';
+        postEventState.job.progress = data.progress;
+        renderPostEventCommunication(eventId, chapterSlug);
+        return processPostEventBatches(eventId, chapterSlug);
+      }).catch(function(error) {
+        button.disabled = false;
+        document.getElementById('post-event-status').textContent = error.message;
+        document.getElementById('post-event-status').style.display = 'block';
+      });
+    };
+    if (resumeButton) resumeButton.onclick = function() {
+      this.disabled = true;
+      processPostEventBatches(eventId, chapterSlug);
+    };
+    if (retryButton) retryButton.onclick = function() {
+      var button = this;
+      button.disabled = true;
+      postEventRequest({
+        action: 'retryFailed',
+        eventId: eventId,
+        chapterSlug: chapterSlug
+      }).then(function(data) {
+        postEventState.job.status = 'processing';
+        postEventState.job.progress = data.progress;
+        renderPostEventCommunication(eventId, chapterSlug);
+        return processPostEventBatches(eventId, chapterSlug);
+      }).catch(function(error) {
+        button.disabled = false;
+        document.getElementById('post-event-status').textContent = error.message;
+        document.getElementById('post-event-status').style.display = 'block';
+      });
+    };
+  }
+
+  function postEventProgressHtml(progress, jobStatus) {
+    var completed = progress.sent + progress.failed;
+    var percentage = progress.total ? Math.round(completed / progress.total * 100) : 100;
+    var html =
+      '<div class="post-event-progress">' +
+        '<div class="post-event-progress__heading"><strong>Delivery progress</strong><span>' + completed + ' of ' + progress.total + ' processed</span></div>' +
+        '<div class="post-event-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax="' + progress.total + '" aria-valuenow="' + completed + '">' +
+          '<span style="width:' + percentage + '%"></span>' +
+        '</div>' +
+        '<div class="post-event-progress__counts">' +
+          '<span><strong>' + progress.sent + '</strong> sent</span>' +
+          '<span><strong>' + progress.pending + '</strong> pending</span>' +
+          '<span><strong>' + progress.failed + '</strong> failed</span>' +
+        '</div>' +
+      '</div>';
+    if (jobStatus === 'initialising') {
+      html += '<p class="text-muted">Recipient preparation was interrupted before sending began. It is safe to resume.</p>' +
+        '<button id="post-event-prepare-btn" type="button">Resume Preparation</button>';
+    } else if (progress.pending > 0) {
+      html += '<button id="post-event-resume-btn" type="button">Resume Sending</button>';
+    } else if (progress.failed > 0) {
+      html += '<button id="post-event-retry-btn" type="button">Retry Failed Messages</button>';
+    } else if (jobStatus === 'completed') {
+      html += '<p class="post-event-success">All post-event messages were delivered successfully.</p>';
+    }
+    return html;
+  }
+
+  function postEventRequest(body) {
+    return GSC.fetch('/api/postEventCommunication', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    }).then(function(response) {
+      return response.json().then(function(data) {
+        if (!response.ok) throw new Error(data.error || 'Post-event communication failed.');
+        return data;
+      });
+    });
   }
 
   // Create event handler
@@ -843,6 +1268,9 @@
     } else {
       bar.style.display = 'none';
     }
+    if (document.getElementById('attendee-email-audience').value === 'selected') {
+      updateAttendeeEmailAudience();
+    }
   }
 
   function applyRoleChange(eventId, eventTitle) {
@@ -869,7 +1297,7 @@
     .catch(function() { alert('Network error.'); });
   }
 
-  function resendTicketEmails(eventId, eventTitle) {
+  function resendTicketEmails(eventId) {
     var selected = document.querySelectorAll('.attendee-check:checked');
     var ids = [];
     selected.forEach(function(cb) { ids.push(cb.dataset.regId); });
@@ -900,7 +1328,152 @@
       }
     })
     .catch(function() { alert('Network error.'); })
-    .finally(function() { btn.disabled = false; btn.textContent = 'Resend Email'; });
+    .finally(function() { btn.disabled = false; btn.textContent = 'Resend Tickets'; });
+  }
+
+  function showAttendeeEmailComposer() {
+    var composer = document.getElementById('attendee-email-composer');
+    composer.style.display = 'block';
+    updateAttendeeEmailAudience(true);
+    document.getElementById('attendee-email-audience').focus();
+  }
+
+  function resetAttendeeEmailComposer() {
+    var composer = document.getElementById('attendee-email-composer');
+    if (!composer) return;
+    composer.style.display = 'none';
+    document.getElementById('attendee-email-subject').value = '';
+    document.getElementById('attendee-email-message').value = '';
+    document.getElementById('attendee-email-audience').value = 'selected';
+    var status = document.getElementById('attendee-email-status');
+    status.textContent = '';
+    status.style.display = 'none';
+  }
+
+  function getAttendeeEmailAudienceIds() {
+    var audience = document.getElementById('attendee-email-audience').value;
+    if (audience === 'selected') {
+      var selectedIds = [];
+      document.querySelectorAll('.attendee-check:checked').forEach(function(cb) {
+        selectedIds.push(cb.dataset.regId);
+      });
+      return selectedIds;
+    }
+    return currentAttendees.filter(function(attendee) {
+      var interested = attendee.volunteerInterest === true;
+      var confirmed = attendee.role === 'volunteer';
+      if (audience === 'volunteer-interest') return interested;
+      if (audience === 'volunteer-role') return confirmed;
+      return interested || confirmed;
+    }).map(function(attendee) { return attendee.id; });
+  }
+
+  function updateAttendeeEmailAudience(loadTemplate) {
+    var audience = document.getElementById('attendee-email-audience').value;
+    var ids = getAttendeeEmailAudienceIds();
+    var countText = ids.length + (ids.length === 1 ? ' recipient' : ' recipients');
+    document.getElementById('attendee-email-recipients').textContent = countText;
+
+    var copy = {
+      selected: {
+        help: 'Uses the registrations selected in the attendee table.',
+        subject: 'Important information for ' + currentEventTitle,
+        message: ''
+      },
+      'volunteer-interest': {
+        help: 'People who opted in to hear about volunteering. This does not grant the volunteer role or scanner access.',
+        subject: 'Volunteer opportunities for ' + currentEventTitle,
+        message: 'Thank you for indicating that you may be interested in volunteering.\n\nWe are getting the volunteer team together and wanted to share the next steps with you.'
+      },
+      'volunteer-role': {
+        help: 'Only registrations assigned the confirmed Volunteer role.',
+        subject: 'Volunteer briefing for ' + currentEventTitle,
+        message: 'Thank you for volunteering to help with this event.\n\nPlease review the following important information about your volunteer role and event-day arrangements.'
+      },
+      'volunteer-all': {
+        help: 'The combined interested and confirmed volunteer groups. Duplicate registrations are included only once.',
+        subject: 'Volunteer information for ' + currentEventTitle,
+        message: 'Thank you for your interest in helping with this event.\n\nWe are coordinating the volunteer team and wanted to share the following information and next steps.'
+      }
+    }[audience];
+    document.getElementById('attendee-email-audience-help').textContent = copy.help;
+    if (loadTemplate) {
+      document.getElementById('attendee-email-subject').value = copy.subject;
+      document.getElementById('attendee-email-message').value = copy.message;
+    }
+  }
+
+  function sendAttendeeEmails(eventId) {
+    var audience = document.getElementById('attendee-email-audience').value;
+    var registrationIds = getAttendeeEmailAudienceIds();
+    var subject = document.getElementById('attendee-email-subject').value.trim();
+    var message = document.getElementById('attendee-email-message').value.trim();
+    var status = document.getElementById('attendee-email-status');
+    if (registrationIds.length === 0) {
+      resetAttendeeEmailComposer();
+      return;
+    }
+    if (!subject || !message) {
+      status.textContent = 'Enter both a subject and message.';
+      status.style.display = 'block';
+      return;
+    }
+    if (!confirm('Send this email to ' + registrationIds.length + ' recipient(s)?')) return;
+
+    var btn = document.getElementById('send-attendee-email-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    status.style.display = 'none';
+
+    var batches = [];
+    for (var i = 0; i < registrationIds.length; i += 100) {
+      batches.push(registrationIds.slice(i, i + 100));
+    }
+    var result = { sent: 0, failed: 0 };
+    var sendSequence = Promise.resolve();
+
+    batches.forEach(function(batch, index) {
+      sendSequence = sendSequence.then(function() {
+        status.textContent = batches.length > 1 ? 'Sending batch ' + (index + 1) + ' of ' + batches.length + '...' : '';
+        status.style.display = batches.length > 1 ? 'block' : 'none';
+        return GSC.fetch('/api/sendAttendeeEmail', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            eventId: eventId,
+            registrationIds: batch,
+            audience: audience,
+            subject: subject,
+            message: message
+          })
+        }).then(function(r) {
+          return r.json().then(function(data) {
+            if (!r.ok) throw new Error(data.error || 'Failed to send emails.');
+            result.sent += data.sent || 0;
+            result.failed += data.failed || 0;
+          });
+        });
+      });
+    });
+
+    sendSequence
+    .then(function() {
+      status.textContent = result.sent + ' email(s) sent.' + (result.failed ? ' ' + result.failed + ' failed.' : '');
+      status.style.display = 'block';
+      if (result.sent > 0 && result.failed === 0) {
+        document.getElementById('attendee-email-subject').value = '';
+        document.getElementById('attendee-email-message').value = '';
+      }
+      loadAuditLog(eventId);
+    })
+    .catch(function(error) {
+      status.textContent = (result.sent ? result.sent + ' email(s) sent before an error occurred. ' : '') + error.message;
+      status.style.display = 'block';
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.textContent = 'Send Email';
+    });
   }
 
   function loadAuditLog(eventId) {
@@ -954,6 +1527,8 @@
       'partner_updated': 'Updated partner',
       'partner_deleted': 'Removed partner',
       'email_resent': 'Resent emails',
+      'attendee_email_sent': 'Emailed attendees',
+      'badge_artwork_generated': 'Generated badge artwork',
       'badges_issued': 'Issued badges'
     };
     return labels[action] || action.replace(/_/g, ' ');
@@ -965,6 +1540,7 @@
     if (action === 'registration_role_updated') return GSC.esc((d.count || 0) + '') + ' attendee(s) → ' + GSC.esc(d.role || '');
     if (action === 'attendee_checked_in') return GSC.esc(d.attendee || '');
     if (action === 'email_resent') return GSC.esc((d.sent || 0) + '') + ' sent' + (d.failed ? ', ' + d.failed + ' failed' : '');
+    if (action === 'attendee_email_sent') return GSC.esc(d.subject || '') + ' · ' + GSC.esc((d.sent || 0) + '') + ' sent' + (d.failed ? ', ' + d.failed + ' failed' : '');
     if (action === 'badges_issued') return GSC.esc((d.issued || 0) + '/' + (d.total || 0)) + ' badges';
     if (action === 'event_updated' && d.fields) return 'Fields: ' + GSC.esc(d.fields.join(', '));
     if ((action === 'partner_added' || action === 'partner_updated') && d.name) return GSC.esc(d.name);

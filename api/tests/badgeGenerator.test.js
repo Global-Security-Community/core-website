@@ -1,4 +1,5 @@
-const { generateBadge } = require('../src/helpers/badgeGenerator');
+const sharp = require('sharp');
+const { generateBadge, generateSharedEventBadgePng } = require('../src/helpers/badgeGenerator');
 
 describe('badgeGenerator', () => {
   const baseOpts = {
@@ -60,5 +61,24 @@ describe('badgeGenerator', () => {
   test('falls back to Attendee colours for unknown badge type', () => {
     const svg = generateBadge({ ...baseOpts, badgeType: 'Unknown' });
     expect(svg).toContain('#20b2aa'); // teal (attendee default)
+  });
+
+  test('generates distinct shared PNG variants from the same event details', async () => {
+    const details = {
+      eventTitle: baseOpts.eventTitle,
+      eventDate: baseOpts.eventDate,
+      eventLocation: baseOpts.eventLocation
+    };
+    const [attendee, speaker, organiser] = await Promise.all([
+      generateSharedEventBadgePng({ ...details, badgeType: 'Attendee' }, null),
+      generateSharedEventBadgePng({ ...details, badgeType: 'Speaker' }, null),
+      generateSharedEventBadgePng({ ...details, badgeType: 'Organiser' }, null)
+    ]);
+
+    expect(attendee.equals(speaker)).toBe(false);
+    expect(speaker.equals(organiser)).toBe(false);
+    await expect(sharp(attendee).metadata()).resolves.toMatchObject({ width: 1024, height: 1024, format: 'png' });
+    await expect(sharp(speaker).metadata()).resolves.toMatchObject({ width: 1024, height: 1024, format: 'png' });
+    await expect(sharp(organiser).metadata()).resolves.toMatchObject({ width: 1024, height: 1024, format: 'png' });
   });
 });

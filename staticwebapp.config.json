@@ -39,6 +39,11 @@
       "headers": { "Cache-Control": "public, max-age=604800, must-revalidate" }
     },
     {
+      "route": "/api/chapterArtwork",
+      "allowedRoles": ["anonymous"],
+      "headers": { "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800" }
+    },
+    {
       "route": "/dashboard/*",
       "allowedRoles": ["admin"],
       "headers": { "Cache-Control": "private, no-store" }
@@ -150,6 +155,16 @@
     },
     {
       "route": "/api/resendTicketEmail",
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
+    },
+    {
+      "route": "/api/sendAttendeeEmail",
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
+    },
+    {
+      "route": "/api/postEventCommunication",
       "allowedRoles": ["admin"],
       "headers": { "Cache-Control": "private, no-store" }
     },

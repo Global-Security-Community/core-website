@@ -1,7 +1,8 @@
-const { randomUUID } = require('crypto');
+const { createHash } = require('crypto');
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
-const { getRegistrationsByEvent, getEvent, storeBadge, getBadgesByEvent } = require('../helpers/tableStorage');
-const { generateBadge, generateBadgePng } = require('../helpers/badgeGenerator');
+const { getRegistrationsByEvent, getEvent, storeBadge, deleteBadge, getBadgesByEvent } = require('../helpers/tableStorage');
+const { generateSharedEventBadgePng } = require('../helpers/badgeGenerator');
+const { downloadGeneratedImage } = require('../helpers/imageGenerator');
 const { sendBadgeEmail } = require('../helpers/emailService');
 const { logAudit } = require('../helpers/auditLog');
 const { checkRateLimit, getClientIP } = require('../helpers/rateLimiter');
@@ -25,22 +26,24 @@ module.exports = async function (request, context) {
     }
 
     const { eventId, chapterSlug } = body;
+    const requestedBatchSize = Number(body.batchSize) || 20;
+    const batchSize = Math.min(Math.max(requestedBatchSize, 1), 20);
 
     if (!eventId || !chapterSlug) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Missing eventId or chapterSlug' }) };
     }
 
-    // Rate limit: max 5 badge issuance requests per hour
+    // A booked-out 200-person event needs 10 batches of 20.
     const clientIP = getClientIP(request);
-    if (!checkRateLimit(clientIP, 'issueBadges', 5)) {
+    if (!checkRateLimit(clientIP, 'issueBadges', 15)) {
       return { status: 429, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Too many requests. Please try again later.' }) };
     }
 
     const event = await getEvent(chapterSlug, eventId);
     if (!event) {
-      return { status: 404, headers: { 'Content-Type': 'application/json' },
+      return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Event not found' }) };
     }
 
@@ -61,68 +64,70 @@ module.exports = async function (request, context) {
 
     if (checkedInRegs.length === 0) {
       return { status: 200, headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ success: true, issued: 0, message: 'No eligible recipients found' }) };
+               body: JSON.stringify({ success: true, issued: 0, remaining: 0, message: 'No eligible recipients found' }) };
     }
 
     // Check for already-issued badges to prevent duplicates
     const existingBadges = await getBadgesByEvent(eventId);
     const issuedEmails = new Set(existingBadges.map(b => (b.recipientEmail || '').toLowerCase()));
-
-    // Map role to badge type (capitalised)
-    const roleToBadgeType = {
-      attendee: 'Attendee',
-      volunteer: 'Volunteer',
-      speaker: 'Speaker',
-      sponsor: 'Sponsor',
-      organiser: 'Organiser'
-    };
+    const eligibleRegs = checkedInRegs.filter(reg => !issuedEmails.has((reg.email || '').toLowerCase()));
+    const batch = eligibleRegs.slice(0, batchSize);
 
     let issued = 0;
     const errors = [];
 
-    // Try to download AI-generated background for PNG badges
-    let backgroundBuffer = null;
+    // Download the finalized shared badge variants from private Blob Storage.
+    let attendeeBadgeBuffer = null;
+    let speakerBadgeBuffer = null;
+    let organiserBadgeBuffer = null;
     if (event.badgeImageUrl) {
       try {
-        // Validate URL is HTTPS and not a private/internal address
-        const badgeUrl = new URL(event.badgeImageUrl);
-        if (badgeUrl.protocol === 'https:') {
-          const bgRes = await fetch(event.badgeImageUrl);
-          if (bgRes.ok) backgroundBuffer = Buffer.from(await bgRes.arrayBuffer());
-        }
+        attendeeBadgeBuffer = await downloadGeneratedImage(event.badgeImageUrl);
       } catch (e) { context.log(`Could not fetch badge background: ${e.message}`); }
     }
-
-    for (const reg of checkedInRegs) {
+    if (event.speakerBadgeImageUrl) {
       try {
-        // Skip if badge already issued to this recipient
-        if (issuedEmails.has((reg.email || '').toLowerCase())) continue;
+        speakerBadgeBuffer = await downloadGeneratedImage(event.speakerBadgeImageUrl);
+      } catch (e) { context.log(`Could not fetch speaker badge: ${e.message}`); }
+    }
+    if (event.organiserBadgeImageUrl) {
+      try {
+        organiserBadgeBuffer = await downloadGeneratedImage(event.organiserBadgeImageUrl);
+      } catch (e) { context.log(`Could not fetch organiser badge: ${e.message}`); }
+    }
+    attendeeBadgeBuffer = attendeeBadgeBuffer || await generateSharedEventBadgePng({
+      eventTitle: event.title,
+      eventDate: event.date,
+      eventLocation: event.location,
+      badgeType: 'Attendee'
+    }, null);
+    speakerBadgeBuffer = speakerBadgeBuffer || await generateSharedEventBadgePng({
+      eventTitle: event.title,
+      eventDate: event.date,
+      eventLocation: event.location,
+      badgeType: 'Speaker'
+    }, null);
+    organiserBadgeBuffer = organiserBadgeBuffer || await generateSharedEventBadgePng({
+      eventTitle: event.title,
+      eventDate: event.date,
+      eventLocation: event.location,
+      badgeType: 'Organiser'
+    }, null);
 
-        const role = reg.role || 'attendee';
-        const badgeType = roleToBadgeType[role] || 'Attendee';
-        const badgeId = randomUUID();
-        const badgeOpts = {
-          recipientName: reg.fullName,
-          eventTitle: event.title,
-          eventDate: event.date,
-          eventLocation: event.location,
-          badgeType
-        };
-
-        // Generate PNG badge (with AI background) or fall back to SVG
-        let badgeContent, badgeContentType, badgeFileName;
-        try {
-          const pngBuffer = await generateBadgePng(badgeOpts, backgroundBuffer);
-          badgeContent = pngBuffer.toString('base64');
-          badgeContentType = 'image/png';
-          badgeFileName = `gsc-badge-${badgeType.toLowerCase()}.png`;
-        } catch (pngErr) {
-          context.log(`PNG badge failed, falling back to SVG: ${pngErr.message}`);
-          badgeContent = generateBadge(badgeOpts);
-          badgeContentType = 'image/svg+xml';
-          badgeFileName = `gsc-badge-${badgeType.toLowerCase()}.svg`;
-        }
-
+    for (const reg of batch) {
+      const badgeType = reg.role === 'speaker' ? 'Speaker' : reg.role === 'organiser' ? 'Organiser' : 'Attendee';
+      const badgeBuffer = badgeType === 'Speaker'
+        ? speakerBadgeBuffer
+        : badgeType === 'Organiser'
+          ? organiserBadgeBuffer
+          : attendeeBadgeBuffer;
+      const badgeContent = badgeBuffer.toString('base64');
+      const badgeId = createHash('sha256')
+        .update(`${eventId}\0${(reg.email || '').toLowerCase()}`)
+        .digest('hex')
+        .slice(0, 32);
+      try {
+        // The deterministic row key reserves this recipient and prevents concurrent duplicate sends.
         await storeBadge({
           id: badgeId,
           eventId,
@@ -133,14 +138,27 @@ module.exports = async function (request, context) {
         });
 
         try {
-          await sendBadgeEmail({ name: reg.fullName, email: reg.email }, badgeContent, event, badgeType, context, badgeContentType, badgeFileName);
+          await sendBadgeEmail(
+            { name: reg.fullName, email: reg.email },
+            badgeContent,
+            event,
+            badgeType,
+            context,
+            'image/png',
+            `gsc-${badgeType.toLowerCase()}-badge.png`
+          );
         } catch (emailErr) {
+          await deleteBadge(eventId, badgeId);
           context.log(`Badge email failed for ${reg.email}: ${emailErr.message}`);
+          errors.push({ email: reg.email, error: 'Email send failed' });
+          continue;
         }
 
         issued++;
       } catch (err) {
-        errors.push({ email: reg.email, error: 'Badge generation failed' });
+        // A create conflict means another request already reserved or sent this badge.
+        if (err.statusCode === 409) continue;
+        errors.push({ email: reg.email, error: 'Badge issuance failed' });
         context.log(`Badge issue failed for ${reg.email}: ${err.message}`);
       }
     }
@@ -150,7 +168,13 @@ module.exports = async function (request, context) {
     return {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: true, issued, total: checkedInRegs.length, errors: errors.length > 0 ? errors : undefined })
+      body: JSON.stringify({
+        success: true,
+        issued,
+        total: checkedInRegs.length,
+        remaining: Math.max(eligibleRegs.length - batch.length, 0),
+        errors: errors.length > 0 ? errors : undefined
+      })
     };
   } catch (error) {
     context.log(`issueBadges error: ${error.message}`);
