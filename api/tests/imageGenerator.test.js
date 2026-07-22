@@ -41,7 +41,11 @@ jest.mock('../src/helpers/badgeGenerator', () => ({
 
 process.env.AZURE_STORAGE_CONNECTION_STRING = 'UseDevelopmentStorage=true';
 
-const { generateEventBadgeBackground } = require('../src/helpers/imageGenerator');
+const sharp = require('sharp');
+const {
+  generateEventBadgeBackground,
+  getChapterHeroArtwork
+} = require('../src/helpers/imageGenerator');
 
 describe('annual community badge themes', () => {
   beforeEach(() => {
@@ -83,9 +87,25 @@ describe('annual community badge themes', () => {
     expect(mockBlobs.get('badge-themes/2027/chapters/sydney.png')).toEqual(mockPng);
     expect(mockBlobs.has('badge-themes/2027/chapters/perth-card.webp')).toBe(true);
     expect(mockBlobs.has('badge-themes/2027/chapters/sydney-card.webp')).toBe(true);
+    expect(mockBlobs.has('badge-themes/2027/chapters/perth-hero.webp')).toBe(true);
+    expect(mockBlobs.has('badge-themes/2027/chapters/sydney-hero.webp')).toBe(true);
     expect(mockBlobs.has('events/perth-security-day-attendee.png')).toBe(true);
     expect(mockBlobs.has('events/perth-security-night-attendee.png')).toBe(true);
     expect(mockBlobs.has('events/sydney-security-day-speaker.png')).toBe(true);
     expect(mockBlobs.has('events/sydney-security-day-organiser.png')).toBe(true);
+  });
+
+  test('backfills an optimized hero from existing chapter artwork', async () => {
+    mockBlobs.set('badge-themes/2026/chapters/perth.png', mockPng);
+
+    const hero = await getChapterHeroArtwork(2026, 'perth');
+    const metadata = await sharp(hero).metadata();
+
+    expect(metadata).toMatchObject({ format: 'webp', width: 1024, height: 576 });
+    expect(hero.length).toBeLessThan(mockPng.length);
+    expect(mockBlobs.get('badge-themes/2026/chapters/perth-hero.webp')).toEqual(hero);
+
+    await getChapterHeroArtwork(2026, 'perth');
+    expect(mockBlobs.get('badge-themes/2026/chapters/perth-hero.webp')).toEqual(hero);
   });
 });
