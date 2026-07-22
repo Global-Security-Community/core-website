@@ -7,7 +7,7 @@ badgeThemeYear: 2026
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
 
-<header class="chapters-hero" style="--chapters-hero-image: url('/assets/badge-themes/2026-hero.webp?v={{ cacheBust }}')">
+<header class="chapters-hero">
   <div class="container chapters-hero__content">
     <h1>Global Chapters</h1>
     <p>Our chapters are the foundation of the Global Security Community. Find your local chapter on the map or browse the list below.</p>
