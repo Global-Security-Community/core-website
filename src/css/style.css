@@ -973,7 +973,7 @@ a.card-link h3 {
   position: absolute;
   z-index: 0;
   inset: 0;
-  background: var(--chapters-hero-image) center 24% / cover no-repeat;
+  background: url("/assets/badge-themes/2026-hero.webp") center 24% / cover no-repeat;
   content: "";
   transform: scale(1.02);
 }
