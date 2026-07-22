@@ -123,6 +123,7 @@ async function sendTicketEmail(registration, event, qrDataUrl, context, partners
   try {
     const poller = await client.beginSend(message);
     const result = await poller.pollUntilDone();
+    ensureEmailSucceeded(result);
     if (context) context.log(`Ticket email sent to ${registration.email}, status: ${result.status}, id: ${result.id || 'n/a'}`);
     return result;
   } catch (err) {
@@ -146,13 +147,18 @@ async function sendBadgeEmail(recipient, badgeContent, event, badgeType, context
     'Organiser': { roleText: 'organising', gratitude: 'Your leadership drives the community forward.' },
     'Volunteer': { roleText: 'volunteering at', gratitude: 'Your contribution made this event possible.' },
     'Sponsor': { roleText: 'sponsoring', gratitude: 'Your support helps us build the security community.' },
-    'Attendee': { roleText: 'attending', gratitude: '' }
+    'Attendee': { roleText: 'attending', gratitude: 'Thank you for showing up and being part of the community.' }
   };
   const msg = roleMessages[badgeType] || roleMessages['Attendee'];
+  const isAttendee = badgeType === 'Attendee';
   const bodyHtml = `
     <h2 style="color:#001f3f;margin:0 0 8px 0;">Thank you for ${msg.roleText} ${escapeHtml(event.title)}! 🏅</h2>
-    <p style="color:#555;margin:0 0 20px 0;">Your digital <strong>${escapeHtml(badgeType)}</strong> badge is attached to this email.${msg.gratitude ? ' ' + msg.gratitude : ''}</p>
+    <p style="color:#555;margin:0 0 20px 0;">${msg.gratitude}</p>
     ${eventDetailsBlock(event)}
+    <div style="margin:24px 0;padding:20px;background:#f0faf9;border-radius:8px;">
+      <p style="margin:0 0 8px 0;font-weight:600;color:#001f3f;">Your ${escapeHtml(badgeType)} badge is attached</p>
+      <p style="margin:0;color:#555;font-size:0.9em;">Save the attached ${isPng ? 'PNG image' : 'badge image'} and share it on LinkedIn to celebrate ${isAttendee ? 'being part of the event' : `your contribution as a ${escapeHtml(badgeType.toLowerCase())}`}.</p>
+    </div>
     <p style="text-align:center;margin-top:24px;">
       <a href="${SITE_URL}/my-tickets/" style="display:inline-block;padding:10px 24px;background:#20b2aa;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">View My Account</a>
     </p>`;
@@ -160,7 +166,7 @@ async function sendBadgeEmail(recipient, badgeContent, event, badgeType, context
   const message = {
     senderAddress: SENDER_ADDRESS,
     content: {
-      subject: `Your ${badgeType} Badge: ${event.title}`,
+      subject: `Thank you for ${msg.roleText} ${event.title} — your ${badgeType} badge`,
       html: emailLayout(bodyHtml)
     },
     recipients: {
@@ -178,12 +184,62 @@ async function sendBadgeEmail(recipient, badgeContent, event, badgeType, context
   try {
     const poller = await client.beginSend(message);
     const result = await poller.pollUntilDone();
+    ensureEmailSucceeded(result);
     if (context) context.log(`Badge email sent to ${recipient.email}, status: ${result.status}, id: ${result.id || 'n/a'}`);
     return result;
   } catch (err) {
     if (context) context.log(`Badge email FAILED | to: ${recipient.email} | error: ${err.message}`);
     throw err;
   }
+}
+
+async function sendPostEventEmail(
+  recipient,
+  badgeContent,
+  event,
+  badgeType,
+  subject,
+  messageText,
+  context,
+  contentType = 'image/png',
+  fileName,
+  operationId
+) {
+  const client = getEmailClient();
+  const safeMessage = escapeHtml(messageText)
+    .split(/\n{2,}/)
+    .map(paragraph => `<p style="color:#555;margin:0 0 16px 0;">${paragraph.replace(/\n/g, '<br>')}</p>`)
+    .join('');
+  const attachmentName = fileName || `gsc-${badgeType.toLowerCase()}-badge.png`;
+  const bodyHtml = `
+    ${safeMessage}
+    ${eventDetailsBlock(event)}
+    <div style="margin:24px 0;padding:20px;background:#f0faf9;border-radius:8px;">
+      <p style="margin:0 0 8px 0;font-weight:600;color:#001f3f;">Your community badge is attached</p>
+      <p style="margin:0;color:#555;font-size:0.9em;">Save the attached PNG image and share it on LinkedIn if you would like to celebrate your contribution to the event.</p>
+    </div>
+    <p style="text-align:center;margin-top:24px;">
+      <a href="${SITE_URL}/my-tickets/" style="display:inline-block;padding:10px 24px;background:#20b2aa;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">View My Account</a>
+    </p>`;
+  const poller = await client.beginSend({
+    senderAddress: SENDER_ADDRESS,
+    content: {
+      subject: subject.replace(/[\r\n]+/g, ' ').trim(),
+      html: emailLayout(bodyHtml)
+    },
+    recipients: {
+      to: [{ address: recipient.email, displayName: recipient.name }]
+    },
+    attachments: [{
+      name: attachmentName,
+      contentType,
+      contentInBase64: badgeContent
+    }]
+  }, operationId ? { operationId } : undefined);
+  const result = await poller.pollUntilDone();
+  ensureEmailSucceeded(result);
+  if (context) context.log(`Post-event email sent to ${recipient.email}, status: ${result.status}, id: ${result.id || 'n/a'}`);
+  return result;
 }
 
 function escapeHtml(str) {
@@ -248,6 +304,7 @@ async function sendCancellationEmail(registration, event, context) {
   try {
     const poller = await client.beginSend(message);
     const result = await poller.pollUntilDone();
+    ensureEmailSucceeded(result);
     if (context) context.log(`Cancellation email sent to ${registration.email}, status: ${result.status}, id: ${result.id || 'n/a'}`);
     return result;
   } catch (err) {
@@ -297,10 +354,50 @@ async function sendEventNotificationEmail(subscriberEmail, event, context) {
   try {
     const poller = await client.beginSend(message);
     const result = await poller.pollUntilDone();
+    ensureEmailSucceeded(result);
     if (context) context.log(`Event notification sent to ${subscriberEmail}, status: ${result.status}, id: ${result.id || 'n/a'}`);
     return result;
   } catch (err) {
     if (context) context.log(`Event notification FAILED | to: ${subscriberEmail} | error: ${err.message}`);
+  }
+}
+
+/**
+ * Sends a custom event update to a registered attendee.
+ */
+async function sendAttendeeEmail(registration, event, subject, messageText, context) {
+  const client = getEmailClient();
+  const safeSubject = subject.replace(/[\r\n]+/g, ' ').trim();
+  const eventPageUrl = event.slug ? `${SITE_URL}/events/${escapeHtml(event.slug)}/` : '';
+  const messageHtml = escapeHtml(messageText).replace(/\r?\n/g, '<br>');
+  const bodyHtml = `
+    <h2 style="color:#001f3f;margin:0 0 8px 0;">Event update</h2>
+    <p style="color:#555;margin:0 0 20px 0;">Hi ${escapeHtml(registration.fullName)},</p>
+    <p style="color:#333;line-height:1.7;margin:0 0 20px 0;">${messageHtml}</p>
+    ${eventDetailsBlock(event)}
+    ${eventPageUrl ? `<div style="text-align:center;margin:24px 0;"><a href="${eventPageUrl}" style="display:inline-block;padding:10px 24px;background:#20b2aa;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">View Event</a></div>` : ''}
+    <p style="color:#777;font-size:0.85em;margin:24px 0 0 0;">You received this message because you are registered for ${escapeHtml(event.title)}.</p>`;
+
+  const emailMessage = {
+    senderAddress: SENDER_ADDRESS,
+    content: {
+      subject: safeSubject,
+      html: emailLayout(bodyHtml)
+    },
+    recipients: {
+      to: [{ address: registration.email, displayName: registration.fullName }]
+    }
+  };
+
+  try {
+    const poller = await client.beginSend(emailMessage);
+    const result = await poller.pollUntilDone();
+    ensureEmailSucceeded(result);
+    if (context) context.log(`Attendee email sent to ${registration.email}, status: ${result.status}, id: ${result.id || 'n/a'}`);
+    return result;
+  } catch (err) {
+    if (context) context.log(`Attendee email FAILED | to: ${registration.email} | event: ${event.slug || 'unknown'} | error: ${err.message}`);
+    throw err;
   }
 }
 
@@ -339,7 +436,7 @@ async function sendSuperAdminEmail(subject, bodyHtml, context) {
         to: [{ address: recipient }]
       }
     });
-    return poller.pollUntilDone();
+    return ensureEmailSucceeded(await poller.pollUntilDone());
   }));
 
   results.forEach((result, index) => {
@@ -351,6 +448,18 @@ async function sendSuperAdminEmail(subject, bodyHtml, context) {
     }
   });
   return results;
+}
+
+function ensureEmailSucceeded(result) {
+  if (result && result.status === 'Succeeded') return result;
+  const status = result && result.status ? result.status : 'Unknown';
+  const detail = result && result.error && result.error.message
+    ? `: ${result.error.message}`
+    : '';
+  const error = new Error(`Email delivery ended with status ${status}${detail}`);
+  error.deliveryDefinitive = status === 'Failed' || status === 'Canceled';
+  error.deliveryStatus = status;
+  throw error;
 }
 
 async function sendChapterApplicationAdminEmail(application, context) {
@@ -389,8 +498,11 @@ async function sendContactSubmissionAdminEmail(submission, context) {
 module.exports = {
   sendTicketEmail,
   sendBadgeEmail,
+  sendPostEventEmail,
+  ensureEmailSucceeded,
   sendCancellationEmail,
   sendEventNotificationEmail,
+  sendAttendeeEmail,
   sendChapterApplicationAdminEmail,
   sendContactSubmissionAdminEmail
 };

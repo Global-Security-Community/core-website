@@ -22,13 +22,16 @@ const getSessionizeDataHandler = require('./functions/getSessionizeData');
 const chapterSubscribeHandler = require('./functions/chapterSubscribe');
 const communityPartnerHandler = require('./functions/communityPartner');
 const getCommunityPartnersHandler = require('./functions/getCommunityPartners');
+const chapterArtworkHandler = require('./functions/chapterArtwork');
 const regenerateImageHandler = require('./functions/regenerateImage');
 const updateEventHandler = require('./functions/updateEvent');
 const fixEventChapterHandler = require('./functions/fixEventChapter');
 const deleteEventHandler = require('./functions/deleteEvent');
 const resendTicketEmailHandler = require('./functions/resendTicketEmail');
+const sendAttendeeEmailHandler = require('./functions/sendAttendeeEmail');
 const getAuditLogHandler = require('./functions/getAuditLog');
 const registrationReportHandler = require('./functions/registrationReport');
+const postEventCommunicationHandler = require('./functions/postEventCommunication');
 
 /**
  * Wraps a POST handler with CSRF header verification.
@@ -49,6 +52,7 @@ app.get('chapterApproval', { authLevel: 'anonymous', handler: chapterApprovalHan
 app.get('getEvent', { authLevel: 'anonymous', handler: getEventHandler });
 app.get('getSessionizeData', { authLevel: 'anonymous', handler: getSessionizeDataHandler });
 app.get('getCommunityPartners', { authLevel: 'anonymous', handler: getCommunityPartnersHandler });
+app.get('chapterArtwork', { authLevel: 'anonymous', handler: chapterArtworkHandler });
 
 // ─── Auth: role assignment (called by SWA platform — no CSRF check) ───
 app.post('roles', { authLevel: 'anonymous', handler: rolesHandler });
@@ -76,5 +80,11 @@ app.post('updateEvent', { authLevel: 'anonymous', handler: withCsrf(updateEventH
 app.post('fixEventChapter', { authLevel: 'anonymous', handler: withCsrf(fixEventChapterHandler) });
 app.post('deleteEvent', { authLevel: 'anonymous', handler: withCsrf(deleteEventHandler) });
 app.post('resendTicketEmail', { authLevel: 'anonymous', handler: withCsrf(resendTicketEmailHandler) });
+app.post('sendAttendeeEmail', { authLevel: 'anonymous', handler: withCsrf(sendAttendeeEmailHandler) });
 app.get('getAuditLog', { authLevel: 'anonymous', handler: getAuditLogHandler });
 app.get('registrationReport', { authLevel: 'anonymous', handler: registrationReportHandler });
+app.http('postEventCommunication', {
+  methods: ['GET', 'POST'],
+  authLevel: 'anonymous',
+  handler: postEventCommunicationHandler
+});

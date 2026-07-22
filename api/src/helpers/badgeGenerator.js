@@ -109,6 +109,61 @@ async function generateBadgePng(opts, backgroundBuffer) {
 }
 
 /**
+ * Generates one shared event badge image for a recipient category.
+ */
+async function generateSharedEventBadgePng({ eventTitle, eventDate, eventLocation, badgeType = 'Attendee' }, backgroundBuffer) {
+  const sharp = require('sharp');
+  const title = escSvg(truncate(eventTitle, 42));
+  const date = escSvg(truncate(eventDate, 30));
+  const location = escSvg(truncate(eventLocation, 35));
+  const isSpeaker = badgeType === 'Speaker';
+  const isOrganiser = badgeType === 'Organiser';
+  const isCeremonial = isSpeaker || isOrganiser;
+  const label = isSpeaker ? 'SPEAKER' : isOrganiser ? 'ORGANISER' : 'ATTENDEE';
+  const accent = isSpeaker ? '#f0a52b' : isOrganiser ? '#dc3545' : '#20b2aa';
+  const labelWidth = isSpeaker ? 155 : isOrganiser ? 185 : 170;
+  const footer = isSpeaker
+    ? 'Thank you for sharing your expertise with the community · globalsecurity.community'
+    : isOrganiser
+      ? 'Thank you for your leadership and service to the community · globalsecurity.community'
+      : 'Thank you for being part of the community · globalsecurity.community';
+  const overlay = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024">
+    ${isCeremonial ? `<rect x="22" y="22" width="980" height="980" rx="28" fill="none" stroke="${accent}" stroke-width="4"/>
+    <rect x="34" y="34" width="956" height="956" rx="22" fill="none" stroke="white" stroke-width="1" opacity="0.45"/>` : ''}
+    <rect y="660" width="1024" height="364" fill="rgba(0,15,31,0.9)"/>
+    <rect y="656" width="1024" height="${isCeremonial ? 7 : 4}" fill="${accent}"/>
+    <text x="60" y="715" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#aab8c5" letter-spacing="3" font-weight="600">GLOBAL SECURITY COMMUNITY</text>
+    <rect x="60" y="740" width="${labelWidth}" height="40" rx="20" fill="${accent}"/>
+    <text x="82" y="767" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="${isSpeaker ? '#001f3f' : 'white'}" font-weight="bold">${label}</text>
+    <text x="60" y="835" font-family="system-ui, -apple-system, sans-serif" font-size="42" fill="white" font-weight="bold">${title}</text>
+    <line x1="60" y1="865" x2="964" y2="865" stroke="${accent}" stroke-width="${isCeremonial ? 3 : 2}" opacity="0.7"/>
+    <text x="60" y="915" font-family="system-ui, -apple-system, sans-serif" font-size="22" fill="#d9e2ea">${date}</text>
+    <text x="60" y="952" font-family="system-ui, -apple-system, sans-serif" font-size="22" fill="#d9e2ea">${location}</text>
+    <text x="60" y="995" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#8fa0b0">${footer}</text>
+  </svg>`);
+
+  let base;
+  if (backgroundBuffer) {
+    base = await sharp(backgroundBuffer).resize(1024, 1024, { fit: 'cover' }).png().toBuffer();
+  } else {
+    base = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="#001f3f"/>
+      <circle cx="820" cy="170" r="260" fill="#20b2aa" opacity="0.14"/>
+      <circle cx="170" cy="470" r="190" fill="#20b2aa" opacity="0.08"/>
+    </svg>`)).png().toBuffer();
+  }
+
+  return await sharp(base)
+    .composite([{ input: overlay, top: 0, left: 0 }])
+    .png()
+    .toBuffer();
+}
+
+async function generateSharedAttendeeBadgePng(opts, backgroundBuffer) {
+  return generateSharedEventBadgePng({ ...opts, badgeType: 'Attendee' }, backgroundBuffer);
+}
+
+/**
  * Legacy SVG badge generator (kept for backward compatibility).
  */
 function generateBadge({ recipientName, eventTitle, eventDate, eventLocation, badgeType }) {
@@ -143,4 +198,10 @@ function generateBadge({ recipientName, eventTitle, eventDate, eventLocation, ba
 </svg>`;
 }
 
-module.exports = { generateBadge, generateBadgePng, generateTextOverlay };
+module.exports = {
+  generateBadge,
+  generateBadgePng,
+  generateTextOverlay,
+  generateSharedAttendeeBadgePng,
+  generateSharedEventBadgePng
+};

@@ -35,6 +35,7 @@ jest.mock('../src/helpers/tableStorage', () => ({
   getDemographicsByEvent: jest.fn().mockResolvedValue([]),
   deleteDemographics: jest.fn().mockResolvedValue({}),
   storeBadge: jest.fn().mockResolvedValue({}),
+  deleteBadge: jest.fn().mockResolvedValue({}),
   getBadge: jest.fn(),
   getBadgesByEvent: jest.fn().mockResolvedValue([]),
   getRegistrationsByRole: jest.fn().mockResolvedValue([]),
@@ -67,6 +68,7 @@ jest.mock('../src/helpers/emailService', () => ({
   sendBadgeEmail: jest.fn().mockResolvedValue({}),
   sendCancellationEmail: jest.fn().mockResolvedValue({}),
   sendEventNotificationEmail: jest.fn().mockResolvedValue({}),
+  sendAttendeeEmail: jest.fn().mockResolvedValue({}),
   sendChapterApplicationAdminEmail: jest.fn().mockResolvedValue([]),
   sendContactSubmissionAdminEmail: jest.fn().mockResolvedValue([])
 }));
@@ -84,15 +86,30 @@ jest.mock('../src/helpers/tokenHelper', () => ({
 jest.mock('../src/helpers/badgeGenerator', () => ({
   generateBadge: jest.fn().mockReturnValue('<svg>mock</svg>'),
   generateBadgePng: jest.fn().mockResolvedValue(Buffer.from('mock-png')),
-  generateTextOverlay: jest.fn().mockReturnValue('<svg>overlay</svg>')
+  generateTextOverlay: jest.fn().mockReturnValue('<svg>overlay</svg>'),
+  generateSharedEventBadgePng: jest.fn().mockResolvedValue(Buffer.from('shared-badge'))
 }));
 
 jest.mock('../src/helpers/imageGenerator', () => ({
   generateChapterBanner: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/chapters/test-banner.png'),
   generateChapterShield: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/chapters/test-shield.png'),
-  generateEventBadgeBackground: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/events/test.png'),
+  generateEventBadgeBackground: jest.fn().mockResolvedValue({
+    attendeeImageUrl: 'https://gsccoresa.blob.core.windows.net/generated-images/events/test-attendee.png',
+    speakerImageUrl: 'https://gsccoresa.blob.core.windows.net/generated-images/events/test-speaker.png',
+    organiserImageUrl: 'https://gsccoresa.blob.core.windows.net/generated-images/events/test-organiser.png',
+    themeYear: 2026,
+    themeCreated: true,
+    chapterThemeCreated: true
+  }),
   callImageApi: jest.fn().mockResolvedValue(Buffer.from('mock')),
-  uploadToBlob: jest.fn().mockResolvedValue('https://mock.blob.url/test.png')
+  uploadToBlob: jest.fn().mockResolvedValue('https://mock.blob.url/test.png'),
+  downloadGeneratedImage: jest.fn().mockResolvedValue(Buffer.from('generated-image')),
+  getChapterCardArtwork: jest.fn().mockResolvedValue(Buffer.from('chapter-card')),
+  ACTIVE_BADGE_THEME_YEAR: 2026
+}));
+
+jest.mock('../src/helpers/aiProvider', () => ({
+  isImageConfigured: jest.fn().mockReturnValue(true)
 }));
 
 jest.mock('@azure/data-tables', () => ({
@@ -131,6 +148,43 @@ const emailService = require('../src/helpers/emailService');
 const rateLimiter = require('../src/helpers/rateLimiter');
 const tokenHelper = require('../src/helpers/tokenHelper');
 const badgeGen = require('../src/helpers/badgeGenerator');
+const imageGenerator = require('../src/helpers/imageGenerator');
+
+describe('chapterArtwork function', () => {
+  const chapterArtwork = require('../src/functions/chapterArtwork');
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    imageGenerator.getChapterCardArtwork.mockResolvedValue(Buffer.from('chapter-card'));
+  });
+
+  test('returns cached WebP artwork for a valid chapter', async () => {
+    const response = await chapterArtwork({
+      url: 'https://globalsecurity.community/api/chapterArtwork?slug=perth&year=2026'
+    }, context);
+
+    expect(response.status).toBe(200);
+    expect(response.headers['Content-Type']).toBe('image/webp');
+    expect(response.body).toEqual(Buffer.from('chapter-card'));
+    expect(imageGenerator.getChapterCardArtwork).toHaveBeenCalledWith(2026, 'perth');
+  });
+
+  test('redirects invalid or missing artwork to the standard shield', async () => {
+    const invalid = await chapterArtwork({
+      url: 'https://globalsecurity.community/api/chapterArtwork?slug=../perth&year=2026'
+    }, context);
+    expect(invalid).toMatchObject({
+      status: 302,
+      headers: { Location: '/assets/GSC-Shield-Transparent.png' }
+    });
+
+    imageGenerator.getChapterCardArtwork.mockResolvedValue(null);
+    const missing = await chapterArtwork({
+      url: 'https://globalsecurity.community/api/chapterArtwork?slug=perth&year=2026'
+    }, context);
+    expect(missing.status).toBe(302);
+  });
+});
 
 function makeRequest(method, body, headers) {
   return {
@@ -634,6 +688,121 @@ describe('resendTicketEmail function', () => {
   });
 });
 
+// ─── sendAttendeeEmail ──────────────────────────────────────────────
+
+describe('sendAttendeeEmail function', () => {
+  const sendAttendeeEmail = require('../src/functions/sendAttendeeEmail');
+  const mockEvent = {
+    rowKey: 'ev-1', title: 'Test Event', slug: 'test-event', chapterSlug: 'perth',
+    partitionKey: 'perth', date: '2026-05-15', location: 'Perth'
+  };
+  const mockRegs = [
+    { rowKey: 'r1', fullName: 'Alice', email: 'alice@test.com' },
+    { rowKey: 'r2', fullName: 'Bob', email: 'bob@test.com' }
+  ];
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('rejects unauthenticated and non-admin requests', async () => {
+    const body = {
+      eventId: 'ev-1',
+      registrationIds: ['r1'],
+      subject: 'Reminder',
+      message: 'Remember the event'
+    };
+    const unauthenticated = await sendAttendeeEmail(makeRequest('POST', body), context);
+    const nonAdmin = await sendAttendeeEmail(makeAuthRequest('POST', body), context);
+    expect(unauthenticated.status).toBe(401);
+    expect(nonAdmin.status).toBe(403);
+  });
+
+  test('rejects requests without complete message details', async () => {
+    const res = await sendAttendeeEmail(makeAuthRequest('POST', {
+      eventId: 'ev-1',
+      registrationIds: ['r1'],
+      subject: '',
+      message: 'Remember the event'
+    }, ['admin']), context);
+    expect(res.status).toBe(400);
+  });
+
+  test('rejects more than 100 recipients', async () => {
+    const res = await sendAttendeeEmail(makeAuthRequest('POST', {
+      eventId: 'ev-1',
+      registrationIds: Array.from({ length: 101 }, (_, index) => `r${index}`),
+      subject: 'Reminder',
+      message: 'Remember the event'
+    }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(res.jsonBody.error).toMatch(/Maximum 100/);
+  });
+
+  test('sends a sanitised custom message to selected registrations', async () => {
+    storage.getEventById.mockResolvedValueOnce(mockEvent);
+    storage.getRegistrationsByEvent.mockResolvedValueOnce(mockRegs);
+    const res = await sendAttendeeEmail(makeAuthRequest('POST', {
+      eventId: 'ev-1',
+      registrationIds: ['r1', 'r2'],
+      subject: 'Reminder\r\nBCC: no@example.com',
+      message: '<strong>Doors open at 8:30</strong>'
+    }, ['admin']), context);
+
+    expect(res.status).toBe(200);
+    expect(res.jsonBody).toMatchObject({ success: true, sent: 2, failed: 0 });
+    expect(emailService.sendAttendeeEmail).toHaveBeenCalledTimes(2);
+    expect(emailService.sendAttendeeEmail).toHaveBeenCalledWith(
+      { fullName: 'Alice', email: 'alice@test.com' },
+      mockEvent,
+      'Reminder BCC: no@example.com',
+      'Doors open at 8:30',
+      context
+    );
+  });
+
+  test('reports unknown registrations without sending to them', async () => {
+    storage.getEventById.mockResolvedValueOnce(mockEvent);
+    storage.getRegistrationsByEvent.mockResolvedValueOnce(mockRegs);
+    const res = await sendAttendeeEmail(makeAuthRequest('POST', {
+      eventId: 'ev-1',
+      registrationIds: ['missing'],
+      subject: 'Reminder',
+      message: 'Doors open at 8:30'
+    }, ['admin']), context);
+
+    expect(res.status).toBe(200);
+    expect(res.jsonBody).toMatchObject({ sent: 0, failed: 1 });
+    expect(emailService.sendAttendeeEmail).not.toHaveBeenCalled();
+  });
+
+  test('enforces volunteer audiences server-side', async () => {
+    storage.getEventById.mockResolvedValueOnce(mockEvent);
+    storage.getRegistrationsByEvent.mockResolvedValueOnce([
+      { rowKey: 'interested', fullName: 'Interested', email: 'interested@test.com', role: 'attendee', volunteerInterest: 'true' },
+      { rowKey: 'confirmed', fullName: 'Confirmed', email: 'confirmed@test.com', role: 'volunteer', volunteerInterest: false },
+      { rowKey: 'attendee', fullName: 'Attendee', email: 'attendee@test.com', role: 'attendee', volunteerInterest: false }
+    ]);
+
+    const res = await sendAttendeeEmail(makeAuthRequest('POST', {
+      eventId: 'ev-1',
+      registrationIds: ['interested', 'confirmed', 'attendee'],
+      audience: 'volunteer-all',
+      subject: 'Volunteer briefing',
+      message: 'Thank you for helping'
+    }, ['admin']), context);
+
+    expect(res.status).toBe(200);
+    expect(res.jsonBody).toMatchObject({ sent: 2, failed: 1 });
+    expect(emailService.sendAttendeeEmail).toHaveBeenCalledTimes(2);
+    expect(emailService.sendAttendeeEmail).not.toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'attendee@test.com' }),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything()
+    );
+  });
+});
+
 // ─── cancelRegistration ─────────────────────────────────────────────
 
 describe('cancelRegistration function', () => {
@@ -827,10 +996,10 @@ describe('issueBadges function', () => {
     expect(JSON.parse(res.body).error).toMatch(/Missing/);
   });
 
-  test('returns 404 when event not found', async () => {
+  test('returns 400 when event not found', async () => {
     storage.getEvent.mockResolvedValueOnce(null);
     const res = await issueBadges(makeAuthRequest('POST', { eventId: 'ev-1', chapterSlug: 'perth' }, ['admin']), context);
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(400);
   });
 
   test('returns issued:0 when no checked-in registrations', async () => {
@@ -850,17 +1019,77 @@ describe('issueBadges function', () => {
     storage.getRegistrationsByEvent.mockResolvedValueOnce([
       { rowKey: 'r1', fullName: 'Alice', email: 'alice@test.com', checkedIn: true, role: 'attendee', userId: 'u1' },
       { rowKey: 'r2', fullName: 'Bob', email: 'bob@test.com', checkedIn: true, role: 'speaker', userId: 'u2' },
+      { rowKey: 'r4', fullName: 'Dana', email: 'dana@test.com', checkedIn: true, role: 'organiser', userId: 'u4' },
       { rowKey: 'r3', fullName: 'Charlie', email: 'c@test.com', checkedIn: false }
     ]);
     const res = await issueBadges(makeAuthRequest('POST', { eventId: 'ev-1', chapterSlug: 'perth' }, ['admin']), context);
     expect(res.status).toBe(200);
     const body = JSON.parse(res.body);
-    expect(body.issued).toBe(2);
-    expect(body.total).toBe(2);
-    expect(storage.storeBadge).toHaveBeenCalledTimes(2);
-    expect(emailService.sendBadgeEmail).toHaveBeenCalledTimes(2);
-    // Verify speaker gets Speaker badge type (now uses generateBadgePng)
-    expect(badgeGen.generateBadgePng).toHaveBeenCalledWith(expect.objectContaining({ badgeType: 'Speaker' }), null);
+    expect(body.issued).toBe(3);
+    expect(body.total).toBe(3);
+    expect(storage.storeBadge).toHaveBeenCalledTimes(3);
+    expect(emailService.sendBadgeEmail).toHaveBeenCalledTimes(3);
+    expect(emailService.sendBadgeEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'bob@test.com' }),
+      expect.any(String),
+      expect.any(Object),
+      'Speaker',
+      context,
+      'image/png',
+      'gsc-speaker-badge.png'
+    );
+    expect(emailService.sendBadgeEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'dana@test.com' }),
+      expect.any(String),
+      expect.any(Object),
+      'Organiser',
+      context,
+      'image/png',
+      'gsc-organiser-badge.png'
+    );
+  });
+
+  test('limits each issuance request to 20 recipients and reports remaining work', async () => {
+    storage.getEvent.mockResolvedValueOnce({ title: 'Test', date: '2026-05-15', location: 'Perth', status: 'completed' });
+    storage.getBadgesByEvent.mockResolvedValueOnce([]);
+    storage.getRegistrationsByEvent.mockResolvedValueOnce(Array.from({ length: 25 }, (_, index) => ({
+      rowKey: `r${index}`,
+      fullName: `Attendee ${index}`,
+      email: `attendee${index}@test.com`,
+      checkedIn: true,
+      role: 'attendee'
+    })));
+
+    const res = await issueBadges(makeAuthRequest('POST', {
+      eventId: 'ev-1',
+      chapterSlug: 'perth',
+      batchSize: 50
+    }, ['admin']), context);
+    const body = JSON.parse(res.body);
+
+    expect(res.status).toBe(200);
+    expect(body.issued).toBe(20);
+    expect(body.remaining).toBe(5);
+    expect(emailService.sendBadgeEmail).toHaveBeenCalledTimes(20);
+  });
+
+  test('removes the reservation when badge email delivery fails', async () => {
+    storage.getEvent.mockResolvedValueOnce({ title: 'Test', date: '2026-05-15', location: 'Perth', status: 'completed' });
+    storage.getBadgesByEvent.mockResolvedValueOnce([]);
+    storage.getRegistrationsByEvent.mockResolvedValueOnce([
+      { rowKey: 'r1', fullName: 'Alice', email: 'alice@test.com', checkedIn: true, role: 'attendee' }
+    ]);
+    emailService.sendBadgeEmail.mockRejectedValueOnce(new Error('ACS unavailable'));
+
+    const res = await issueBadges(makeAuthRequest('POST', {
+      eventId: 'ev-1',
+      chapterSlug: 'perth'
+    }, ['admin']), context);
+    const body = JSON.parse(res.body);
+
+    expect(body.issued).toBe(0);
+    expect(body.errors).toEqual([{ email: 'alice@test.com', error: 'Email send failed' }]);
+    expect(storage.deleteBadge).toHaveBeenCalledWith('ev-1', expect.any(String));
   });
 });
 
@@ -1380,11 +1609,48 @@ describe('regenerateImage function', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
-  test('returns 503 — image generation temporarily disabled', async () => {
-    const res = await regenerateImage(makeAuthRequest('POST', { type: 'event', slug: 'test' }, ['admin']), context);
-    expect(res.status).toBe(503);
-    const body = JSON.parse(res.body);
-    expect(body.error).toMatch(/temporarily disabled/);
+  test('rejects unauthenticated and non-admin requests', async () => {
+    const requestBody = { eventId: 'ev-1', chapterSlug: 'perth' };
+    expect((await regenerateImage(makeRequest('POST', requestBody), context)).status).toBe(401);
+    expect((await regenerateImage(makeAuthRequest('POST', requestBody, ['authenticated']), context)).status).toBe(403);
+  });
+
+  test('generates, stores, and returns a preview of event badge artwork', async () => {
+    storage.getEvent.mockResolvedValueOnce({
+      rowKey: 'ev-1',
+      partitionKey: 'perth',
+      title: 'Security Meetup',
+      slug: 'security-meetup',
+      locationCity: 'Perth'
+    });
+
+    const res = await regenerateImage(makeAuthRequest('POST', {
+      eventId: 'ev-1',
+      chapterSlug: 'perth'
+    }, ['admin']), context);
+
+    expect(res.status).toBe(200);
+    expect(res.jsonBody.attendeeImageDataUrl).toBe(`data:image/png;base64,${Buffer.from('generated-image').toString('base64')}`);
+    expect(res.jsonBody.speakerImageDataUrl).toBe(`data:image/png;base64,${Buffer.from('generated-image').toString('base64')}`);
+    expect(res.jsonBody.organiserImageDataUrl).toBe(`data:image/png;base64,${Buffer.from('generated-image').toString('base64')}`);
+    expect(res.jsonBody).toMatchObject({
+      themeYear: 2026,
+      themeCreated: true,
+      chapterThemeCreated: true
+    });
+    expect(imageGenerator.generateEventBadgeBackground).toHaveBeenCalledWith(
+      'Security Meetup',
+      'Perth',
+      'perth',
+      'security-meetup',
+      undefined,
+      context
+    );
+    expect(storage.updateEvent).toHaveBeenCalledWith('perth', 'ev-1', {
+      badgeImageUrl: 'https://gsccoresa.blob.core.windows.net/generated-images/events/test-attendee.png',
+      speakerBadgeImageUrl: 'https://gsccoresa.blob.core.windows.net/generated-images/events/test-speaker.png',
+      organiserBadgeImageUrl: 'https://gsccoresa.blob.core.windows.net/generated-images/events/test-organiser.png'
+    });
   });
 });
 

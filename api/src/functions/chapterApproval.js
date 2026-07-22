@@ -3,8 +3,8 @@ const { getApplication, updateApplicationStatus } = require('../helpers/tableSto
 const { createChapterChannel } = require('../helpers/discordBot');
 const { logAudit } = require('../helpers/auditLog');
 const { stripHtml } = require('../helpers/sanitise');
-// AI image generation disabled for now — use dashboard to regenerate when ready
-// const { generateChapterBanner, generateChapterShield } = require('../helpers/imageGenerator');
+const { ensureChapterBadgeTheme, ACTIVE_BADGE_THEME_YEAR } = require('../helpers/imageGenerator');
+const { isImageConfigured } = require('../helpers/aiProvider');
 const { Octokit } = require('@octokit/rest');
 const { createAppAuth } = require('@octokit/auth-app');
 
@@ -79,7 +79,32 @@ module.exports = async function (request, context) {
       context.log(`Discord channel creation failed (non-critical): ${err.message}`);
     }
 
-    // 2. Trigger GitHub Action to generate chapter page (non-critical)
+    // 2. Generate the chapter's current annual artwork (non-critical)
+    var artworkGenerated = false;
+    const citySlug = application.city
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    if (isImageConfigured()) {
+      try {
+        await ensureChapterBadgeTheme(
+          ACTIVE_BADGE_THEME_YEAR,
+          citySlug,
+          application.city,
+          application.country,
+          context
+        );
+        artworkGenerated = true;
+      } catch (imgErr) {
+        context.log(`Chapter artwork generation failed (non-critical): ${imgErr.message}`);
+      }
+    } else {
+      context.log('Image generation configuration missing — chapter artwork skipped');
+    }
+
+    // 3. Trigger GitHub Action to generate chapter page (non-critical)
     var pageTriggered = false;
     try {
       const appId = process.env.GITHUB_APP_ID;
@@ -93,13 +118,6 @@ module.exports = async function (request, context) {
           authStrategy: createAppAuth,
           auth: { appId, privateKey, installationId }
         });
-
-        const citySlug = application.city
-          .toLowerCase()
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .trim();
 
         await octokit.repos.createDispatchEvent({
           owner: repoOwner,
@@ -131,20 +149,6 @@ module.exports = async function (request, context) {
       context.log(`GitHub dispatch failed (non-critical): ${err.message}`);
     }
 
-    // 3. AI image generation disabled — use dashboard "Regenerate" to create shield/banner
-    // To re-enable: uncomment the imageGenerator import and the block below
-    // try {
-    //   const { TableClient } = require('@azure/data-tables');
-    //   const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
-    //   const client = TableClient.fromConnectionString(connStr, 'ChapterApplications');
-    //   const shieldUrl = await generateChapterShield(application.city, application.country, context);
-    //   if (shieldUrl) {
-    //     await client.updateEntity({ partitionKey: application.partitionKey || 'chapter', rowKey: application.rowKey || applicationId, shieldImageUrl: shieldUrl }, 'Merge');
-    //   }
-    // } catch (imgErr) {
-    //   context.log(`Image generation failed (non-critical): ${imgErr.message}`);
-    // }
-
     // Build success message with details about what happened
     var details = [`The chapter in <strong>${stripHtml(application.city)}, ${stripHtml(application.country)}</strong> has been approved!`];
     if (discordChannel) {
@@ -157,7 +161,9 @@ module.exports = async function (request, context) {
     } else {
       details.push('⚠️ Chapter page could not be auto-generated — create manually');
     }
-    details.push('ℹ️ Use the dashboard to generate chapter shield and banner images');
+    details.push(artworkGenerated
+      ? `✅ ${ACTIVE_BADGE_THEME_YEAR} chapter artwork created`
+      : '⚠️ Chapter artwork could not be created — the standard shield will be used');
 
     return htmlResponse(200, '✅ Chapter Approved',
       details.join('<br>'));

@@ -161,6 +161,8 @@ module.exports = async function (request, context) {
       body: JSON.stringify({
         eventId,
         eventStatus: event ? event.status : undefined,
+        eventDate: event ? event.date : undefined,
+        hasBadgeArtwork: Boolean(event && event.badgeImageUrl),
         total,
         checkedIn,
         attendees: registrations.map(r => ({

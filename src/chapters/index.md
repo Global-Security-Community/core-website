@@ -2,16 +2,19 @@
 layout: base.njk
 title: Chapters
 description: "Find your local Global Security Community chapter. Connect with cybersecurity professionals in your city."
+badgeThemeYear: 2026
 ---
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
 
-<div class="container">
-  <header class="page-header">
+<header class="chapters-hero" style="--chapters-hero-image: url('/assets/badge-themes/2026-hero.webp?v={{ cacheBust }}')">
+  <div class="container chapters-hero__content">
     <h1>Global Chapters</h1>
-    <p class="page-lede">Our chapters are the foundation of the Global Security Community. Find your local chapter on the map or browse the list below.</p>
-  </header>
+    <p>Our chapters are the foundation of the Global Security Community. Find your local chapter on the map or browse the list below.</p>
+  </div>
+</header>
 
+<div class="container">
   {% if collections.chapter and collections.chapter.length > 0 %}
   <div id="chapter-map" class="chapter-map" aria-label="Map showing chapter locations"></div>
 
@@ -23,8 +26,14 @@ description: "Find your local Global Security Community chapter. Connect with cy
        data-city="{{ chapter.data.city }}"
        id="chapter-{{ chapter.data.city | lower | replace(' ', '-') }}">
       <div class="chapter-card-banner">
-        <img src="/assets/GSC-Shield-Transparent.png" 
-             alt="{{ chapter.data.city }} Chapter" class="chapter-card-logo">
+        <img src="/api/chapterArtwork?slug={{ chapter.data.city | lower | replace(' ', '-') }}&year={{ badgeThemeYear }}"
+             alt="{{ chapter.data.city }} chapter artwork featuring local landmarks"
+             class="chapter-card-artwork"
+             width="720"
+             height="405"
+             loading="lazy"
+             decoding="async">
+        <span class="chapter-card-city">{{ chapter.data.city }}</span>
       </div>
       <div class="chapter-card-body">
         <span class="chapter-card-badge">Official Chapter</span>
