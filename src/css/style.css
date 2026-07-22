@@ -971,7 +971,7 @@ a.card-link h3 {
 
 .chapters-hero::before {
   position: absolute;
-  z-index: -2;
+  z-index: 0;
   inset: 0;
   background: var(--chapters-hero-image) center 24% / cover no-repeat;
   content: "";
@@ -980,13 +980,15 @@ a.card-link h3 {
 
 .chapters-hero::after {
   position: absolute;
-  z-index: -1;
+  z-index: 1;
   inset: 0;
   background: linear-gradient(180deg, rgba(0, 31, 63, 0.14), rgba(6, 23, 44, 0.96));
   content: "";
 }
 
 .chapters-hero__content {
+  position: relative;
+  z-index: 2;
   padding-top: clamp(3rem, 8vw, 5.5rem);
   padding-bottom: var(--space-2xl);
   color: var(--color-text-inverse);
@@ -998,6 +1000,7 @@ a.card-link h3 {
   font-size: clamp(2.5rem, 7vw, 4.75rem);
   line-height: 0.96;
   letter-spacing: -0.035em;
+  color: var(--color-text-inverse);
   text-wrap: balance;
 }
 
