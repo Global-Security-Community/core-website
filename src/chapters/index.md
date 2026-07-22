@@ -7,12 +7,14 @@ badgeThemeYear: 2026
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
 
-<header class="chapters-hero">
-  <div class="container chapters-hero__content">
-    <h1>Global Chapters</h1>
-    <p>Our chapters are the foundation of the Global Security Community. Find your local chapter on the map or browse the list below.</p>
-  </div>
-</header>
+<div class="container">
+  <header class="chapters-hero">
+    <div class="chapters-hero__content">
+      <h1>Global Chapters</h1>
+      <p>Our chapters are the foundation of the Global Security Community. Find your local chapter on the map or browse the list below.</p>
+    </div>
+  </header>
+</div>
 
 <div class="container">
   {% if collections.chapter and collections.chapter.length > 0 %}
