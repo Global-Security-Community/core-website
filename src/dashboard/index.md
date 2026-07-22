@@ -131,8 +131,19 @@ title: Dashboard
     <p id="detail-subtitle" class="subtitle-muted"></p>
     <div id="detail-panel" class="detail-panel"></div>
     <div id="detail-actions" class="detail-actions"></div>
+    <section id="post-event-communication-panel" class="post-event-panel is-hidden" aria-labelledby="post-event-heading">
+      <div class="post-event-panel__header">
+        <div>
+          <h3 id="post-event-heading">Complete event and thank contributors</h3>
+          <p class="text-muted">Review the checked-in recipients and role-specific messages before anything is sent.</p>
+        </div>
+        <button id="post-event-close-btn" type="button" class="btn-outline">Close</button>
+      </div>
+      <div id="post-event-content"></div>
+      <p id="post-event-status" class="form-message is-hidden" role="status" aria-live="polite"></p>
+    </section>
     <h3>Register Attendee</h3>
-    <p class="text-muted">Manually register someone for this event. Speaker, sponsor, and organiser roles bypass capacity limits.</p>
+    <p class="text-muted">Manually register someone for this event. Speaker, Community Partner, and organiser roles bypass capacity limits.</p>
     <div class="volunteer-add-form">
       <input type="text" id="admin-reg-name" placeholder="Name">
       <input type="email" id="admin-reg-email" placeholder="Email">
@@ -140,7 +151,7 @@ title: Dashboard
         <option value="attendee">Attendee</option>
         <option value="volunteer">Volunteer</option>
         <option value="speaker">Speaker</option>
-        <option value="sponsor">Sponsor</option>
+        <option value="sponsor">Community Partner</option>
         <option value="organiser">Organiser</option>
       </select>
       <button id="admin-reg-btn" type="button">Register</button>
@@ -153,12 +164,46 @@ title: Dashboard
         <option value="attendee">Attendee</option>
         <option value="volunteer">Volunteer</option>
         <option value="speaker">Speaker</option>
-        <option value="sponsor">Sponsor</option>
+        <option value="sponsor">Community Partner</option>
         <option value="organiser">Organiser</option>
       </select>
       <button id="role-apply-btn" type="button">Apply</button>
-      <button id="resend-email-btn" type="button" class="btn-outline">Resend Email</button>
+      <button id="resend-email-btn" type="button" class="btn-outline">Resend Tickets</button>
     </div>
+    <div class="attendee-communication-actions">
+      <button id="compose-email-btn" type="button">Email Event Group</button>
+      <p class="text-muted">Message selected registrations, people interested in volunteering, confirmed volunteers, or both volunteer groups.</p>
+    </div>
+    <section id="attendee-email-composer" class="attendee-email-composer is-hidden" aria-labelledby="attendee-email-heading">
+      <div class="attendee-email-composer__header">
+        <div>
+          <h3 id="attendee-email-heading">Email an event group</h3>
+          <p id="attendee-email-recipients" class="text-muted">0 recipients</p>
+        </div>
+        <button id="cancel-attendee-email-btn" type="button" class="btn-outline">Cancel</button>
+      </div>
+      <div class="form-group">
+        <label for="attendee-email-audience">Recipients</label>
+        <select id="attendee-email-audience">
+          <option value="selected">Selected registrations</option>
+          <option value="volunteer-interest">Interested in volunteering</option>
+          <option value="volunteer-role">Confirmed volunteers</option>
+          <option value="volunteer-all">Interested and confirmed volunteers</option>
+        </select>
+        <p id="attendee-email-audience-help" class="char-hint">Uses the registrations selected in the attendee table.</p>
+      </div>
+      <div class="form-group">
+        <label for="attendee-email-subject">Subject</label>
+        <input id="attendee-email-subject" type="text" maxlength="150" autocomplete="off" required>
+      </div>
+      <div class="form-group">
+        <label for="attendee-email-message">Message</label>
+        <textarea id="attendee-email-message" rows="8" maxlength="5000" placeholder="Share arrival information, schedule reminders, or anything attendees should know." required></textarea>
+        <p class="char-hint">The attendee's name and event details are added automatically.</p>
+      </div>
+      <div id="attendee-email-status" class="form-message is-hidden" role="status" aria-live="polite"></div>
+      <button id="send-attendee-email-btn" type="button">Send Email</button>
+    </section>
     <div id="detail-attendees"></div>
     <h3>Activity Log</h3>
     <div id="audit-log" class="audit-log"><p class="text-muted">Loading activity log...</p></div>

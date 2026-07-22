@@ -92,7 +92,8 @@ jest.mock('../src/helpers/imageGenerator', () => ({
 jest.mock('../src/helpers/badgeGenerator', () => ({
   generateBadge: jest.fn().mockReturnValue('<svg>mock</svg>'),
   generateBadgePng: jest.fn().mockResolvedValue(Buffer.from('mock-png')),
-  generateTextOverlay: jest.fn().mockReturnValue('<svg>overlay</svg>')
+  generateTextOverlay: jest.fn().mockReturnValue('<svg>overlay</svg>'),
+  generateSharedEventBadgePng: jest.fn().mockResolvedValue(Buffer.from('shared-badge'))
 }));
 
 jest.mock('@azure/data-tables', () => ({

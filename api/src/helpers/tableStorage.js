@@ -318,6 +318,7 @@ async function storeBadge(badge) {
     recipientName: badge.recipientName,
     badgeType: badge.badgeType,
     userId: badge.userId || '',
+    postEventOperationId: badge.postEventOperationId || '',
     issuedAt: new Date().toISOString()
   };
   await client.createEntity(entity);
@@ -327,6 +328,11 @@ async function storeBadge(badge) {
 async function getBadge(eventId, badgeId) {
   const client = getTableClient('EventBadges');
   return await client.getEntity(eventId, badgeId);
+}
+
+async function deleteBadge(eventId, badgeId) {
+  const client = getTableClient('EventBadges');
+  await client.deleteEntity(eventId, badgeId);
 }
 
 async function getBadgesByEvent(eventId) {
@@ -339,6 +345,119 @@ async function getBadgesByEvent(eventId) {
     results.push(entity);
   }
   return results;
+}
+
+// ─── Post-event communications ───
+
+let postEventTableReady = false;
+
+async function getPostEventTable() {
+  const client = getTableClient('PostEventCommunications');
+  if (!postEventTableReady) {
+    try {
+      await client.createTable();
+    } catch (error) {
+      if (error.statusCode !== 409 && !String(error.message || '').includes('TableAlreadyExists')) {
+        throw error;
+      }
+    }
+    postEventTableReady = true;
+  }
+  return client;
+}
+
+async function getPostEventJob(eventId) {
+  const client = await getPostEventTable();
+  try {
+    return await client.getEntity(eventId, 'job');
+  } catch (error) {
+    if (error.statusCode === 404 || String(error.message || '').includes('ResourceNotFound')) return null;
+    throw error;
+  }
+}
+
+async function upsertPostEventJob(eventId, updates) {
+  const client = await getPostEventTable();
+  const entity = {
+    partitionKey: eventId,
+    rowKey: 'job',
+    ...updates,
+    updatedAt: new Date().toISOString()
+  };
+  await client.upsertEntity(entity, 'Merge');
+  return entity;
+}
+
+async function createPostEventJob(eventId, values) {
+  const client = await getPostEventTable();
+  const entity = {
+    partitionKey: eventId,
+    rowKey: 'job',
+    ...values,
+    updatedAt: new Date().toISOString()
+  };
+  await client.createEntity(entity);
+  return entity;
+}
+
+async function updatePostEventJob(eventId, updates, etag) {
+  const client = await getPostEventTable();
+  const entity = {
+    partitionKey: eventId,
+    rowKey: 'job',
+    ...updates,
+    updatedAt: new Date().toISOString()
+  };
+  await client.updateEntity(entity, 'Merge', { etag });
+  return entity;
+}
+
+async function getPostEventDeliveries(eventId) {
+  const client = await getPostEventTable();
+  const entities = client.listEntities({
+    queryOptions: { filter: `PartitionKey eq '${eventId.replace(/'/g, "''")}'` }
+  });
+  const results = [];
+  for await (const entity of entities) {
+    if (String(entity.rowKey || '').startsWith('recipient-')) results.push(entity);
+  }
+  return results;
+}
+
+async function upsertPostEventDelivery(eventId, rowKey, updates) {
+  const client = await getPostEventTable();
+  const entity = {
+    partitionKey: eventId,
+    rowKey,
+    ...updates,
+    updatedAt: new Date().toISOString()
+  };
+  await client.upsertEntity(entity, 'Merge');
+  return entity;
+}
+
+async function createPostEventDelivery(eventId, rowKey, values) {
+  const client = await getPostEventTable();
+  const entity = {
+    partitionKey: eventId,
+    rowKey,
+    ...values,
+    updatedAt: new Date().toISOString()
+  };
+  await client.createEntity(entity);
+  return entity;
+}
+
+async function updatePostEventDelivery(eventId, rowKey, updates, etag) {
+  const client = await getPostEventTable();
+  const entity = {
+    partitionKey: eventId,
+    rowKey,
+    ...updates,
+    updatedAt: new Date().toISOString()
+  };
+  await client.updateEntity(entity, 'Merge', { etag });
+  return entity;
 }
 
 // ─── Volunteers ───
@@ -662,7 +781,9 @@ module.exports = {
   getRegistrationsByEvent, countRegistrations, updateRegistration,
   deleteRegistration, deleteDemographics,
   storeDemographics, getDemographicsByEvent,
-  storeBadge, getBadge, getBadgesByEvent,
+  storeBadge, getBadge, deleteBadge, getBadgesByEvent,
+  getPostEventJob, upsertPostEventJob, createPostEventJob, updatePostEventJob,
+  getPostEventDeliveries, upsertPostEventDelivery, createPostEventDelivery, updatePostEventDelivery,
   storeVolunteer, getVolunteersByEvent, removeVolunteer, isVolunteerForAnyEvent,
   getRegistrationsByRole, isVolunteerOrOrganiserByRegistration, VALID_ROLES,
   getApprovedApplicationByEmail, getApprovedApplicationsByEmail,
