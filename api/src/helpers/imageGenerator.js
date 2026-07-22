@@ -124,6 +124,31 @@ async function getChapterCardArtwork(year, chapterSlug) {
   return await downloadBlobPath(`badge-themes/${year}/chapters/${safeChapterSlug}-card.webp`);
 }
 
+async function createChapterHeroArtwork(year, chapterSlug, source, context) {
+  const safeChapterSlug = safeStorageSegment(chapterSlug, 'chapter');
+  const heroBuffer = await sharp(source)
+    .resize(1024, 576, { fit: 'cover', position: 'north' })
+    .webp({ quality: 82, effort: 5 })
+    .toBuffer();
+  await uploadToBlob(
+    heroBuffer,
+    `badge-themes/${year}/chapters/${safeChapterSlug}-hero.webp`,
+    context,
+    'image/webp'
+  );
+  return heroBuffer;
+}
+
+async function getChapterHeroArtwork(year, chapterSlug, context) {
+  const safeChapterSlug = safeStorageSegment(chapterSlug, 'chapter');
+  const cached = await downloadBlobPath(`badge-themes/${year}/chapters/${safeChapterSlug}-hero.webp`);
+  if (cached) return cached;
+
+  const source = await getChapterBadgeTheme(year, safeChapterSlug);
+  if (!source) return null;
+  return await createChapterHeroArtwork(year, safeChapterSlug, source, context);
+}
+
 async function generateAnnualBadgeTheme(year, context) {
   const prompt = `A square digital illustration forming the ${year} annual visual theme for Global Security Community event badges worldwide. ` +
     `Create one iconic, polished cybersecurity community scene that can be reused consistently across many different events and countries. ` +
@@ -157,12 +182,15 @@ async function generateChapterBadgeTheme(year, chapterSlug, city, country, annua
     .resize(720, 405, { fit: 'cover', position: 'north' })
     .webp({ quality: 78, effort: 5 })
     .toBuffer();
-  await uploadToBlob(
-    cardBuffer,
-    `badge-themes/${year}/chapters/${safeChapterSlug}-card.webp`,
-    context,
-    'image/webp'
-  );
+  await Promise.all([
+    uploadToBlob(
+      cardBuffer,
+      `badge-themes/${year}/chapters/${safeChapterSlug}-card.webp`,
+      context,
+      'image/webp'
+    ),
+    createChapterHeroArtwork(year, safeChapterSlug, buffer, context)
+  ]);
   return buffer;
 }
 
@@ -344,6 +372,7 @@ module.exports = {
   getAnnualBadgeTheme,
   getChapterBadgeTheme,
   getChapterCardArtwork,
+  getChapterHeroArtwork,
   generateAnnualBadgeTheme,
   generateChapterBadgeTheme,
   ensureChapterBadgeTheme,

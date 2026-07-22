@@ -1,5 +1,10 @@
 const crypto = require('crypto');
 
+function chapterSlugFromUrl(value) {
+  const match = String(value || '').match(/^\/chapters\/([a-z0-9](?:[a-z0-9-]{0,60}[a-z0-9])?)\/$/);
+  return match ? match[1] : '';
+}
+
 module.exports = function(eleventyConfig) {
   // Copy static assets
   eleventyConfig.addPassthroughCopy("src/assets");
@@ -15,6 +20,9 @@ module.exports = function(eleventyConfig) {
     if (!value) return '';
     return crypto.createHash('md5').update(value.trim().toLowerCase()).digest('hex');
   });
+
+  // Chapter URLs are generated from the canonical application slug.
+  eleventyConfig.addFilter("chapterSlugFromUrl", chapterSlugFromUrl);
 
   // Date filters for date-based event grouping in templates
   eleventyConfig.addFilter("dateToMs", function(value) {
@@ -106,3 +114,5 @@ module.exports = function(eleventyConfig) {
     htmlTemplateEngine: "njk"
   };
 };
+
+module.exports.chapterSlugFromUrl = chapterSlugFromUrl;
