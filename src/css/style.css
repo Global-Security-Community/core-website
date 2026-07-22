@@ -728,6 +728,60 @@ body {
   margin-bottom: var(--space-3xl);
 }
 
+.chapter-visual-hero {
+  position: relative;
+  display: flex;
+  min-height: 360px;
+  align-items: flex-end;
+  margin-bottom: var(--space-3xl);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-navy-deep);
+  box-shadow: var(--shadow-lg);
+}
+
+.chapter-visual-hero::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 31, 63, 0.08), rgba(6, 23, 44, 0.94));
+  content: "";
+}
+
+.chapter-visual-hero__artwork {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+}
+
+.chapter-visual-hero__content {
+  position: relative;
+  z-index: 2;
+  padding: clamp(3rem, 8vw, 5.5rem) clamp(2.5rem, 6vw, 5rem) var(--space-2xl);
+  color: var(--color-text-inverse);
+}
+
+.chapter-visual-hero__content h1 {
+  max-width: 18ch;
+  margin: 0 0 var(--space-sm);
+  color: var(--color-text-inverse);
+  font-size: clamp(2.35rem, 6vw, 4.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.chapter-visual-hero__content p {
+  margin: 0;
+  color: var(--color-text-inverse-muted);
+  font-size: var(--text-lg);
+}
+
 .page-header h1,
 .chapter-page-header h1,
 .event-page-header h1 {
@@ -1618,7 +1672,8 @@ button:not(.nav-toggle):hover,
 }
 
 @media (max-width: 768px) {
-  .chapters-hero {
+  .chapters-hero,
+  .chapter-visual-hero {
     min-height: 300px;
   }
 
@@ -3017,18 +3072,6 @@ a.event-card:hover { color: inherit; }
 .inline-ml-sm { margin-left: var(--space-sm); }
 .card-padding-standard { padding: var(--space-2xl); }
 .skeleton-ticket { max-width: 420px; margin: 0 auto; }
-.chapter-banner {
-  margin-bottom: var(--space-xl);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  max-height: 200px;
-}
-.chapter-banner-img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  display: block;
-}
 .subscribe-message {
   margin: 0 0 var(--space-md) 0;
 }
