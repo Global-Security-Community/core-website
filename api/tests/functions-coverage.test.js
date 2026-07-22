@@ -104,8 +104,8 @@ jest.mock('../src/helpers/imageGenerator', () => ({
   callImageApi: jest.fn().mockResolvedValue(Buffer.from('mock')),
   uploadToBlob: jest.fn().mockResolvedValue('https://mock.blob.url/test.png'),
   downloadGeneratedImage: jest.fn().mockResolvedValue(Buffer.from('generated-image')),
-  getChapterBadgeTheme: jest.fn().mockResolvedValue(Buffer.from('chapter-theme')),
   getChapterCardArtwork: jest.fn().mockResolvedValue(Buffer.from('chapter-card')),
+  getChapterHeroArtwork: jest.fn().mockResolvedValue(Buffer.from('chapter-hero')),
   ACTIVE_BADGE_THEME_YEAR: 2026
 }));
 
@@ -157,6 +157,7 @@ describe('chapterArtwork function', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     imageGenerator.getChapterCardArtwork.mockResolvedValue(Buffer.from('chapter-card'));
+    imageGenerator.getChapterHeroArtwork.mockResolvedValue(Buffer.from('chapter-hero'));
   });
 
   test('returns cached WebP artwork for a valid chapter', async () => {
@@ -170,15 +171,15 @@ describe('chapterArtwork function', () => {
     expect(imageGenerator.getChapterCardArtwork).toHaveBeenCalledWith(2026, 'perth');
   });
 
-  test('returns the full chapter artwork for a hero', async () => {
+  test('returns optimized WebP artwork for a hero', async () => {
     const response = await chapterArtwork({
-      url: 'https://globalsecurity.community/api/chapterArtwork?slug=perth&year=2026&variant=hero'
+      url: 'https://globalsecurity.community/api/chapterArtwork?slug=perth&year=2026&variant=hero-webp'
     }, context);
 
     expect(response.status).toBe(200);
-    expect(response.headers['Content-Type']).toBe('image/png');
-    expect(response.body).toEqual(Buffer.from('chapter-theme'));
-    expect(imageGenerator.getChapterBadgeTheme).toHaveBeenCalledWith(2026, 'perth');
+    expect(response.headers['Content-Type']).toBe('image/webp');
+    expect(response.body).toEqual(Buffer.from('chapter-hero'));
+    expect(imageGenerator.getChapterHeroArtwork).toHaveBeenCalledWith(2026, 'perth', context);
   });
 
   test('redirects invalid or missing artwork to the standard shield', async () => {
