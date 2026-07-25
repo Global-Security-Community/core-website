@@ -12,7 +12,7 @@
     "@11ty/eleventy": "^3.1.5"
   },
   "devDependencies": {
-    "@azure/static-web-apps-cli": "^2.0.9",
+    "@azure/static-web-apps-cli": "^2.0.10",
     "@playwright/test": "^1.60.0"
   },
   "overrides": {
