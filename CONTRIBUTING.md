@@ -41,7 +41,10 @@ gh workflow run release-production.yml
 The workflow opens a pull request from `main` into `live-version-swa` and enables merge-commit
 auto-merge. GitHub releases it after the required source, CI, CodeQL, and deployment-preview
 checks pass. Generated event and chapter pages use squash auto-merge into `main` but remain
-unreleased until this workflow is run.
+unreleased until approved. New chapter generation posts a Discord approval link bound to the
+exact tested `main` commit. An authenticated administrator can approve that release; if `main`
+changes first, the approval expires and the release is blocked. The manual workflow remains
+available for non-chapter releases.
 
 ## Tests
 

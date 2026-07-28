@@ -181,3 +181,46 @@ jobs:
           done
           echo "::error::Timed out waiting for PR #$PR_NUMBER to merge (CI may have failed)"
           exit 1
+
+      - name: Request production release approval
+        if: env.BRANCH != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ github.event.client_payload.notification_channel_id }}
+          CITY: ${{ github.event.client_payload.chapter_city }}
+          SLUG: ${{ github.event.client_payload.chapter_slug }}
+        run: |
+          if [ -z "$BOT_TOKEN" ] || ! [[ "$CHANNEL_ID" =~ ^[0-9]+$ ]]; then
+            echo "::error::Discord release approval configuration is missing"
+            exit 1
+          fi
+
+          MAIN_SHA=$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)
+          APPROVAL_PATH="/api/releaseApproval?sha=${MAIN_SHA}&chapter=${SLUG}"
+          APPROVAL_REDIRECT=$(jq -rn --arg value "$APPROVAL_PATH" '$value | @uri')
+          APPROVAL_URL="https://globalsecurity.community/.auth/login/ciam?post_login_redirect_uri=${APPROVAL_REDIRECT}"
+          REVIEW_URL="https://github.com/${GITHUB_REPOSITORY}/compare/live-version-swa...${MAIN_SHA}"
+          PAYLOAD=$(jq -n \
+            --arg city "$CITY" \
+            --arg sha "$MAIN_SHA" \
+            --arg approvalUrl "$APPROVAL_URL" \
+            --arg reviewUrl "$REVIEW_URL" \
+            '{
+              embeds: [{
+                title: "Chapter ready for production approval",
+                description: ("The generated **" + $city + "** chapter has passed checks and merged into `main`."),
+                color: 2142890,
+                fields: [
+                  { name: "Approved main commit", value: ("`" + $sha + "`"), inline: false },
+                  { name: "Actions", value: ("[Review all release changes](" + $reviewUrl + ") | [Approve production release](" + $approvalUrl + ")"), inline: false }
+                ],
+                footer: { text: "Approval is valid only while main remains at this commit." }
+              }]
+            }')
+
+          curl --fail-with-body --silent --show-error \
+            -X POST "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages" \
+            -H "Authorization: Bot ${BOT_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "$PAYLOAD"
