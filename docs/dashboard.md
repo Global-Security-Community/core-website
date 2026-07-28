@@ -50,10 +50,18 @@ Requires the **admin** role. Only approved chapter leads are automatically assig
 - **Issue Badges** — After an event, generate and email digital badges to:
   - Attendees (who checked in)
   - Speakers
+  - Volunteers
   - Sponsors
-  - Organisers / Volunteers
+  - Organisers
 
-> **Note:** AI-generated badge background images are currently disabled. Badges use a gradient fallback. See [Badges](badges.md) for details.
+- **Badge Artwork Generation** — The "Apply Community Theme" / "Rebuild Badges from Community Theme" button generates shared event artwork for the badge templates. It currently creates these artwork variants:
+  - **Attendee** → used for attendee badge emails and the event badge preview
+  - **Speaker** → used for speaker badge emails and the event badge preview
+  - **Organiser** → used for organiser badge emails and the event badge preview
+
+  The dashboard preview shows the generated artwork for those three variants, and the event record stores the generated image URLs for attendee, speaker, and organiser artwork.
+
+> **Note:** If badge artwork has not been generated yet, badge issuance will fall back to the standard badge artwork path.
 
 ## Event Creation Flow
 

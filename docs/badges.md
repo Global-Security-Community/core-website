@@ -23,6 +23,16 @@ Badges are generated as PNG images (with SVG fallback) featuring GSC branding:
 - Recipient's name
 - "Verified by Global Security Community" footer
 
+## How Badge Artwork is Generated
+
+The dashboard's badge artwork button generates the shared event artwork used as the background for badge emails. The current artwork generation flow creates and saves three event artwork variants:
+
+- **Attendee artwork** → saved to the event as `badgeImageUrl`
+- **Speaker artwork** → saved to the event as `speakerBadgeImageUrl`
+- **Organiser artwork** → saved to the event as `organiserBadgeImageUrl`
+
+These artwork files are then downloaded and composited into the final badge PNGs when badges are issued.
+
 ## How Badges Are Issued
 
 1. After an event is completed, an admin opens the [Dashboard](/dashboard/)
@@ -31,26 +41,23 @@ Badges are generated as PNG images (with SVG fallback) featuring GSC branding:
 4. Badges are emailed to recipients from `DoNotReply@globalsecurity.community`
 5. Recipients can also download their badge via the API
 
-## Downloading Your Badge
+## Role to artwork mapping
 
-Badges are available for download at:
+| Registration role | Final badge type emailed | Artwork used |
+|-------------------|--------------------------|--------------|
+| `attendee` | Attendee | `badgeImageUrl` / Attendee artwork |
+| `volunteer` | Volunteer | `badgeImageUrl` / Attendee artwork |
+| `speaker` | Speaker | `speakerBadgeImageUrl` / Speaker artwork |
+| `organiser` | Organiser | `organiserBadgeImageUrl` / Organiser artwork |
+| `sponsor` | Sponsor | `badgeImageUrl` / Attendee artwork |
 
-`/api/badge?eventId={event-id}&badgeId={badge-id}`
+In other words, the system can email Volunteer and Sponsor badges, but those roles currently reuse the attendee artwork background rather than having their own dedicated generated artwork variant.
 
-You must be logged in to download your badge. Only badge recipients and admins can access badge downloads.
+## AI Image Generation
 
-## AI Image Generation (Currently Disabled)
+Badge background images can be AI-generated using city landmarks and cybersecurity visual elements. This feature is currently enabled in the badge artwork workflow.
 
-Badge background images can be AI-generated using city landmarks and cybersecurity visual elements. This feature is **temporarily disabled** while the workflow is being improved.
-
-When re-enabled, the system supports multiple AI providers via `api/src/helpers/aiProvider.js`:
-
-| Provider | Env Var | Description |
-|----------|---------|-------------|
-| `openai` (default) | `OPENAI_API_KEY` | OpenAI API platform (gpt-image-1, DALL-E) |
-| `azure` | `AZURE_AI_ENDPOINT` + `AZURE_AI_KEY` | Azure AI Foundry (FLUX, custom deployments) |
-
-Set `AI_PROVIDER` env var to switch between providers. See `api/src/helpers/aiProvider.js` for configuration details.
+The implementation uses the configured AI provider in `api/src/helpers/aiProvider.js`.
 
 ## Related Pages
 
