@@ -9,16 +9,17 @@
     "test:e2e:headed": "npx playwright test --headed"
   },
   "dependencies": {
-    "@11ty/eleventy": "^3.1.5"
+    "@11ty/eleventy": "^3.1.6"
   },
   "devDependencies": {
-    "@azure/static-web-apps-cli": "^2.0.9",
-    "@playwright/test": "^1.60.0"
+    "@azure/static-web-apps-cli": "^2.0.10",
+    "@playwright/test": "^1.62.0"
   },
   "overrides": {
     "cookie": "^0.7.0",
     "tmp": "^0.2.4",
     "ws": "^8.20.1",
-    "adm-zip": "0.6.0"
+    "adm-zip": "0.6.0",
+    "brace-expansion": "5.0.8"
   }
 }
