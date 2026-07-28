@@ -312,6 +312,8 @@ API secrets are stored in `api/local.settings.json` (gitignored). Required value
 | `CIAM_CLIENT_ID` | Azure AD B2C app client ID |
 | `CIAM_CLIENT_SECRET` | Azure AD B2C app client secret |
 | `AZURE_COMMUNICATION_CONNECTION_STRING` | ACS connection (optional — emails fail gracefully) |
+| `ACS_REPLY_TO_ADDRESS` | Reply-to address for platform email (defaults to `hello@globalsecurity.community`) |
+| `EMAIL_UNSUBSCRIBE_SECRET` | Random secret used to sign one-click chapter unsubscribe links |
 | `SUPER_ADMIN_EMAILS` | Comma-separated community organiser addresses used for admin access and submission notifications |
 | `DISCORD_BOT_TOKEN` | Discord bot token (optional — notifications fail gracefully) |
 | `DISCORD_CONTACT_CHANNEL_ID` | Discord channel ID for contact form submissions |

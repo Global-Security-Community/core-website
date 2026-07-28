@@ -1,7 +1,9 @@
 const { EmailClient } = require('@azure/communication-email');
+const { generateUnsubscribeToken } = require('./unsubscribeToken');
 
 const connectionString = process.env.AZURE_COMMUNICATION_CONNECTION_STRING || '';
 const SENDER_ADDRESS = process.env.ACS_SENDER_ADDRESS || 'DoNotReply@globalsecurity.community';
+const REPLY_TO_ADDRESS = process.env.ACS_REPLY_TO_ADDRESS || 'hello@globalsecurity.community';
 const LOGO_URL = 'https://globalsecurity.community/assets/GSC-Shield-Transparent.png';
 const SITE_URL = 'https://globalsecurity.community';
 
@@ -43,6 +45,55 @@ function emailLayout(bodyHtml) {
   </div>
 </body>
 </html>`;
+}
+
+function decodeHtmlEntities(value) {
+  return value
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&#(\d+);/g, (entity, code) => decodeCodePoint(entity, code, 10))
+    .replace(/&#x([0-9a-f]+);/gi, (entity, code) => decodeCodePoint(entity, code, 16));
+}
+
+function decodeCodePoint(entity, value, radix) {
+  const codePoint = parseInt(value, radix);
+  return Number.isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10FFFF
+    ? String.fromCodePoint(codePoint)
+    : entity;
+}
+
+function htmlToPlainText(html) {
+  const withoutTags = html
+    .replace(/<a\b[^>]*href=(["'])(.*?)\1[^>]*>(.*?)<\/a>/gis, (_, quote, href, label) => {
+      const text = label.replace(/<[^>]+>/g, '').trim();
+      return text && text !== href ? `${text} (${href})` : href;
+    })
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<li\b[^>]*>/gi, '- ')
+    .replace(/<\/(?:p|div|h[1-6]|li|tr|table)>/gi, '\n')
+    .replace(/<[^>]+>/g, '');
+
+  return decodeHtmlEntities(withoutTags)
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n[ \t]+/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function buildEmailContent(subject, bodyHtml) {
+  return {
+    subject,
+    plainText: `${htmlToPlainText(bodyHtml)}\n\nGlobal Security Community\n${SITE_URL}`,
+    html: emailLayout(bodyHtml)
+  };
+}
+
+function replyToRecipients() {
+  return [{ address: REPLY_TO_ADDRESS, displayName: 'Global Security Community' }];
 }
 
 /**
@@ -100,13 +151,11 @@ async function sendTicketEmail(registration, event, qrDataUrl, context, partners
 
   const message = {
     senderAddress: SENDER_ADDRESS,
-    content: {
-      subject: `Your Ticket: ${event.title}`,
-      html: emailLayout(bodyHtml)
-    },
+    content: buildEmailContent(`Your Ticket: ${event.title}`, bodyHtml),
     recipients: {
       to: [{ address: registration.email, displayName: registration.fullName }]
-    }
+    },
+    replyTo: replyToRecipients()
   };
 
   if (qrBase64) {
@@ -165,13 +214,11 @@ async function sendBadgeEmail(recipient, badgeContent, event, badgeType, context
 
   const message = {
     senderAddress: SENDER_ADDRESS,
-    content: {
-      subject: `Thank you for ${msg.roleText} ${event.title} — your ${badgeType} badge`,
-      html: emailLayout(bodyHtml)
-    },
+    content: buildEmailContent(`Thank you for ${msg.roleText} ${event.title} — your ${badgeType} badge`, bodyHtml),
     recipients: {
       to: [{ address: recipient.email, displayName: recipient.name }]
     },
+    replyTo: replyToRecipients(),
     attachments: [
       {
         name: attachmentName,
@@ -223,13 +270,11 @@ async function sendPostEventEmail(
     </p>`;
   const poller = await client.beginSend({
     senderAddress: SENDER_ADDRESS,
-    content: {
-      subject: subject.replace(/[\r\n]+/g, ' ').trim(),
-      html: emailLayout(bodyHtml)
-    },
+    content: buildEmailContent(subject.replace(/[\r\n]+/g, ' ').trim(), bodyHtml),
     recipients: {
       to: [{ address: recipient.email, displayName: recipient.name }]
     },
+    replyTo: replyToRecipients(),
     attachments: [{
       name: attachmentName,
       contentType,
@@ -292,13 +337,11 @@ async function sendCancellationEmail(registration, event, context) {
 
   const message = {
     senderAddress: SENDER_ADDRESS,
-    content: {
-      subject: `Registration Cancelled: ${event.title}`,
-      html: emailLayout(bodyHtml)
-    },
+    content: buildEmailContent(`Registration Cancelled: ${event.title}`, bodyHtml),
     recipients: {
       to: [{ address: registration.email, displayName: registration.fullName }]
-    }
+    },
+    replyTo: replyToRecipients()
   };
 
   try {
@@ -324,6 +367,8 @@ async function sendEventNotificationEmail(subscriberEmail, event, context) {
 
   const eventPageUrl = event.slug ? `${SITE_URL}/events/${escapeHtml(event.slug)}/` : SITE_URL;
   const registerUrl = event.slug ? `${SITE_URL}/register/?event=${escapeHtml(event.slug)}` : SITE_URL;
+  const unsubscribeToken = generateUnsubscribeToken(event.chapterSlug, subscriberEmail);
+  const unsubscribeUrl = `${SITE_URL}/api/chapterUnsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
 
   const bodyHtml = `
     <h2 style="color:#001f3f;margin:0 0 8px 0;">New Event: ${escapeHtml(event.title)} 🎉</h2>
@@ -337,17 +382,20 @@ async function sendEventNotificationEmail(subscriberEmail, event, context) {
     </p>
     <p style="color:#999;font-size:0.8em;text-align:center;margin-top:24px;">
       You received this because you subscribed to ${escapeHtml(chapterName)} chapter updates.
-      <a href="${SITE_URL}/chapters/${escapeHtml(event.chapterSlug)}/" style="color:#20b2aa;">Manage preferences</a>
+      <a href="${unsubscribeUrl}" style="color:#20b2aa;">Unsubscribe</a>
+      or <a href="${SITE_URL}/chapters/${escapeHtml(event.chapterSlug)}/" style="color:#20b2aa;">manage preferences</a>.
     </p>`;
 
   const message = {
     senderAddress: SENDER_ADDRESS,
-    content: {
-      subject: `New Event: ${event.title}`,
-      html: emailLayout(bodyHtml)
-    },
+    content: buildEmailContent(`New Event: ${event.title}`, bodyHtml),
     recipients: {
       to: [{ address: subscriberEmail }]
+    },
+    replyTo: replyToRecipients(),
+    headers: {
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
     }
   };
 
@@ -380,13 +428,11 @@ async function sendAttendeeEmail(registration, event, subject, messageText, cont
 
   const emailMessage = {
     senderAddress: SENDER_ADDRESS,
-    content: {
-      subject: safeSubject,
-      html: emailLayout(bodyHtml)
-    },
+    content: buildEmailContent(safeSubject, bodyHtml),
     recipients: {
       to: [{ address: registration.email, displayName: registration.fullName }]
-    }
+    },
+    replyTo: replyToRecipients()
   };
 
   try {
@@ -428,13 +474,11 @@ async function sendSuperAdminEmail(subject, bodyHtml, context) {
   const results = await Promise.allSettled(recipients.map(async recipient => {
     const poller = await client.beginSend({
       senderAddress: SENDER_ADDRESS,
-      content: {
-        subject,
-        html: emailLayout(bodyHtml)
-      },
+      content: buildEmailContent(subject, bodyHtml),
       recipients: {
         to: [{ address: recipient }]
-      }
+      },
+      replyTo: replyToRecipients()
     });
     return ensureEmailSucceeded(await poller.pollUntilDone());
   }));

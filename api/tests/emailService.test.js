@@ -11,6 +11,7 @@ describe('superadmin email notifications', () => {
 
   beforeAll(() => {
     process.env.AZURE_COMMUNICATION_CONNECTION_STRING = 'endpoint=https://test/;accesskey=test';
+    process.env.EMAIL_UNSUBSCRIBE_SECRET = 'test-unsubscribe-secret';
     emailService = require('../src/helpers/emailService');
   });
 
@@ -23,6 +24,7 @@ describe('superadmin email notifications', () => {
 
   afterAll(() => {
     delete process.env.AZURE_COMMUNICATION_CONNECTION_STRING;
+    delete process.env.EMAIL_UNSUBSCRIBE_SECRET;
     delete process.env.SUPER_ADMIN_EMAILS;
   });
 
@@ -48,6 +50,11 @@ describe('superadmin email notifications', () => {
       expect(call[0].content.html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
       expect(call[0].content.html).toContain('&lt;b&gt;Build a community&lt;/b&gt;');
       expect(call[0].content.html).not.toContain('<script>');
+      expect(call[0].content.plainText).toContain('<script>alert(1)</script>');
+      expect(call[0].replyTo).toEqual([{
+        address: 'hello@globalsecurity.community',
+        displayName: 'Global Security Community'
+      }]);
     });
   });
 
@@ -153,5 +160,40 @@ describe('superadmin email notifications', () => {
     );
 
     expect(mockBeginSend.mock.calls[0][1]).toEqual({ operationId });
+  });
+
+  test('adds RFC 8058 one-click unsubscribe metadata to chapter announcements', async () => {
+    await emailService.sendEventNotificationEmail(
+      'subscriber@example.com',
+      {
+        title: 'Security Meetup',
+        date: '2026-08-01',
+        location: 'Town Hall',
+        slug: 'security-meetup',
+        chapterSlug: 'perth'
+      },
+      context
+    );
+
+    const message = mockBeginSend.mock.calls[0][0];
+    expect(message.content.plainText).toContain('Unsubscribe (https://globalsecurity.community/api/chapterUnsubscribe?token=');
+    expect(message.headers['List-Unsubscribe']).toMatch(
+      /^<https:\/\/globalsecurity\.community\/api\/chapterUnsubscribe\?token=/
+    );
+    expect(message.headers['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
+  });
+
+  test('preserves escaped angle-bracket text in the plain-text alternative', async () => {
+    await emailService.sendAttendeeEmail(
+      { fullName: 'Alice', email: 'alice@example.com' },
+      { title: 'C++ &lt;algorithm&gt;', date: '2026-08-01', location: 'Town Hall' },
+      'C++ update',
+      'Bring examples using <algorithm>.',
+      context
+    );
+
+    const message = mockBeginSend.mock.calls[0][0];
+    expect(message.content.plainText).toContain('C++ <algorithm>');
+    expect(message.content.plainText).toContain('Bring examples using <algorithm>.');
   });
 });
