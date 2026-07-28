@@ -138,7 +138,8 @@ module.exports = async function (request, context) {
               linkedin: application.secondLeadLinkedIn || '',
               github: application.secondLeadGitHub || ''
             }),
-            discord_channel_id: discordChannel ? discordChannel.channelId : ''
+            discord_channel_id: discordChannel ? discordChannel.channelId : '',
+            notification_channel_id: process.env.DISCORD_NOTIFICATIONS_CHANNEL_ID || ''
           }
         });
         pageTriggered = true;
