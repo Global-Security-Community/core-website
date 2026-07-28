@@ -176,7 +176,7 @@ describe('superadmin email notifications', () => {
     );
 
     const message = mockBeginSend.mock.calls[0][0];
-    expect(message.content.plainText).toContain('Unsubscribe (https://globalsecurity.community/api/chapterUnsubscribe?token=');
+    expect(message.content.plainText).toContain('Unsubscribe [https://globalsecurity.community/api/chapterUnsubscribe?token=');
     expect(message.headers['List-Unsubscribe']).toMatch(
       /^<https:\/\/globalsecurity\.community\/api\/chapterUnsubscribe\?token=/
     );
@@ -186,7 +186,7 @@ describe('superadmin email notifications', () => {
   test('preserves escaped angle-bracket text in the plain-text alternative', async () => {
     await emailService.sendAttendeeEmail(
       { fullName: 'Alice', email: 'alice@example.com' },
-      { title: 'C++ &lt;algorithm&gt;', date: '2026-08-01', location: 'Town Hall' },
+      { title: 'C++ <algorithm>', date: '2026-08-01', location: 'Town Hall' },
       'C++ update',
       'Bring examples using <algorithm>.',
       context

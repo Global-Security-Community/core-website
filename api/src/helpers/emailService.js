@@ -1,4 +1,5 @@
 const { EmailClient } = require('@azure/communication-email');
+const { convert: convertHtmlToText } = require('html-to-text');
 const { generateUnsubscribeToken } = require('./unsubscribeToken');
 
 const connectionString = process.env.AZURE_COMMUNICATION_CONNECTION_STRING || '';
@@ -47,41 +48,13 @@ function emailLayout(bodyHtml) {
 </html>`;
 }
 
-function decodeHtmlEntities(value) {
-  return value
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&#(\d+);/g, (entity, code) => decodeCodePoint(entity, code, 10))
-    .replace(/&#x([0-9a-f]+);/gi, (entity, code) => decodeCodePoint(entity, code, 16));
-}
-
-function decodeCodePoint(entity, value, radix) {
-  const codePoint = parseInt(value, radix);
-  return Number.isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10FFFF
-    ? String.fromCodePoint(codePoint)
-    : entity;
-}
-
 function htmlToPlainText(html) {
-  const withoutTags = html
-    .replace(/<a\b[^>]*href=(["'])(.*?)\1[^>]*>(.*?)<\/a>/gis, (_, quote, href, label) => {
-      const text = label.replace(/<[^>]+>/g, '').trim();
-      return text && text !== href ? `${text} (${href})` : href;
-    })
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<li\b[^>]*>/gi, '- ')
-    .replace(/<\/(?:p|div|h[1-6]|li|tr|table)>/gi, '\n')
-    .replace(/<[^>]+>/g, '');
-
-  return decodeHtmlEntities(withoutTags)
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n[ \t]+/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  return convertHtmlToText(html, {
+    wordwrap: false,
+    selectors: [
+      { selector: 'img', format: 'skip' }
+    ]
+  }).trim();
 }
 
 function buildEmailContent(subject, bodyHtml) {
