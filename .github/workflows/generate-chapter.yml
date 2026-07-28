@@ -181,20 +181,3 @@ jobs:
           done
           echo "::error::Timed out waiting for PR #$PR_NUMBER to merge (CI may have failed)"
           exit 1
-
-      - name: Deploy to production
-        if: env.BRANCH != ''
-        run: |
-          git fetch origin main live-version-swa
-          git checkout live-version-swa
-          git merge origin/main --no-edit
-          git push origin live-version-swa
-          echo "✅ Chapter page merged to live-version-swa"
-
-      - name: Trigger SWA deploy
-        if: env.BRANCH != ''
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh workflow run azure-static-web-apps-lively-desert-0f1f18c10.yml --ref live-version-swa
-          echo "✅ SWA deploy triggered"
