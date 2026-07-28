@@ -48,5 +48,5 @@ cd api && npm test
 
 ## Branching
 
-- `main` — development branch
-- `live-version-swa` — production (merge from main to release)
+- `main` — protected development branch
+- `live-version-swa` — protected production branch (release by PR from `main`)

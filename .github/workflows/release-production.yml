@@ -1,0 +1,53 @@
+name: Release to Production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-production
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Open Production Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or reuse release pull request
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GH_PR_TOKEN }}
+        run: |
+          AHEAD=$(GH_TOKEN="${{ github.token }}" gh api \
+            "repos/${GITHUB_REPOSITORY}/compare/live-version-swa...main" \
+            --jq .ahead_by)
+          if [ "$AHEAD" -eq 0 ]; then
+            echo "Production already contains all commits from main"
+            exit 0
+          fi
+
+          PR_NUMBER=$(gh pr list \
+            --base live-version-swa \
+            --head main \
+            --state open \
+            --json number \
+            --jq '.[0].number')
+
+          if [ -z "$PR_NUMBER" ]; then
+            gh pr create \
+              --base live-version-swa \
+              --head main \
+              --title "Release main to production" \
+              --body "Promotes the tested state of \`main\` to \`live-version-swa\`."
+            PR_NUMBER=$(gh pr list \
+              --base live-version-swa \
+              --head main \
+              --state open \
+              --json number \
+              --jq '.[0].number')
+          fi
+
+          gh pr merge "$PR_NUMBER" --auto --merge
+          echo "Release PR #$PR_NUMBER will merge after all required checks pass"

@@ -1,0 +1,25 @@
+name: Validate Production Release
+
+on:
+  pull_request:
+    branches: [live-version-swa]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-source:
+    name: Validate Release Source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require main as the source branch
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          TARGET_REPO: ${{ github.repository }}
+        run: |
+          if [ "$HEAD_REF" != "main" ] || [ "$HEAD_REPO" != "$TARGET_REPO" ]; then
+            echo "::error::Production releases must originate from ${TARGET_REPO}:main"
+            exit 1
+          fi
