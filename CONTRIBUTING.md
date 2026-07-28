@@ -32,14 +32,16 @@ See [`.github/copilot-instructions.md`](.github/copilot-instructions.md) for det
 
 ## Deployment
 
-Merge `main` into `live-version-swa` to deploy:
+Run the production release workflow when the tested changes on `main` are ready:
 
 ```bash
-git checkout live-version-swa
-git merge main
-git push origin live-version-swa
-git checkout main
+gh workflow run release-production.yml
 ```
+
+The workflow opens a pull request from `main` into `live-version-swa` and enables merge-commit
+auto-merge. GitHub releases it after the required source, CI, CodeQL, and deployment-preview
+checks pass. Generated event and chapter pages use squash auto-merge into `main` but remain
+unreleased until this workflow is run.
 
 ## Tests
 
