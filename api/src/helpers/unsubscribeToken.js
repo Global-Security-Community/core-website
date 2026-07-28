@@ -1,5 +1,8 @@
 const crypto = require('crypto');
 
+const TOKEN_VERSION = 'v1';
+const IV_LENGTH = 12;
+
 function getSecret() {
   const secret = process.env.EMAIL_UNSUBSCRIBE_SECRET || '';
   if (!secret) {
@@ -15,8 +18,8 @@ function normaliseSubscription(chapterSlug, email) {
   };
 }
 
-function signPayload(payload) {
-  return crypto.createHmac('sha256', getSecret()).update(payload).digest('base64url');
+function encryptionKey() {
+  return crypto.createHash('sha256').update(getSecret(), 'utf8').digest();
 }
 
 function generateUnsubscribeToken(chapterSlug, email) {
@@ -25,26 +28,44 @@ function generateUnsubscribeToken(chapterSlug, email) {
     throw new Error('Chapter slug and subscriber email are required');
   }
 
-  const payload = Buffer.from(JSON.stringify(subscription)).toString('base64url');
-  return `${payload}.${signPayload(payload)}`;
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv('aes-256-gcm', encryptionKey(), iv);
+  const ciphertext = Buffer.concat([
+    cipher.update(JSON.stringify(subscription), 'utf8'),
+    cipher.final()
+  ]);
+  const authTag = cipher.getAuthTag();
+
+  return [
+    TOKEN_VERSION,
+    iv.toString('base64url'),
+    ciphertext.toString('base64url'),
+    authTag.toString('base64url')
+  ].join('.');
 }
 
 function verifyUnsubscribeToken(token) {
   if (!token || typeof token !== 'string') return null;
   const parts = token.split('.');
-  if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
-
-  const [payload, signature] = parts;
-  const expected = signPayload(payload);
-  const providedBuffer = Buffer.from(signature, 'base64url');
-  const expectedBuffer = Buffer.from(expected, 'base64url');
-  if (providedBuffer.length !== expectedBuffer.length ||
-      !crypto.timingSafeEqual(providedBuffer, expectedBuffer)) {
+  if (parts.length !== 4 || parts.some(part => !part) || parts[0] !== TOKEN_VERSION) {
     return null;
   }
 
+  const [, encodedIv, encodedCiphertext, encodedAuthTag] = parts;
+  const iv = Buffer.from(encodedIv, 'base64url');
+  const ciphertext = Buffer.from(encodedCiphertext, 'base64url');
+  const authTag = Buffer.from(encodedAuthTag, 'base64url');
+  if (iv.length !== IV_LENGTH || !ciphertext.length || authTag.length !== 16) return null;
+
+  const key = encryptionKey();
   try {
-    const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(authTag);
+    const plaintext = Buffer.concat([
+      decipher.update(ciphertext),
+      decipher.final()
+    ]).toString('utf8');
+    const parsed = JSON.parse(plaintext);
     const subscription = normaliseSubscription(parsed.chapterSlug, parsed.email);
     return subscription.chapterSlug && subscription.email ? subscription : null;
   } catch {

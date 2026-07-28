@@ -59,7 +59,7 @@ function htmlToPlainText(html) {
 
 function buildEmailContent(subject, bodyHtml) {
   return {
-    subject,
+    subject: String(subject || '').replace(/[\r\n]+/g, ' ').trim(),
     plainText: `${htmlToPlainText(bodyHtml)}\n\nGlobal Security Community\n${SITE_URL}`,
     html: emailLayout(bodyHtml)
   };

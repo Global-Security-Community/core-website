@@ -183,6 +183,23 @@ describe('superadmin email notifications', () => {
     expect(message.headers['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
   });
 
+  test('normalises newlines from subjects across email types', async () => {
+    await emailService.sendEventNotificationEmail(
+      'subscriber@example.com',
+      {
+        title: 'Security Meetup\r\nBcc: victim@example.com',
+        date: '2026-08-01',
+        location: 'Town Hall',
+        slug: 'security-meetup',
+        chapterSlug: 'perth'
+      },
+      context
+    );
+
+    expect(mockBeginSend.mock.calls[0][0].content.subject)
+      .toBe('New Event: Security Meetup Bcc: victim@example.com');
+  });
+
   test('rejects chapter announcements without a chapter slug before delivery', async () => {
     await expect(emailService.sendEventNotificationEmail(
       'subscriber@example.com',
