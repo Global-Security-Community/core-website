@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - uses: actions/setup-node@v4
         with:
@@ -28,6 +28,19 @@ jobs:
 
       - name: Install API dependencies
         run: cd api && npm ci
+
+      - name: Audit production dependencies
+        run: |
+          npm audit --omit=dev --audit-level=high
+          cd api && npm audit --omit=dev --audit-level=high
+
+      - name: Report development dependency advisories
+        continue-on-error: true
+        run: |
+          status=0
+          npm audit --audit-level=high || status=1
+          (cd api && npm audit --audit-level=high) || status=1
+          exit "$status"
 
       - name: Build Eleventy site
         run: npx @11ty/eleventy
