@@ -17,6 +17,7 @@ jobs:
     steps:
       - name: Create or reuse release pull request
         env:
+          GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GH_PR_TOKEN }}
         run: |
           AHEAD=$(GH_TOKEN="${{ github.token }}" gh api \
