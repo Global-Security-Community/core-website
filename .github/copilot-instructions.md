@@ -244,17 +244,15 @@ The chapters listing page (`/chapters/`) features an interactive map powered by 
 ## Branching Strategy
 
 - **`main`** — Development branch. All day-to-day work, feature branches, and generation workflows target `main`.
-- **`live-version-swa`** — Production branch. Deployed to Azure SWA. Only updated by merging `main` into it when a release is ready.
+- **`live-version-swa`** — Protected production branch. Deployed to Azure SWA. Only updated by a pull request from `main`.
 - **Feature branches** — For larger features, create a branch off `main`, work on it, then PR back to `main`.
 - **Releasing to production:**
   ```bash
-  git checkout live-version-swa
-  git merge main
-  git push origin live-version-swa
-  git checkout main
+  gh workflow run release-production.yml
   ```
-- **Generation workflows** (`generate-event.yml`, `generate-chapter.yml`, `delete-chapter.yml`) push to `main` only. They do NOT push to `live-version-swa`. Changes reach production on the next release merge.
-- **Never push directly to `live-version-swa`** — always merge from `main`.
+- **Generation workflows** (`generate-event.yml`, `generate-chapter.yml`, `delete-chapter.yml`) create squash-auto-merge PRs into `main`. They do not release to production automatically.
+- After a generated chapter merges into `main`, `generate-chapter.yml` posts a Discord release request bound to the exact `main` SHA. `/api/releaseApproval` requires the `admin` role and dispatches `release-approved`; the release workflow rejects the request if `main` has changed.
+- **Never push directly to `main` or `live-version-swa`** — both branches require pull requests and passing checks.
 
 ---
 
@@ -263,7 +261,7 @@ The chapters listing page (`/chapters/`) features an interactive map powered by 
 - **Frontend:** Eleventy builds to `_site/`, deployed by Azure SWA GitHub Action
 - **API:** Azure Functions in `api/` deployed alongside SWA
 - **SWA deploy triggers** on push to `live-version-swa` or PRs targeting it
-- **Generation workflows** push to `main` only — changes reach production on next release merge
+- **Generation workflows** use protected squash-auto-merge PRs into `main`; production release is explicit
 
 ---
 

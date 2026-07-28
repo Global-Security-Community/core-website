@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: main
           fetch-depth: 0
@@ -142,20 +142,3 @@ jobs:
           done
           echo "::error::Timed out waiting for PR #$PR_NUMBER to merge (CI may have failed)"
           exit 1
-
-      - name: Deploy to production
-        if: env.BRANCH != ''
-        run: |
-          git fetch origin main live-version-swa
-          git checkout live-version-swa
-          git merge origin/main --no-edit
-          git push origin live-version-swa
-          echo "✅ Chapter deletion merged to live-version-swa"
-
-      - name: Trigger SWA deploy
-        if: env.BRANCH != ''
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh workflow run azure-static-web-apps-lively-desert-0f1f18c10.yml --ref live-version-swa
-          echo "✅ SWA deploy triggered"

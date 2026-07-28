@@ -266,13 +266,14 @@ describe('chapterApproval — GitHub dispatch integration', () => {
     expect(payload.chapter_slug).toBe('kansas-city');
   });
 
-  test('includes discord channel ID in dispatch payload', async () => {
+  test('includes Discord channel IDs in dispatch payload', async () => {
     setGitHubEnv();
     storage.getApplication.mockResolvedValueOnce({ ...pendingApplication });
     await chapterApproval(approvalReq({ id: 'app-1', action: 'approve', token: 'tok' }), context);
 
     const payload = mockCreateDispatchEvent.mock.calls[0][0].client_payload;
     expect(payload.discord_channel_id).toBe('ch-123');
+    expect(payload.notification_channel_id).toBe('test-notif-channel');
   });
 
   test('skips dispatch when GitHub env vars are missing', async () => {

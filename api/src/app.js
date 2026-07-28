@@ -33,6 +33,7 @@ const sendAttendeeEmailHandler = require('./functions/sendAttendeeEmail');
 const getAuditLogHandler = require('./functions/getAuditLog');
 const registrationReportHandler = require('./functions/registrationReport');
 const postEventCommunicationHandler = require('./functions/postEventCommunication');
+const releaseApprovalHandler = require('./functions/releaseApproval');
 
 /**
  * Wraps a POST handler with CSRF header verification.
@@ -89,4 +90,9 @@ app.http('postEventCommunication', {
   methods: ['GET', 'POST'],
   authLevel: 'anonymous',
   handler: postEventCommunicationHandler
+});
+app.http('releaseApproval', {
+  methods: ['GET', 'POST'],
+  authLevel: 'anonymous',
+  handler: withCsrf(releaseApprovalHandler)
 });
