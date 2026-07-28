@@ -20,6 +20,7 @@ const getChapterHandler = require('./functions/getChapter');
 const refreshSessionizeHandler = require('./functions/refreshSessionize');
 const getSessionizeDataHandler = require('./functions/getSessionizeData');
 const chapterSubscribeHandler = require('./functions/chapterSubscribe');
+const chapterUnsubscribeHandler = require('./functions/chapterUnsubscribe');
 const communityPartnerHandler = require('./functions/communityPartner');
 const getCommunityPartnersHandler = require('./functions/getCommunityPartners');
 const chapterArtworkHandler = require('./functions/chapterArtwork');
@@ -54,6 +55,7 @@ app.get('getEvent', { authLevel: 'anonymous', handler: getEventHandler });
 app.get('getSessionizeData', { authLevel: 'anonymous', handler: getSessionizeDataHandler });
 app.get('getCommunityPartners', { authLevel: 'anonymous', handler: getCommunityPartnersHandler });
 app.get('chapterArtwork', { authLevel: 'anonymous', handler: chapterArtworkHandler });
+app.http('chapterUnsubscribe', { methods: ['GET', 'POST'], authLevel: 'anonymous', handler: chapterUnsubscribeHandler });
 
 // ─── Auth: role assignment (called by SWA platform — no CSRF check) ───
 app.post('roles', { authLevel: 'anonymous', handler: rolesHandler });

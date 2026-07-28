@@ -44,6 +44,11 @@
       "headers": { "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800" }
     },
     {
+      "route": "/api/chapterUnsubscribe",
+      "allowedRoles": ["anonymous"],
+      "headers": { "Cache-Control": "private, no-store" }
+    },
+    {
       "route": "/dashboard/*",
       "allowedRoles": ["admin"],
       "headers": { "Cache-Control": "private, no-store" }

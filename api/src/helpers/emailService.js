@@ -1,7 +1,10 @@
 const { EmailClient } = require('@azure/communication-email');
+const { convert: convertHtmlToText } = require('html-to-text');
+const { generateUnsubscribeToken } = require('./unsubscribeToken');
 
 const connectionString = process.env.AZURE_COMMUNICATION_CONNECTION_STRING || '';
 const SENDER_ADDRESS = process.env.ACS_SENDER_ADDRESS || 'DoNotReply@globalsecurity.community';
+const REPLY_TO_ADDRESS = process.env.ACS_REPLY_TO_ADDRESS || 'hello@globalsecurity.community';
 const LOGO_URL = 'https://globalsecurity.community/assets/GSC-Shield-Transparent.png';
 const SITE_URL = 'https://globalsecurity.community';
 
@@ -43,6 +46,27 @@ function emailLayout(bodyHtml) {
   </div>
 </body>
 </html>`;
+}
+
+function htmlToPlainText(html) {
+  return convertHtmlToText(html, {
+    wordwrap: false,
+    selectors: [
+      { selector: 'img', format: 'skip' }
+    ]
+  }).trim();
+}
+
+function buildEmailContent(subject, bodyHtml) {
+  return {
+    subject: String(subject || '').replace(/[\r\n]+/g, ' ').trim(),
+    plainText: `${htmlToPlainText(bodyHtml)}\n\nGlobal Security Community\n${SITE_URL}`,
+    html: emailLayout(bodyHtml)
+  };
+}
+
+function replyToRecipients() {
+  return [{ address: REPLY_TO_ADDRESS, displayName: 'Global Security Community' }];
 }
 
 /**
@@ -100,13 +124,11 @@ async function sendTicketEmail(registration, event, qrDataUrl, context, partners
 
   const message = {
     senderAddress: SENDER_ADDRESS,
-    content: {
-      subject: `Your Ticket: ${event.title}`,
-      html: emailLayout(bodyHtml)
-    },
+    content: buildEmailContent(`Your Ticket: ${event.title}`, bodyHtml),
     recipients: {
       to: [{ address: registration.email, displayName: registration.fullName }]
-    }
+    },
+    replyTo: replyToRecipients()
   };
 
   if (qrBase64) {
@@ -165,13 +187,11 @@ async function sendBadgeEmail(recipient, badgeContent, event, badgeType, context
 
   const message = {
     senderAddress: SENDER_ADDRESS,
-    content: {
-      subject: `Thank you for ${msg.roleText} ${event.title} — your ${badgeType} badge`,
-      html: emailLayout(bodyHtml)
-    },
+    content: buildEmailContent(`Thank you for ${msg.roleText} ${event.title} — your ${badgeType} badge`, bodyHtml),
     recipients: {
       to: [{ address: recipient.email, displayName: recipient.name }]
     },
+    replyTo: replyToRecipients(),
     attachments: [
       {
         name: attachmentName,
@@ -223,13 +243,11 @@ async function sendPostEventEmail(
     </p>`;
   const poller = await client.beginSend({
     senderAddress: SENDER_ADDRESS,
-    content: {
-      subject: subject.replace(/[\r\n]+/g, ' ').trim(),
-      html: emailLayout(bodyHtml)
-    },
+    content: buildEmailContent(subject.replace(/[\r\n]+/g, ' ').trim(), bodyHtml),
     recipients: {
       to: [{ address: recipient.email, displayName: recipient.name }]
     },
+    replyTo: replyToRecipients(),
     attachments: [{
       name: attachmentName,
       contentType,
@@ -292,13 +310,11 @@ async function sendCancellationEmail(registration, event, context) {
 
   const message = {
     senderAddress: SENDER_ADDRESS,
-    content: {
-      subject: `Registration Cancelled: ${event.title}`,
-      html: emailLayout(bodyHtml)
-    },
+    content: buildEmailContent(`Registration Cancelled: ${event.title}`, bodyHtml),
     recipients: {
       to: [{ address: registration.email, displayName: registration.fullName }]
-    }
+    },
+    replyTo: replyToRecipients()
   };
 
   try {
@@ -317,13 +333,17 @@ async function sendCancellationEmail(registration, event, context) {
  * Sends a new event notification email to chapter subscribers.
  */
 async function sendEventNotificationEmail(subscriberEmail, event, context) {
+  if (!event.chapterSlug) {
+    throw new Error('Event chapter slug is required for chapter notification emails');
+  }
+
   const client = getEmailClient();
-  const chapterName = event.chapterSlug
-    ? event.chapterSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-    : 'your chapter';
+  const chapterName = event.chapterSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
   const eventPageUrl = event.slug ? `${SITE_URL}/events/${escapeHtml(event.slug)}/` : SITE_URL;
   const registerUrl = event.slug ? `${SITE_URL}/register/?event=${escapeHtml(event.slug)}` : SITE_URL;
+  const unsubscribeToken = generateUnsubscribeToken(event.chapterSlug, subscriberEmail);
+  const unsubscribeUrl = `${SITE_URL}/api/chapterUnsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
 
   const bodyHtml = `
     <h2 style="color:#001f3f;margin:0 0 8px 0;">New Event: ${escapeHtml(event.title)} 🎉</h2>
@@ -337,17 +357,20 @@ async function sendEventNotificationEmail(subscriberEmail, event, context) {
     </p>
     <p style="color:#999;font-size:0.8em;text-align:center;margin-top:24px;">
       You received this because you subscribed to ${escapeHtml(chapterName)} chapter updates.
-      <a href="${SITE_URL}/chapters/${escapeHtml(event.chapterSlug)}/" style="color:#20b2aa;">Manage preferences</a>
+      <a href="${unsubscribeUrl}" style="color:#20b2aa;">Unsubscribe</a>
+      or <a href="${SITE_URL}/chapters/${escapeHtml(event.chapterSlug)}/" style="color:#20b2aa;">manage preferences</a>.
     </p>`;
 
   const message = {
     senderAddress: SENDER_ADDRESS,
-    content: {
-      subject: `New Event: ${event.title}`,
-      html: emailLayout(bodyHtml)
-    },
+    content: buildEmailContent(`New Event: ${event.title}`, bodyHtml),
     recipients: {
       to: [{ address: subscriberEmail }]
+    },
+    replyTo: replyToRecipients(),
+    headers: {
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
     }
   };
 
@@ -380,13 +403,11 @@ async function sendAttendeeEmail(registration, event, subject, messageText, cont
 
   const emailMessage = {
     senderAddress: SENDER_ADDRESS,
-    content: {
-      subject: safeSubject,
-      html: emailLayout(bodyHtml)
-    },
+    content: buildEmailContent(safeSubject, bodyHtml),
     recipients: {
       to: [{ address: registration.email, displayName: registration.fullName }]
-    }
+    },
+    replyTo: replyToRecipients()
   };
 
   try {
@@ -428,13 +449,11 @@ async function sendSuperAdminEmail(subject, bodyHtml, context) {
   const results = await Promise.allSettled(recipients.map(async recipient => {
     const poller = await client.beginSend({
       senderAddress: SENDER_ADDRESS,
-      content: {
-        subject,
-        html: emailLayout(bodyHtml)
-      },
+      content: buildEmailContent(subject, bodyHtml),
       recipients: {
         to: [{ address: recipient }]
-      }
+      },
+      replyTo: replyToRecipients()
     });
     return ensureEmailSucceeded(await poller.pollUntilDone());
   }));
