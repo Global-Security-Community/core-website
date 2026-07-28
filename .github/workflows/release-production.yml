@@ -2,6 +2,13 @@ name: Release to Production
 
 on:
   workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Optional exact main SHA to release
+        required: false
+        type: string
+  repository_dispatch:
+    types: [release-approved]
 
 permissions:
   contents: read
@@ -19,7 +26,24 @@ jobs:
         env:
           GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GH_PR_TOKEN }}
+          EXPECTED_SHA: ${{ github.event.client_payload.expected_sha || inputs.expected_sha || '' }}
+          APPROVED_BY: ${{ github.event.client_payload.approved_by || github.actor }}
         run: |
+          MAIN_SHA=$(GH_TOKEN="${{ github.token }}" gh api \
+            "repos/${GITHUB_REPOSITORY}/commits/main" \
+            --jq .sha)
+          if [ -n "$EXPECTED_SHA" ]; then
+            if ! [[ "$EXPECTED_SHA" =~ ^[a-f0-9]{40}$ ]]; then
+              echo "::error::Approved SHA is invalid"
+              exit 1
+            fi
+            if [ "$MAIN_SHA" != "$EXPECTED_SHA" ]; then
+              echo "::error::Main changed after approval. Expected $EXPECTED_SHA but found $MAIN_SHA"
+              exit 1
+            fi
+          fi
+          APPROVED_SHA="${EXPECTED_SHA:-$MAIN_SHA}"
+
           AHEAD=$(GH_TOKEN="${{ github.token }}" gh api \
             "repos/${GITHUB_REPOSITORY}/compare/live-version-swa...main" \
             --jq .ahead_by)
@@ -40,13 +64,27 @@ jobs:
               --base live-version-swa \
               --head main \
               --title "Release main to production" \
-              --body "Promotes the tested state of \`main\` to \`live-version-swa\`."
+              --body "Promotes the tested state of \`main\` to \`live-version-swa\`.
+
+          Approved by: ${APPROVED_BY}
+
+          <!-- approved-main-sha:${APPROVED_SHA} -->"
             PR_NUMBER=$(gh pr list \
               --base live-version-swa \
               --head main \
               --state open \
               --json number \
               --jq '.[0].number')
+          else
+            gh api \
+              --method PATCH \
+              "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" \
+              -f body="Promotes the tested state of \`main\` to \`live-version-swa\`.
+
+          Approved by: ${APPROVED_BY}
+
+          <!-- approved-main-sha:${APPROVED_SHA} -->" \
+              >/dev/null
           fi
 
           gh pr merge "$PR_NUMBER" --auto --merge

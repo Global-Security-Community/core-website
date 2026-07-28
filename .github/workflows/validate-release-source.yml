@@ -3,7 +3,7 @@ name: Validate Production Release
 on:
   pull_request:
     branches: [live-version-swa]
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
@@ -17,9 +17,20 @@ jobs:
         env:
           HEAD_REF: ${{ github.head_ref }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
           TARGET_REPO: ${{ github.repository }}
         run: |
           if [ "$HEAD_REF" != "main" ] || [ "$HEAD_REPO" != "$TARGET_REPO" ]; then
             echo "::error::Production releases must originate from ${TARGET_REPO}:main"
+            exit 1
+          fi
+          if ! [[ "$PR_BODY" =~ approved-main-sha:([a-f0-9]{40}) ]]; then
+            echo "::error::Production release is missing an approved main SHA"
+            exit 1
+          fi
+          APPROVED_SHA="${BASH_REMATCH[1]}"
+          if [ "$HEAD_SHA" != "$APPROVED_SHA" ]; then
+            echo "::error::Main changed after approval. Expected $APPROVED_SHA but found $HEAD_SHA"
             exit 1
           fi
