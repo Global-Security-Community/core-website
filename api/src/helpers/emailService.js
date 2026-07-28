@@ -333,10 +333,12 @@ async function sendCancellationEmail(registration, event, context) {
  * Sends a new event notification email to chapter subscribers.
  */
 async function sendEventNotificationEmail(subscriberEmail, event, context) {
+  if (!event.chapterSlug) {
+    throw new Error('Event chapter slug is required for chapter notification emails');
+  }
+
   const client = getEmailClient();
-  const chapterName = event.chapterSlug
-    ? event.chapterSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-    : 'your chapter';
+  const chapterName = event.chapterSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
   const eventPageUrl = event.slug ? `${SITE_URL}/events/${escapeHtml(event.slug)}/` : SITE_URL;
   const registerUrl = event.slug ? `${SITE_URL}/register/?event=${escapeHtml(event.slug)}` : SITE_URL;

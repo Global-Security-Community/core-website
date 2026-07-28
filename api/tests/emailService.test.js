@@ -183,6 +183,21 @@ describe('superadmin email notifications', () => {
     expect(message.headers['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
   });
 
+  test('rejects chapter announcements without a chapter slug before delivery', async () => {
+    await expect(emailService.sendEventNotificationEmail(
+      'subscriber@example.com',
+      {
+        title: 'Security Meetup',
+        date: '2026-08-01',
+        location: 'Town Hall',
+        slug: 'security-meetup'
+      },
+      context
+    )).rejects.toThrow('Event chapter slug is required for chapter notification emails');
+
+    expect(mockBeginSend).not.toHaveBeenCalled();
+  });
+
   test('preserves escaped angle-bracket text in the plain-text alternative', async () => {
     await emailService.sendAttendeeEmail(
       { fullName: 'Alice', email: 'alice@example.com' },
