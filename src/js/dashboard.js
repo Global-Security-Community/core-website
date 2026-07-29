@@ -550,6 +550,10 @@
             var reader = new FileReader();
             reader.onload = function(ev) { sendPartner(ev.target.result, 'image/svg+xml'); };
             reader.readAsDataURL(file);
+          } else if (file) {
+            var fallbackReader = new FileReader();
+            fallbackReader.onload = function(ev) { sendPartner(ev.target.result, file.type || 'image/png'); };
+            fallbackReader.readAsDataURL(file);
           } else {
             msg.textContent = 'Please select a logo image.'; msg.style.display = 'block'; msg.style.color = '#721c24';
           }
