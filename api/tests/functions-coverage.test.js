@@ -659,6 +659,15 @@ describe('resendTicketEmail function', () => {
     expect(JSON.parse(res.body).error).toMatch(/registrationIds/);
   });
 
+  test('rejects more than 15 recipients', async () => {
+    const res = await resendTicketEmail(makeAuthRequest('POST', {
+      eventId: 'ev-1',
+      registrationIds: Array.from({ length: 16 }, (_, index) => `r${index}`)
+    }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/Maximum 15/);
+  });
+
   test('returns 400 when event not found', async () => {
     storage.getEventById.mockResolvedValueOnce(null);
     const res = await resendTicketEmail(makeAuthRequest('POST', { eventId: 'ev-1', registrationIds: ['r1'] }, ['admin']), context);
