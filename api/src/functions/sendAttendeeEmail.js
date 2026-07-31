@@ -4,6 +4,7 @@ const { sendAttendeeEmail } = require('../helpers/emailService');
 const { sanitiseFields } = require('../helpers/sanitise');
 const { logAudit } = require('../helpers/auditLog');
 const { checkRateLimit, getClientIP } = require('../helpers/rateLimiter');
+const { runInChunks } = require('../helpers/concurrency');
 
 const VALID_AUDIENCES = new Set([
   'selected',
@@ -12,6 +13,7 @@ const VALID_AUDIENCES = new Set([
   'volunteer-all'
 ]);
 const MAX_RECIPIENTS_PER_REQUEST = 15;
+const MAX_CONCURRENT_SENDS = 5;
 
 /**
  * POST /api/sendAttendeeEmail
@@ -87,15 +89,15 @@ module.exports = async function (request, context) {
     let sent = 0;
     const errors = [];
 
-    for (const registrationId of registrationIds) {
+    await runInChunks(registrationIds, MAX_CONCURRENT_SENDS, async registrationId => {
       const registration = registrationsById.get(registrationId);
       if (!registration) {
         errors.push({ id: registrationId, error: 'Registration not found' });
-        continue;
+        return;
       }
       if (!registrationMatchesAudience(registration, audience)) {
         errors.push({ id: registrationId, error: 'Registration is not part of the selected audience' });
-        continue;
+        return;
       }
 
       try {
@@ -108,7 +110,7 @@ module.exports = async function (request, context) {
         context.log(`Attendee email failed for ${registration.email}: ${emailError.message}`);
         errors.push({ id: registrationId, email: registration.email, error: 'Email send failed' });
       }
-    }
+    });
 
     logAudit('event', eventId, 'attendee_email_sent', user.userDetails, {
       subject,
