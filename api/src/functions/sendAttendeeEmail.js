@@ -62,7 +62,7 @@ module.exports = async function (request, context) {
     }
 
     const clientIP = getClientIP(request);
-    if (!checkRateLimit(clientIP, 'sendAttendeeEmail', 20)) {
+    if (!checkRateLimit(clientIP, 'sendAttendeeEmail', 30)) {
       return {
         status: 429,
         jsonBody: { error: 'Too many attendee email requests. Please try again later.' }

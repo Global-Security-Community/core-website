@@ -1312,6 +1312,7 @@
     btn.disabled = true;
     btn.textContent = 'Sending...';
 
+    // Must match MAX_RECIPIENTS_PER_REQUEST in resendTicketEmail.js.
     var batchSize = 15;
     var batches = [];
     for (var i = 0; i < ids.length; i += batchSize) {
@@ -1474,6 +1475,7 @@
     status.style.display = 'none';
 
     var batches = [];
+    // Must match MAX_RECIPIENTS_PER_REQUEST in sendAttendeeEmail.js.
     var batchSize = 15;
     for (var i = 0; i < registrationIds.length; i += batchSize) {
       batches.push(registrationIds.slice(i, i + batchSize));
