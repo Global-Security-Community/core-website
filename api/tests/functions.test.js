@@ -203,12 +203,12 @@ describe('checkIn function', () => {
     expect(res.status).toBe(403);
   });
 
-  test('returns 404 for invalid ticket', async () => {
+  test('returns JSON-safe 400 for invalid ticket', async () => {
     storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', chapterSlug: 'perth' });
     storage.getRegistrationByTicketCode.mockResolvedValueOnce(null);
     const req = makeAuthRequest('POST', { ticketCode: 'INVALID', eventId: 'ev-1' }, ['admin']);
     const res = await checkIn(req, context);
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(400);
     expect(JSON.parse(res.body).status).toBe('invalid');
   });
 
@@ -241,6 +241,89 @@ describe('checkIn function', () => {
     expect(res.status).toBe(200);
     expect(JSON.parse(res.body).status).toBe('already_checked_in');
     expect(storage.updateRegistration).not.toHaveBeenCalled();
+  });
+
+  test('allows a volunteer assigned to this event to check in attendees', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', chapterSlug: 'perth' });
+    storage.isVolunteerOrOrganiserByRegistration.mockResolvedValueOnce({ role: 'volunteer' });
+    storage.getRegistrationByTicketCode.mockResolvedValueOnce({
+      rowKey: 'reg-1',
+      fullName: 'Alice',
+      checkedIn: 'false'
+    });
+
+    const req = makeAuthRequest('POST', { ticketCode: 'abcd1234', eventId: 'ev-1' }, ['volunteer']);
+    const res = await checkIn(req, context);
+
+    expect(res.status).toBe(200);
+    expect(JSON.parse(res.body).status).toBe('checked_in');
+    expect(storage.isVolunteerOrOrganiserByRegistration).toHaveBeenCalledWith('test@example.com', 'ev-1');
+    expect(storage.getRegistrationByTicketCode).toHaveBeenCalledWith('ev-1', 'ABCD1234');
+  });
+
+  test('rejects a volunteer who is not assigned to this event', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', chapterSlug: 'perth' });
+    storage.isVolunteerOrOrganiserByRegistration.mockResolvedValueOnce(null);
+    storage.isVolunteerForAnyEvent.mockResolvedValueOnce(null);
+
+    const req = makeAuthRequest('POST', { ticketCode: 'ABCD1234', eventId: 'ev-1' }, ['volunteer']);
+    const res = await checkIn(req, context);
+
+    expect(res.status).toBe(403);
+    expect(storage.getRegistrationByTicketCode).not.toHaveBeenCalled();
+  });
+
+  test('allows a chapter admin volunteering at another chapter event', async () => {
+    storage.getApprovedApplicationsByEmail.mockResolvedValueOnce([{ city: 'Perth' }]);
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'sydney', chapterSlug: 'sydney' });
+    storage.isVolunteerOrOrganiserByRegistration.mockResolvedValueOnce({ role: 'volunteer' });
+    storage.getRegistrationByTicketCode.mockResolvedValueOnce({
+      rowKey: 'reg-1',
+      fullName: 'Alice',
+      checkedIn: false
+    });
+
+    const req = makeAuthRequest('POST', { ticketCode: 'ABCD1234', eventId: 'ev-1' }, ['admin']);
+    const res = await checkIn(req, context);
+
+    expect(res.status).toBe(200);
+    expect(storage.isVolunteerOrOrganiserByRegistration).toHaveBeenCalledWith('test@example.com', 'ev-1');
+  });
+});
+
+describe('checkInStats function', () => {
+  const checkInStats = require('../src/functions/checkInStats');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('returns privacy-safe totals with strict Table Storage booleans', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', chapterSlug: 'perth' });
+    storage.getRegistrationsByEvent.mockResolvedValueOnce([
+      { rowKey: 'r1', checkedIn: true },
+      { rowKey: 'r2', checkedIn: 'true' },
+      { rowKey: 'r3', checkedIn: 'false' }
+    ]);
+    const req = makeAuthRequest('GET', null, ['admin']);
+    req.url = 'https://globalsecurity.community/api/checkInStats?eventId=ev-1';
+
+    const res = await checkInStats(req, context);
+
+    expect(res.status).toBe(200);
+    expect(res.jsonBody).toEqual({ total: 3, checkedIn: 2 });
+    expect(res.jsonBody.attendees).toBeUndefined();
+  });
+
+  test('allows an event volunteer to view totals', async () => {
+    storage.getEventById.mockResolvedValueOnce({ rowKey: 'ev-1', partitionKey: 'perth', chapterSlug: 'perth' });
+    storage.isVolunteerOrOrganiserByRegistration.mockResolvedValueOnce({ role: 'volunteer' });
+    storage.getRegistrationsByEvent.mockResolvedValueOnce([]);
+    const req = makeAuthRequest('GET', null, ['volunteer']);
+    req.url = 'https://globalsecurity.community/api/checkInStats?eventId=ev-1';
+
+    const res = await checkInStats(req, context);
+
+    expect(res.status).toBe(200);
+    expect(res.jsonBody).toEqual({ total: 0, checkedIn: 0 });
   });
 });
 
