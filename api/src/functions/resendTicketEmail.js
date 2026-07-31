@@ -4,6 +4,8 @@ const { sendTicketEmail } = require('../helpers/emailService');
 const { logAudit } = require('../helpers/auditLog');
 const { checkRateLimit, getClientIP } = require('../helpers/rateLimiter');
 
+const MAX_RECIPIENTS_PER_REQUEST = 15;
+
 /**
  * POST /api/resendTicketEmail
  * Admin-only: resend ticket confirmation emails to selected registrations.
@@ -27,15 +29,15 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Missing eventId or registrationIds (array)' }) };
     }
 
-    // Cap the number of emails per request
-    if (registrationIds.length > 100) {
+    // Keep each invocation comfortably below the Azure Functions timeout.
+    if (registrationIds.length > MAX_RECIPIENTS_PER_REQUEST) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ error: 'Maximum 100 registrations per resend request' }) };
+               body: JSON.stringify({ error: `Maximum ${MAX_RECIPIENTS_PER_REQUEST} registrations per resend request` }) };
     }
 
-    // Rate limit: max 10 resend requests per admin per hour
+    // Smaller timeout-safe batches require more requests for a full event.
     const clientIP = getClientIP(request);
-    if (!checkRateLimit(clientIP, 'resendEmail', 10)) {
+    if (!checkRateLimit(clientIP, 'resendEmail', 20)) {
       return { status: 429, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Too many resend requests. Please try again later.' }) };
     }

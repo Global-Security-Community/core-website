@@ -40,7 +40,9 @@ describe('unsubscribe tokens', () => {
     const { generateUnsubscribeToken, verifyUnsubscribeToken } = require('../src/helpers/unsubscribeToken');
     const token = generateUnsubscribeToken('perth', 'user@example.com');
     const parts = token.split('.');
-    parts[2] = `${parts[2].slice(0, -1)}${parts[2].endsWith('A') ? 'B' : 'A'}`;
+    const ciphertext = Buffer.from(parts[2], 'base64url');
+    ciphertext[0] ^= 1;
+    parts[2] = ciphertext.toString('base64url');
 
     expect(verifyUnsubscribeToken(parts.join('.'))).toBeNull();
   });
