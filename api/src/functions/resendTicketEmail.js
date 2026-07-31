@@ -3,8 +3,10 @@ const { getRegistrationsByEvent, getEventById, getPartnersByEvent } = require('.
 const { sendTicketEmail } = require('../helpers/emailService');
 const { logAudit } = require('../helpers/auditLog');
 const { checkRateLimit, getClientIP } = require('../helpers/rateLimiter');
+const { runInChunks } = require('../helpers/concurrency');
 
 const MAX_RECIPIENTS_PER_REQUEST = 15;
+const MAX_CONCURRENT_SENDS = 5;
 
 /**
  * POST /api/resendTicketEmail
@@ -63,11 +65,11 @@ module.exports = async function (request, context) {
     let sent = 0;
     const errors = [];
 
-    for (const regId of registrationIds) {
+    await runInChunks(registrationIds, MAX_CONCURRENT_SENDS, async regId => {
       const reg = regMap[regId];
       if (!reg) {
         errors.push({ id: regId, error: 'Registration not found' });
-        continue;
+        return;
       }
 
       // Build registration object matching sendTicketEmail expectations
@@ -94,7 +96,7 @@ module.exports = async function (request, context) {
         context.log(`Resend email failed for ${reg.email}: ${emailErr.message}`);
         errors.push({ id: regId, email: reg.email, error: 'Email send failed' });
       }
-    }
+    });
 
     context.log(`Resent ${sent}/${registrationIds.length} ticket emails for event ${eventId} by ${user.userDetails}`);
     logAudit('event', eventId, 'email_resent', user.userDetails, { sent, failed: errors.length, registrationIds }, context);
