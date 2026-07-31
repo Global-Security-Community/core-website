@@ -84,5 +84,63 @@ test.describe('Authenticated Flows', () => {
     await expect(page.locator('h1')).toBeVisible();
     await docScreenshot(page, '14-scanner');
   });
-});
 
+  test('scanner handles valid, duplicate, and invalid manual ticket codes', async ({ page }) => {
+    let validScans = 0;
+    const submittedCodes = [];
+
+    await page.route('**/js/vendor/html5-qrcode.min.js*', route => route.fulfill({
+      contentType: 'application/javascript',
+      body: `window.Html5Qrcode = class {
+        start() { return Promise.resolve(); }
+        pause() {}
+        resume() {}
+      };`
+    }));
+    await page.route('**/api/checkInStats?**', route => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ total: 137, checkedIn: 0 })
+    }));
+    await page.route('**/api/checkIn', async route => {
+      const requestBody = route.request().postDataJSON();
+      submittedCodes.push(requestBody.ticketCode);
+      if (requestBody.ticketCode === 'TEST1234') {
+        validScans++;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(validScans === 1
+            ? { status: 'checked_in', attendeeName: 'Scanner Test' }
+            : { status: 'already_checked_in', attendeeName: 'Scanner Test', checkedInAt: '2026-07-31T05:00:00Z' })
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: 'invalid', error: 'Invalid ticket' })
+      });
+    });
+
+    await page.goto('/scanner/');
+    await page.locator('#scanner-event-id').fill('event-test');
+    await page.locator('#start-scanner-btn').click();
+    await expect(page.locator('#scan-registered')).toHaveText('137');
+
+    await page.locator('#manual-code').fill('test1234');
+    await page.locator('#manual-checkin-btn').click();
+    await expect(page.locator('#scan-result')).toContainText('Scanner Test checked in!');
+    await expect(page.locator('#scan-total')).toHaveText('1');
+
+    await page.locator('#manual-code').fill('TEST1234');
+    await page.locator('#manual-checkin-btn').click();
+    await expect(page.locator('#scan-result')).toContainText('already checked in');
+    await expect(page.locator('#scan-total')).toHaveText('1');
+
+    await page.locator('#manual-code').fill('invalid');
+    await page.locator('#manual-checkin-btn').click();
+    await expect(page.locator('#scan-result')).toContainText('Invalid ticket code');
+    expect(submittedCodes).toEqual(['TEST1234', 'TEST1234', 'INVALID']);
+  });
+});

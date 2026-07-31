@@ -1,4 +1,4 @@
-const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
+const { getAuthUser, hasRole, unauthorised, forbidden, verifyEventCheckInAccess } = require('../helpers/auth');
 const { getRegistrationByTicketCode, updateRegistration, getEventById } = require('../helpers/tableStorage');
 const { logAudit } = require('../helpers/auditLog');
 
@@ -20,7 +20,8 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Invalid JSON' }) };
     }
 
-    const { ticketCode, eventId } = body;
+    const ticketCode = typeof body.ticketCode === 'string' ? body.ticketCode.trim().toUpperCase() : '';
+    const eventId = typeof body.eventId === 'string' ? body.eventId.trim() : '';
     if (!ticketCode || !eventId) {
       return { status: 400, headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ error: 'Missing ticketCode or eventId' }) };
@@ -33,20 +34,20 @@ module.exports = async function (request, context) {
                body: JSON.stringify({ error: 'Event not found' }) };
     }
     const chapterSlug = event.chapterSlug || event.partitionKey || '';
-    if (!await verifyChapterAccess(user, chapterSlug, context)) {
+    if (!await verifyEventCheckInAccess(user, eventId, chapterSlug, context)) {
       return forbidden('You do not have permission to check in attendees for this event');
     }
 
     const registration = await getRegistrationByTicketCode(eventId, ticketCode);
     if (!registration) {
       return {
-        status: 404,
+        status: 400,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'Invalid ticket', status: 'invalid' })
       };
     }
 
-    if (registration.checkedIn) {
+    if (registration.checkedIn === true || registration.checkedIn === 'true') {
       return {
         status: 200,
         headers: { 'Content-Type': 'application/json' },

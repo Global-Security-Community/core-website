@@ -9,6 +9,7 @@ const getEventHandler = require('./functions/getEvent');
 const registerEventHandler = require('./functions/registerEvent');
 const myTicketsHandler = require('./functions/myTickets');
 const checkInHandler = require('./functions/checkIn');
+const checkInStatsHandler = require('./functions/checkInStats');
 const issueBadgesHandler = require('./functions/issueBadges');
 const badgeDownloadHandler = require('./functions/badgeDownload');
 const eventAttendanceHandler = require('./functions/eventAttendance');
@@ -65,6 +66,7 @@ app.post('registerEvent', { authLevel: 'anonymous', handler: withCsrf(registerEv
 app.post('cancelRegistration', { authLevel: 'anonymous', handler: withCsrf(cancelRegistrationHandler) });
 app.get('myTickets', { authLevel: 'anonymous', handler: myTicketsHandler });
 app.get('badge', { authLevel: 'anonymous', handler: badgeDownloadHandler });
+app.get('checkInStats', { authLevel: 'anonymous', handler: checkInStatsHandler });
 app.post('chapterSubscribe', { authLevel: 'anonymous', handler: withCsrf(chapterSubscribeHandler) });
 
 // ─── Admin endpoints ───
