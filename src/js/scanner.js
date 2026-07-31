@@ -35,7 +35,7 @@
   });
 
   document.getElementById('manual-checkin-btn').addEventListener('click', function() {
-    var code = document.getElementById('manual-code').value.trim();
+    var code = document.getElementById('manual-code').value.trim().toUpperCase();
     if (code) {
       doCheckIn(code);
       document.getElementById('manual-code').value = '';
@@ -66,7 +66,14 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ticketCode: ticketCode, eventId: eventId })
     })
-    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      return r.json().then(function(data) {
+        if (!r.ok && data.status !== 'invalid') {
+          throw new Error(data.error || 'Check-in failed.');
+        }
+        return data;
+      });
+    })
     .then(function(data) {
       scanLog.unshift({ code: ticketCode, time: Date.now(), result: data.status, name: data.attendeeName || '' });
 
@@ -85,15 +92,20 @@
 
       renderLog();
     })
-    .catch(function() {
+    .catch(function(error) {
       resultEl.style.backgroundColor = '#f8d7da'; resultEl.style.color = '#721c24';
-      resultEl.textContent = 'Network error. Please try again.';
+      resultEl.textContent = error.message || 'Network error. Please try again.';
     });
   }
 
   function loadStats() {
-    GSC.fetch('/api/eventAttendance?eventId=' + encodeURIComponent(eventId))
-      .then(function(r) { return r.json(); })
+    GSC.fetch('/api/checkInStats?eventId=' + encodeURIComponent(eventId))
+      .then(function(r) {
+        return r.json().then(function(data) {
+          if (!r.ok) throw new Error(data.error || 'Unable to load check-in totals.');
+          return data;
+        });
+      })
       .then(function(data) {
         totalRegistered = data.total || 0;
         totalCheckedIn = data.checkedIn || 0;

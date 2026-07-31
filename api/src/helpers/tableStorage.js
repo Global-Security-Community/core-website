@@ -203,6 +203,7 @@ async function storeRegistration(registration) {
     userId: registration.userId,
     fullName: registration.fullName,
     email: registration.email,
+    normalisedEmail: registration.email.trim().toLowerCase(),
     company: registration.company || '',
     ticketCode: registration.ticketCode,
     role: registration.role || 'attendee',
@@ -493,11 +494,14 @@ async function removeVolunteer(eventId, volunteerId) {
   await client.deleteEntity(eventId, volunteerId);
 }
 
-async function isVolunteerForAnyEvent(email) {
+async function isVolunteerForAnyEvent(email, eventId) {
   const client = getTableClient('EventVolunteers');
   const normalised = email.trim().toLowerCase();
+  const eventFilter = eventId
+    ? `PartitionKey eq '${eventId.replace(/'/g, "''")}' and `
+    : '';
   const entities = client.listEntities({
-    queryOptions: { filter: `email eq '${normalised.replace(/'/g, "''")}'` }
+    queryOptions: { filter: `${eventFilter}email eq '${normalised.replace(/'/g, "''")}'` }
   });
   for await (const entity of entities) {
     return entity;
@@ -514,15 +518,37 @@ async function getRegistrationsByRole(eventId, role) {
   return regs.filter(r => (r.role || 'attendee') === role);
 }
 
-async function isVolunteerOrOrganiserByRegistration(email) {
+async function isVolunteerOrOrganiserByRegistration(email, eventId) {
   const client = getTableClient('EventRegistrations');
   const normalised = email.trim().toLowerCase();
+  const eventFilter = eventId
+    ? `PartitionKey eq '${eventId.replace(/'/g, "''")}' and `
+    : '';
   const entities = client.listEntities({
-    queryOptions: { filter: `email eq '${normalised.replace(/'/g, "''")}'` }
+    queryOptions: { filter: `${eventFilter}normalisedEmail eq '${normalised.replace(/'/g, "''")}'` }
   });
   for await (const entity of entities) {
     const role = entity.role || 'attendee';
     if (role === 'volunteer' || role === 'organiser') return entity;
+  }
+
+  // Existing registrations predate normalisedEmail, so compare those records in code.
+  const legacyEntities = client.listEntities({
+    queryOptions: {
+      filter: eventId
+        ? `PartitionKey eq '${eventId.replace(/'/g, "''")}'`
+        : "(role eq 'volunteer' or role eq 'organiser')",
+      select: ['email', 'role']
+    }
+  });
+  for await (const entity of legacyEntities) {
+    const role = entity.role || 'attendee';
+    if (
+      String(entity.email || '').trim().toLowerCase() === normalised &&
+      (role === 'volunteer' || role === 'organiser')
+    ) {
+      return entity;
+    }
   }
   return null;
 }

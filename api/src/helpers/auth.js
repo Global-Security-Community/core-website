@@ -113,7 +113,7 @@ async function resolveEmail(user) {
  * Returns true if: user is a super admin, OR user leads the target chapter.
  * Returns false otherwise.
  */
-async function verifyChapterAccess(user, targetChapterSlug, context) {
+async function verifyChapterAccess(user, targetChapterSlug, context, logDenied = true) {
   const email = await resolveEmail(user);
   if (isSuperAdmin(email)) {
     return true;
@@ -121,11 +121,33 @@ async function verifyChapterAccess(user, targetChapterSlug, context) {
   const slugs = await getAdminChapterSlugs(email);
   const target = (targetChapterSlug || '').toLowerCase();
   const hasAccess = slugs.includes(target);
-  if (!hasAccess && context) {
+  if (!hasAccess && context && logDenied) {
     const { logSecurityEvent } = require('./securityLogger');
     logSecurityEvent(context, 'chapter_access_denied', {
       email, targetChapter: target, userChapters: slugs
     });
+  }
+  return hasAccess;
+}
+
+async function verifyEventCheckInAccess(user, eventId, chapterSlug, context) {
+  if (hasRole(user, 'admin') && await verifyChapterAccess(user, chapterSlug, context, false)) {
+    return true;
+  }
+  if (!hasRole(user, 'admin') && !hasRole(user, 'volunteer')) return false;
+
+  const email = await resolveEmail(user);
+  if (!email) return false;
+  const {
+    isVolunteerOrOrganiserByRegistration,
+    isVolunteerForAnyEvent
+  } = require('./tableStorage');
+  const registration = await isVolunteerOrOrganiserByRegistration(email, eventId);
+  const hasAccess = Boolean(registration || await isVolunteerForAnyEvent(email, eventId));
+
+  if (!hasAccess && context) {
+    const { logSecurityEvent } = require('./securityLogger');
+    logSecurityEvent(context, 'event_check_in_access_denied', { email, eventId });
   }
   return hasAccess;
 }
@@ -169,4 +191,17 @@ function verifyCsrfHeader(request) {
   };
 }
 
-module.exports = { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess, getAdminChapterSlugs, isSuperAdmin, cityToSlug, verifyCsrfHeader, extractEmail, resolveEmail };
+module.exports = {
+  getAuthUser,
+  hasRole,
+  unauthorised,
+  forbidden,
+  verifyChapterAccess,
+  verifyEventCheckInAccess,
+  getAdminChapterSlugs,
+  isSuperAdmin,
+  cityToSlug,
+  verifyCsrfHeader,
+  extractEmail,
+  resolveEmail
+};
