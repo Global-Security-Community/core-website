@@ -1312,27 +1312,72 @@
     btn.disabled = true;
     btn.textContent = 'Sending...';
 
-    GSC.fetch('/api/resendTicketEmail', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ eventId: eventId, registrationIds: ids })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d.success) {
-        var msg = d.sent + ' email(s) sent.';
-        if (d.failed > 0) {
-          msg += ' ' + d.failed + ' failed.';
-          if (d.errors && d.errors.length > 0) {
-            msg += '\n\nErrors:\n' + d.errors.map(function(e) { return (e.email || e.id) + ': ' + e.error; }).join('\n');
-          }
+    // Must match MAX_RECIPIENTS_PER_REQUEST in resendTicketEmail.js.
+    var batchSize = 15;
+    var batches = [];
+    for (var i = 0; i < ids.length; i += batchSize) {
+      batches.push(ids.slice(i, i + batchSize));
+    }
+    var result = { sent: 0, failed: 0, errors: [] };
+    var sendSequence = Promise.resolve();
+
+    batches.forEach(function(batch, index) {
+      sendSequence = sendSequence.then(function() {
+        btn.textContent = 'Sending ' + (index + 1) + '/' + batches.length + '...';
+        return GSC.fetch('/api/resendTicketEmail', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ eventId: eventId, registrationIds: batch })
+        }).then(function(response) {
+          return parseEmailBatchResponse(
+            response,
+            'The ticket service stopped before this batch completed. Some recipients in the current batch may have received a ticket; do not resend the full list.'
+          );
+        }).then(function(data) {
+          result.sent += data.sent || 0;
+          result.failed += data.failed || 0;
+          if (data.errors) result.errors = result.errors.concat(data.errors);
+        });
+      });
+    });
+
+    sendSequence
+    .then(function() {
+      var msg = result.sent + ' ticket email(s) sent.';
+      if (result.failed > 0) {
+        msg += ' ' + result.failed + ' failed.';
+        if (result.errors.length > 0) {
+          msg += '\n\nErrors:\n' + result.errors.map(function(e) {
+            return (e.email || e.id) + ': ' + e.error;
+          }).join('\n');
         }
-        alert(msg);
-      } else {
-        alert(d.error || 'Failed to resend emails.');
       }
+      alert(msg);
     })
-    .catch(function() { alert('Network error.'); })
-    .finally(function() { btn.disabled = false; btn.textContent = 'Resend Tickets'; });
+    .catch(function(error) {
+      alert(result.sent + ' ticket email(s) confirmed sent before the error. ' + error.message);
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.textContent = 'Resend Tickets';
+    });
+  }
+
+  function parseEmailBatchResponse(response, partialSendMessage) {
+    return response.text().then(function(body) {
+      var data = {};
+      try {
+        data = body ? JSON.parse(body) : {};
+      } catch (error) {
+        if (!response.ok) {
+          throw new Error(partialSendMessage);
+        }
+        throw new Error('The email service returned an invalid response.');
+      }
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send emails.');
+      }
+      return data;
+    });
   }
 
   function showAttendeeEmailComposer() {
@@ -1430,16 +1475,19 @@
     status.style.display = 'none';
 
     var batches = [];
-    for (var i = 0; i < registrationIds.length; i += 100) {
-      batches.push(registrationIds.slice(i, i + 100));
+    // Must match MAX_RECIPIENTS_PER_REQUEST in sendAttendeeEmail.js.
+    var batchSize = 15;
+    for (var i = 0; i < registrationIds.length; i += batchSize) {
+      batches.push(registrationIds.slice(i, i + batchSize));
     }
     var result = { sent: 0, failed: 0 };
     var sendSequence = Promise.resolve();
 
     batches.forEach(function(batch, index) {
       sendSequence = sendSequence.then(function() {
-        status.textContent = batches.length > 1 ? 'Sending batch ' + (index + 1) + ' of ' + batches.length + '...' : '';
-        status.style.display = batches.length > 1 ? 'block' : 'none';
+        status.textContent = 'Sending batch ' + (index + 1) + ' of ' + batches.length + '... ' +
+          result.sent + ' confirmed sent so far.';
+        status.style.display = 'block';
         return GSC.fetch('/api/sendAttendeeEmail', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
@@ -1450,9 +1498,11 @@
             subject: subject,
             message: message
           })
-        }).then(function(r) {
-          return r.json().then(function(data) {
-            if (!r.ok) throw new Error(data.error || 'Failed to send emails.');
+        }).then(function(response) {
+          return parseEmailBatchResponse(
+            response,
+            'The email service stopped before this batch completed. Some recipients in the current batch may have received the email; do not resend the full list.'
+          ).then(function(data) {
             result.sent += data.sent || 0;
             result.failed += data.failed || 0;
           });
@@ -1471,7 +1521,7 @@
       loadAuditLog(eventId);
     })
     .catch(function(error) {
-      status.textContent = (result.sent ? result.sent + ' email(s) sent before an error occurred. ' : '') + error.message;
+      status.textContent = result.sent + ' email(s) confirmed sent before the error. ' + error.message;
       status.style.display = 'block';
     })
     .finally(function() {
