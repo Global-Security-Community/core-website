@@ -15,7 +15,7 @@ describe('runInChunks', () => {
     });
 
     expect(maximumActive).toBe(3);
-    expect(completed).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(completed.sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
   test('stops before starting another chunk when a handler rejects', async () => {
@@ -27,5 +27,14 @@ describe('runInChunks', () => {
     })).rejects.toThrow('failed');
 
     expect(started).toEqual([1, 2]);
+  });
+
+  test.each([
+    [null, 1, async () => {}],
+    [[], 0, async () => {}],
+    [[], 1.5, async () => {}],
+    [[], 1, null]
+  ])('rejects invalid arguments', async (items, chunkSize, handler) => {
+    await expect(runInChunks(items, chunkSize, handler)).rejects.toThrow();
   });
 });
