@@ -739,15 +739,15 @@ describe('sendAttendeeEmail function', () => {
     expect(res.status).toBe(400);
   });
 
-  test('rejects more than 100 recipients', async () => {
+  test('rejects more than 15 recipients', async () => {
     const res = await sendAttendeeEmail(makeAuthRequest('POST', {
       eventId: 'ev-1',
-      registrationIds: Array.from({ length: 101 }, (_, index) => `r${index}`),
+      registrationIds: Array.from({ length: 16 }, (_, index) => `r${index}`),
       subject: 'Reminder',
       message: 'Remember the event'
     }, ['admin']), context);
     expect(res.status).toBe(400);
-    expect(res.jsonBody.error).toMatch(/Maximum 100/);
+    expect(res.jsonBody.error).toMatch(/Maximum 15/);
   });
 
   test('sends a sanitised custom message to selected registrations', async () => {

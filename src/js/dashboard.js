@@ -1430,16 +1430,18 @@
     status.style.display = 'none';
 
     var batches = [];
-    for (var i = 0; i < registrationIds.length; i += 100) {
-      batches.push(registrationIds.slice(i, i + 100));
+    var batchSize = 15;
+    for (var i = 0; i < registrationIds.length; i += batchSize) {
+      batches.push(registrationIds.slice(i, i + batchSize));
     }
     var result = { sent: 0, failed: 0 };
     var sendSequence = Promise.resolve();
 
     batches.forEach(function(batch, index) {
       sendSequence = sendSequence.then(function() {
-        status.textContent = batches.length > 1 ? 'Sending batch ' + (index + 1) + ' of ' + batches.length + '...' : '';
-        status.style.display = batches.length > 1 ? 'block' : 'none';
+        status.textContent = 'Sending batch ' + (index + 1) + ' of ' + batches.length + '... ' +
+          result.sent + ' confirmed sent so far.';
+        status.style.display = 'block';
         return GSC.fetch('/api/sendAttendeeEmail', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
@@ -1451,7 +1453,16 @@
             message: message
           })
         }).then(function(r) {
-          return r.json().then(function(data) {
+          return r.text().then(function(body) {
+            var data = {};
+            try {
+              data = body ? JSON.parse(body) : {};
+            } catch (error) {
+              if (!r.ok) {
+                throw new Error('The email service stopped before this batch completed. Some recipients in the current batch may have received the email; do not resend the full list.');
+              }
+              throw new Error('The email service returned an invalid response.');
+            }
             if (!r.ok) throw new Error(data.error || 'Failed to send emails.');
             result.sent += data.sent || 0;
             result.failed += data.failed || 0;
@@ -1471,7 +1482,7 @@
       loadAuditLog(eventId);
     })
     .catch(function(error) {
-      status.textContent = (result.sent ? result.sent + ' email(s) sent before an error occurred. ' : '') + error.message;
+      status.textContent = result.sent + ' email(s) confirmed sent before the error. ' + error.message;
       status.style.display = 'block';
     })
     .finally(function() {

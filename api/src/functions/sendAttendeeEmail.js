@@ -11,6 +11,7 @@ const VALID_AUDIENCES = new Set([
   'volunteer-role',
   'volunteer-all'
 ]);
+const MAX_RECIPIENTS_PER_REQUEST = 15;
 
 /**
  * POST /api/sendAttendeeEmail
@@ -47,10 +48,10 @@ module.exports = async function (request, context) {
         jsonBody: { error: 'Event, recipients, subject, and message are required' }
       };
     }
-    if (registrationIds.length > 100) {
+    if (registrationIds.length > MAX_RECIPIENTS_PER_REQUEST) {
       return {
         status: 400,
-        jsonBody: { error: 'Maximum 100 recipients per request' }
+        jsonBody: { error: `Maximum ${MAX_RECIPIENTS_PER_REQUEST} recipients per request` }
       };
     }
     if (subject.length > 150 || message.length > 5000) {
@@ -61,7 +62,7 @@ module.exports = async function (request, context) {
     }
 
     const clientIP = getClientIP(request);
-    if (!checkRateLimit(clientIP, 'sendAttendeeEmail', 5)) {
+    if (!checkRateLimit(clientIP, 'sendAttendeeEmail', 20)) {
       return {
         status: 429,
         jsonBody: { error: 'Too many attendee email requests. Please try again later.' }
