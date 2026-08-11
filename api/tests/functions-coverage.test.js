@@ -993,6 +993,41 @@ describe('createEvent function', () => {
     const body = JSON.parse(res.body);
     expect(body.event.slug).toBe('global-security-bootcamp-2026');
   });
+
+  test('creates workflow-compatible slugs up to 80 characters', async () => {
+    const res = await createEvent(makeAuthRequest('POST', {
+      ...validBody,
+      title: 'Securing Agentic AI: How to Build, Deploy, and Govern Trustworthy AI Agents'
+    }, ['admin']), context);
+    expect(res.status).toBe(201);
+    const slug = JSON.parse(res.body).event.slug;
+    expect(slug).toBe('securing-agentic-ai-how-to-build-deploy-and-govern-trustworthy-ai-agents');
+    expect(slug.length).toBeLessThanOrEqual(80);
+  });
+
+  test('rejects a title that cannot produce a valid slug', async () => {
+    const res = await createEvent(makeAuthRequest('POST', {
+      ...validBody, title: '!!!'
+    }, ['admin']), context);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/letter or number/);
+    expect(storage.storeEvent).not.toHaveBeenCalled();
+  });
+
+  test('keeps uniqueness suffixes within the workflow slug limit', async () => {
+    storage.getEventBySlug
+      .mockResolvedValueOnce({ rowKey: 'existing' })
+      .mockResolvedValueOnce({ rowKey: 'existing-in-city' })
+      .mockResolvedValueOnce(null);
+
+    const res = await createEvent(makeAuthRequest('POST', {
+      ...validBody, title: 'A'.repeat(100)
+    }, ['admin']), context);
+    expect(res.status).toBe(201);
+    const slug = JSON.parse(res.body).event.slug;
+    expect(slug).toHaveLength(80);
+    expect(slug).toMatch(/-2$/);
+  });
 });
 
 // ─── issueBadges ────────────────────────────────────────────────────
