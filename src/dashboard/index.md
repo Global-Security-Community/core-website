@@ -224,7 +224,7 @@ title: Dashboard
       <div class="form-group">
         <label for="edit-slug">URL Slug *</label>
         <input type="text" id="edit-slug" maxlength="80" placeholder="e.g. my-event-name">
-        <span class="help-text">Only lowercase letters, numbers, and hyphens. Changing this will alter the event URL.</span>
+        <span class="help-text">Maximum 80 lowercase letters, numbers, and hyphens. Changing this will alter the event URL.</span>
       </div>
       <div class="form-group">
         <label for="edit-date">Date *</label>

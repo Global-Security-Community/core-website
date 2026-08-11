@@ -10,6 +10,16 @@ const { logAudit } = require('../helpers/auditLog');
 const { Octokit } = require('@octokit/rest');
 const { createAppAuth } = require('@octokit/auth-app');
 
+const MAX_EVENT_SLUG_LENGTH = 80;
+const EVENT_SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$/;
+
+function appendSlugSuffix(slug, suffix) {
+  const cleanSuffix = String(suffix).replace(/[^a-z0-9]/g, '');
+  const availableBaseLength = MAX_EVENT_SLUG_LENGTH - cleanSuffix.length - 1;
+  const base = slug.substring(0, availableBaseLength).replace(/-+$/g, '');
+  return `${base}-${cleanSuffix}`;
+}
+
 module.exports = async function (request, context) {
   context.log('Create event request received');
 
@@ -86,19 +96,26 @@ module.exports = async function (request, context) {
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
-      .substring(0, 80);
+      .replace(/^-+|-+$/g, '')
+      .substring(0, MAX_EVENT_SLUG_LENGTH)
+      .replace(/-+$/g, '');
+
+    if (!EVENT_SLUG_PATTERN.test(slug)) {
+      return { status: 400, headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ error: 'Event title must contain at least one letter or number' }) };
+    }
 
     // Ensure slug uniqueness — append city or counter if needed
     if (await getEventBySlug(slug)) {
       const citySlug = (safe.locationCity || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       if (citySlug && !slug.includes(citySlug)) {
-        slug = (slug + '-' + citySlug).substring(0, 80);
+        slug = appendSlugSuffix(slug, citySlug.substring(0, MAX_EVENT_SLUG_LENGTH - 2));
       }
       // If still not unique, append a counter
       let counter = 2;
       let candidate = slug;
       while (await getEventBySlug(candidate)) {
-        candidate = slug + '-' + counter;
+        candidate = appendSlugSuffix(slug, counter);
         counter++;
       }
       slug = candidate;
