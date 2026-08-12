@@ -29,6 +29,7 @@ jest.mock('../src/helpers/tableStorage', () => ({
   getRegistrationsByUser: jest.fn().mockResolvedValue([]),
   getRegistrationsByEvent: jest.fn().mockResolvedValue([]),
   countRegistrations: jest.fn().mockResolvedValue(0),
+  countRegistrationsForEvents: jest.fn().mockResolvedValue(0),
   updateRegistration: jest.fn().mockResolvedValue({}),
   deleteRegistration: jest.fn().mockResolvedValue({}),
   storeDemographics: jest.fn().mockResolvedValue({}),

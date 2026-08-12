@@ -256,6 +256,21 @@ async function countRegistrations(eventId) {
   return regs.length;
 }
 
+async function countRegistrationsForEvents(eventIds) {
+  const includedEventIds = new Set(eventIds);
+  if (includedEventIds.size === 0) return 0;
+
+  const client = getTableClient('EventRegistrations');
+  const entities = client.listEntities({
+    queryOptions: { select: ['PartitionKey'] }
+  });
+  let count = 0;
+  for await (const entity of entities) {
+    if (includedEventIds.has(entity.partitionKey)) count++;
+  }
+  return count;
+}
+
 async function updateRegistration(eventId, registrationId, updates) {
   const client = getTableClient('EventRegistrations');
   const entity = await client.getEntity(eventId, registrationId);
@@ -860,7 +875,7 @@ module.exports = {
   storeApplication, getApplication, updateApplicationStatus, getApprovedApplicationBySlug,
   storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent, moveEventToChapter, deleteEvent,
   storeRegistration, getRegistrationByTicketCode, getRegistrationsByUser,
-  getRegistrationsByEvent, countRegistrations, updateRegistration,
+  getRegistrationsByEvent, countRegistrations, countRegistrationsForEvents, updateRegistration,
   deleteRegistration, deleteDemographics,
   storeDemographics, getDemographicsByEvent,
   storeBadge, getBadge, deleteBadge, getBadgesByEvent,
