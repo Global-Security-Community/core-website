@@ -36,6 +36,7 @@ const registrationReportHandler = require('./functions/registrationReport');
 const postEventCommunicationHandler = require('./functions/postEventCommunication');
 const releaseApprovalHandler = require('./functions/releaseApproval');
 const scannerEventsHandler = require('./functions/scannerEvents');
+const communityMetricsHandler = require('./functions/communityMetrics');
 
 /**
  * Wraps a POST handler with CSRF header verification.
@@ -57,6 +58,7 @@ app.get('getEvent', { authLevel: 'anonymous', handler: getEventHandler });
 app.get('getSessionizeData', { authLevel: 'anonymous', handler: getSessionizeDataHandler });
 app.get('getCommunityPartners', { authLevel: 'anonymous', handler: getCommunityPartnersHandler });
 app.get('chapterArtwork', { authLevel: 'anonymous', handler: chapterArtworkHandler });
+app.get('communityMetrics', { authLevel: 'anonymous', handler: communityMetricsHandler });
 app.http('chapterUnsubscribe', { methods: ['GET', 'POST'], authLevel: 'anonymous', handler: chapterUnsubscribeHandler });
 
 // ─── Auth: role assignment (called by SWA platform — no CSRF check) ───
