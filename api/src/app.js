@@ -35,6 +35,7 @@ const getAuditLogHandler = require('./functions/getAuditLog');
 const registrationReportHandler = require('./functions/registrationReport');
 const postEventCommunicationHandler = require('./functions/postEventCommunication');
 const releaseApprovalHandler = require('./functions/releaseApproval');
+const scannerEventsHandler = require('./functions/scannerEvents');
 
 /**
  * Wraps a POST handler with CSRF header verification.
@@ -67,6 +68,7 @@ app.post('cancelRegistration', { authLevel: 'anonymous', handler: withCsrf(cance
 app.get('myTickets', { authLevel: 'anonymous', handler: myTicketsHandler });
 app.get('badge', { authLevel: 'anonymous', handler: badgeDownloadHandler });
 app.get('checkInStats', { authLevel: 'anonymous', handler: checkInStatsHandler });
+app.get('scannerEvents', { authLevel: 'anonymous', handler: scannerEventsHandler });
 app.post('chapterSubscribe', { authLevel: 'anonymous', handler: withCsrf(chapterSubscribeHandler) });
 
 // ─── Admin endpoints ───
