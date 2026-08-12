@@ -89,18 +89,23 @@ templateEngineOverride: njk
     <h2 id="offer-heading" class="sr-only">Community at a Glance</h2>
     <div class="stats-bar">
       <div class="stat-item">
-        <span class="stat-value">8</span>
+        <span class="stat-value">{{ communityMetrics.chaptersWorldwide }}</span>
         <span class="stat-desc">Chapters worldwide</span>
       </div>
       <div class="stat-item">
-        <span class="stat-value">3</span>
+        <span class="stat-value" id="events-hosted">{{ communityMetrics.eventsHosted }}</span>
         <span class="stat-desc">Events hosted</span>
       </div>
       <div class="stat-item">
-        <span class="stat-value">5</span>
+        <span class="stat-value">{{ communityMetrics.countriesRepresented }}</span>
         <span class="stat-desc">Countries represented</span>
       </div>
+      <div class="stat-item">
+        <span class="stat-value" id="total-registrations">{{ communityMetrics.totalRegistrations | safe }}</span>
+        <span class="stat-desc">Event registrations</span>
+      </div>
     </div>
+    <script src="/js/community-metrics.js?v={{ cacheBust }}"></script>
   </section>
 
   <section class="home-section home-feature reveal-on-scroll" aria-labelledby="chapter-discovery-heading">

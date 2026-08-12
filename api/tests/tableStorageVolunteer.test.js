@@ -14,6 +14,7 @@ jest.mock('@azure/data-tables', () => ({
 
 const {
   storeRegistration,
+  countRegistrationsForEvents,
   isVolunteerOrOrganiserByRegistration,
   getScannerEventIdsByEmail,
   getApprovedApplicationByEmail,
@@ -46,6 +47,20 @@ describe('volunteer registration email matching', () => {
       email: 'Volunteer@Example.COM',
       normalisedEmail: 'volunteer@example.com'
     }));
+  });
+
+  test('counts registrations only for included public events', async () => {
+    mockClient.listEntities.mockReturnValueOnce(entities([
+      { partitionKey: 'published-1' },
+      { partitionKey: 'draft-1' },
+      { partitionKey: 'published-2' },
+      { partitionKey: 'published-1' }
+    ]));
+
+    await expect(countRegistrationsForEvents(['published-1', 'published-2'])).resolves.toBe(3);
+    expect(mockClient.listEntities).toHaveBeenCalledWith({
+      queryOptions: { select: ['PartitionKey'] }
+    });
   });
 
   test('matches mixed-case email on a legacy event registration', async () => {
