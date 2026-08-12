@@ -13,7 +13,7 @@ leads:
     email_hash: "df465f66c4662a33ec4e7a5b0fa90e1f"
     linkedin: "https://www.linkedin.com/in/santhoshkumar-anandakrishnan/"
     website: "https://skylinetechnology.org/blog/"
-  - name: "Pouya"
-    email_hash: "de71bed2eb24de2c38d45c6c37aa3c95"
+  - name: "Pouya Koushandehfar"
+    email_hash: "7c3f3aa1577c190d8adefdbd73b2419a"
     linkedin: "https://www.linkedin.com/in/koushandehfar/"
 ---
