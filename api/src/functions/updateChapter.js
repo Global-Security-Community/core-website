@@ -98,6 +98,8 @@ module.exports = async function (request, context) {
         const filePath = `src/chapters/${chapterSlug}/index.md`;
         let existingLatitude = '';
         let existingLongitude = '';
+        let existingDiscordChannelId = '';
+        let existingDiscordGuildId = '';
         try {
           const { data } = await octokit.repos.getContent({
             owner: repoOwner, repo: repoName, path: filePath, ref: 'main'
@@ -105,8 +107,12 @@ module.exports = async function (request, context) {
           const fileContent = Buffer.from(data.content, 'base64').toString('utf8');
           const latMatch = fileContent.match(/^latitude:\s*(-?[\d.]+)/m);
           const lngMatch = fileContent.match(/^longitude:\s*(-?[\d.]+)/m);
+          const discordChannelMatch = fileContent.match(/^discord_channel_id:\s*"([^"]*)"/m);
+          const discordGuildMatch = fileContent.match(/^discord_guild_id:\s*"([^"]*)"/m);
           if (latMatch) existingLatitude = latMatch[1];
           if (lngMatch) existingLongitude = lngMatch[1];
+          if (discordChannelMatch) existingDiscordChannelId = discordChannelMatch[1];
+          if (discordGuildMatch) existingDiscordGuildId = discordGuildMatch[1];
         } catch (err) {
           context.log(`Could not get existing file SHA: ${err.message}`);
         }
@@ -115,8 +121,8 @@ module.exports = async function (request, context) {
         const markdown = buildChapterMarkdown({
           city: application.city,
           country: application.country,
-          discordChannelId: application.discordChannelId || '',
-          discordGuildId: application.discordGuildId || '',
+          discordChannelId: application.discordChannelId || existingDiscordChannelId,
+          discordGuildId: application.discordGuildId || existingDiscordGuildId,
           leads: sanitisedLeads,
           latitude: existingLatitude,
           longitude: existingLongitude

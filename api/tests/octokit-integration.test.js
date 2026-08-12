@@ -12,7 +12,9 @@ const mockCreateDispatchEvent = jest.fn().mockResolvedValue({});
 const mockGetContent = jest.fn().mockResolvedValue({
   data: {
     sha: 'abc123',
-    content: Buffer.from('latitude: -31.95\nlongitude: 115.86\n').toString('base64')
+    content: Buffer.from(
+      'latitude: -31.95\nlongitude: 115.86\ndiscord_channel_id: "existing-channel"\ndiscord_guild_id: "existing-guild"\n'
+    ).toString('base64')
   }
 });
 const mockCreateOrUpdateFileContents = jest.fn().mockResolvedValue({});
@@ -496,6 +498,24 @@ describe('updateChapter — automated PR dispatch integration', () => {
     expect(decoded).toContain('layout:');
     expect(decoded).toContain('latitude: -31.95');
     expect(decoded).not.toContain('alice@test.com');
+  });
+
+  test('preserves existing Discord identifiers when storage fields are empty', async () => {
+    storage.getApprovedApplicationBySlug.mockResolvedValueOnce({
+      city: 'Perth',
+      country: 'Australia',
+      email: 'admin@test.com',
+      discordChannelId: '',
+      discordGuildId: ''
+    });
+    setGitHubEnv();
+
+    await updateChapter(makeAuthRequest('POST', validLeads, ['admin']), context);
+
+    const payload = mockCreateDispatchEvent.mock.calls[0][0].client_payload;
+    const decoded = Buffer.from(payload.chapter_markdown_base64, 'base64').toString('utf-8');
+    expect(decoded).toContain('discord_channel_id: "existing-channel"');
+    expect(decoded).toContain('discord_guild_id: "existing-guild"');
   });
 
   test('skips GitHub update when env vars are missing', async () => {

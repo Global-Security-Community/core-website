@@ -6,7 +6,7 @@ country: "Australia"
 latitude: -37.8142454
 longitude: 144.9631732
 tags: chapter
-discord_channel_id: ""
+discord_channel_id: "1531283264944340992"
 discord_guild_id: ""
 leads:
   - name: "Santhoshkumar Anandakrishnan"
