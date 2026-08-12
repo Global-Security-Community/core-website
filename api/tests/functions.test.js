@@ -26,6 +26,7 @@ jest.mock('../src/helpers/tableStorage', () => ({
   getBadgesByEvent: jest.fn().mockResolvedValue([]),
   getRegistrationsByRole: jest.fn().mockResolvedValue([]),
   isVolunteerOrOrganiserByRegistration: jest.fn().mockResolvedValue(null),
+  getScannerEventIdsByEmail: jest.fn().mockResolvedValue([]),
   isVolunteerForAnyEvent: jest.fn().mockResolvedValue(null),
   VALID_ROLES: ['attendee', 'volunteer', 'speaker', 'sponsor', 'organiser'],
   getApprovedApplicationByEmail: jest.fn(),
@@ -519,6 +520,93 @@ describe('adminRegister function', () => {
     const res = await adminRegister(req, context);
     expect(res.status).toBe(201);
     expect(JSON.parse(res.body).registration.role).toBe('attendee');
+  });
+
+  test('bulk registers valid speakers and reports duplicate rows', async () => {
+    storage.getEventById.mockResolvedValueOnce({
+      rowKey: 'ev-1',
+      partitionKey: 'perth',
+      title: 'Test',
+      status: 'published',
+      registrationCap: 1
+    });
+    storage.getRegistrationsByEvent.mockResolvedValueOnce([{ rowKey: 'r1', email: 'existing@test.com' }]);
+    const req = makeAuthRequest('POST', {
+      eventId: 'ev-1',
+      registrations: [
+        { name: 'Speaker One', email: 'one@test.com' },
+        { name: 'Existing', email: 'existing@test.com' },
+        { name: 'Speaker Duplicate', email: 'one@test.com' }
+      ]
+    }, ['admin']);
+
+    const res = await adminRegister(req, context);
+    const body = JSON.parse(res.body);
+
+    expect(res.status).toBe(200);
+    expect(body.registered).toBe(1);
+    expect(body.failed).toBe(2);
+    expect(body.results[0]).toEqual(expect.objectContaining({ success: true, email: 'one@test.com' }));
+    expect(body.results[1].error).toMatch(/already registered/i);
+    expect(body.results[2].error).toMatch(/duplicate/i);
+    expect(storage.storeRegistration).toHaveBeenCalledTimes(1);
+    expect(storage.storeRegistration).toHaveBeenCalledWith(expect.objectContaining({ role: 'speaker' }));
+  });
+
+  test('rejects bulk speaker requests above the limit', async () => {
+    storage.getEventById.mockResolvedValueOnce({
+      rowKey: 'ev-1',
+      partitionKey: 'perth',
+      title: 'Test',
+      status: 'published'
+    });
+    const registrations = Array.from({ length: 51 }, (_, index) => ({
+      name: `Speaker ${index}`,
+      email: `speaker${index}@test.com`
+    }));
+    const req = makeAuthRequest('POST', { eventId: 'ev-1', registrations }, ['admin']);
+
+    const res = await adminRegister(req, context);
+
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body).error).toMatch(/maximum of 50/i);
+    expect(storage.storeRegistration).not.toHaveBeenCalled();
+  });
+});
+
+describe('scannerEvents function', () => {
+  const scannerEvents = require('../src/functions/scannerEvents');
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('lists assigned events for a volunteer and excludes completed events', async () => {
+    storage.getScannerEventIdsByEmail.mockResolvedValueOnce(['ev-1', 'ev-2']);
+    storage.listEvents.mockResolvedValueOnce([
+      { rowKey: 'ev-1', partitionKey: 'perth', title: 'Active Event', date: '2026-09-01', status: 'published' },
+      { rowKey: 'ev-2', partitionKey: 'perth', title: 'Past Event', date: '2026-01-01', status: 'completed' },
+      { rowKey: 'ev-3', partitionKey: 'sydney', title: 'Other Event', date: '2026-10-01', status: 'published' }
+    ]);
+    const req = makeAuthRequest('GET', null, ['volunteer']);
+
+    const res = await scannerEvents(req, context);
+
+    expect(res.status).toBe(200);
+    expect(res.jsonBody.events).toEqual([
+      expect.objectContaining({ id: 'ev-1', title: 'Active Event' })
+    ]);
+  });
+
+  test('lists chapter events for an organiser', async () => {
+    storage.listEvents.mockResolvedValueOnce([
+      { rowKey: 'ev-1', partitionKey: 'perth', title: 'Perth Event', date: '2026-09-01', status: 'published' },
+      { rowKey: 'ev-2', partitionKey: 'sydney', title: 'Sydney Event', date: '2026-10-01', status: 'published' }
+    ]);
+    const req = makeAuthRequest('GET', null, ['admin']);
+
+    const res = await scannerEvents(req, context);
+
+    expect(res.status).toBe(200);
+    expect(res.jsonBody.events.map(event => event.id)).toEqual(['ev-1']);
   });
 });
 

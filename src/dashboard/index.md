@@ -156,6 +156,20 @@ title: Dashboard
       </select>
       <button id="admin-reg-btn" type="button">Register</button>
     </div>
+    <details class="bulk-speaker-panel">
+      <summary>Bulk register speakers</summary>
+      <div class="bulk-speaker-panel__content">
+        <p class="text-muted">Paste speaker names and email addresses from a spreadsheet or CSV. Use one speaker per line in <strong>Name, email</strong> format.</p>
+        <div class="form-group">
+          <label for="bulk-speaker-input">Speakers</label>
+          <textarea id="bulk-speaker-input" rows="7" placeholder="Alex Smith, alex@example.com&#10;Jordan Lee, jordan@example.com"></textarea>
+          <p class="char-hint">Up to 50 speakers. A header row is optional.</p>
+        </div>
+        <button id="bulk-speaker-btn" type="button">Register Speakers</button>
+        <div id="bulk-speaker-status" class="form-message is-hidden" role="status" aria-live="polite"></div>
+        <div id="bulk-speaker-results" class="bulk-speaker-results"></div>
+      </div>
+    </details>
     <h3>Attendees</h3>
     <div id="role-action-bar" class="role-action-bar is-hidden">
       <span id="role-selected-count">0 selected</span>

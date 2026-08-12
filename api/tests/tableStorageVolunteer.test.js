@@ -14,7 +14,10 @@ jest.mock('@azure/data-tables', () => ({
 
 const {
   storeRegistration,
-  isVolunteerOrOrganiserByRegistration
+  isVolunteerOrOrganiserByRegistration,
+  getScannerEventIdsByEmail,
+  getApprovedApplicationByEmail,
+  getApprovedApplicationsByEmail
 } = require('../src/helpers/tableStorage');
 
 function entities(values) {
@@ -81,5 +84,80 @@ describe('volunteer registration email matching', () => {
         select: ['email', 'role']
       }
     });
+  });
+
+  test('combines current, legacy, and volunteer-table scanner assignments', async () => {
+    mockClient.listEntities
+      .mockReturnValueOnce(entities([
+        { partitionKey: 'event-1', role: 'volunteer' },
+        { partitionKey: 'ignored-event', role: 'attendee' }
+      ]))
+      .mockReturnValueOnce(entities([
+        { partitionKey: 'event-2', email: 'Volunteer@Example.com', role: 'organiser' }
+      ]))
+      .mockReturnValueOnce(entities([
+        { partitionKey: 'event-3' },
+        { partitionKey: 'event-1' }
+      ]));
+
+    const eventIds = await getScannerEventIdsByEmail('volunteer@example.com');
+
+    expect(eventIds).toEqual(['event-1', 'event-2', 'event-3']);
+  });
+
+  test('matches a chapter lead added through leadsJson', async () => {
+    mockClient.listEntities.mockReturnValueOnce(entities([{
+      partitionKey: 'applications',
+      rowKey: 'melbourne',
+      city: 'Melbourne',
+      status: 'approved',
+      email: 'original@example.com',
+      leadsJson: JSON.stringify([
+        { name: 'Original Lead', email: 'original@example.com' },
+        { name: 'New Lead', email: 'New.Lead@Example.com' }
+      ])
+    }]));
+
+    const application = await getApprovedApplicationByEmail('new.lead@example.com');
+
+    expect(application).toEqual(expect.objectContaining({ city: 'Melbourne' }));
+  });
+
+  test('includes all chapters where the user appears in leadsJson', async () => {
+    mockClient.listEntities.mockReturnValueOnce(entities([
+      {
+        city: 'Melbourne',
+        status: 'approved',
+        leadsJson: JSON.stringify([{ email: 'lead@example.com' }])
+      },
+      {
+        city: 'Sydney',
+        status: 'approved',
+        leadsJson: JSON.stringify([{ email: 'other@example.com' }])
+      },
+      {
+        city: 'Perth',
+        status: 'approved',
+        secondLeadEmail: 'LEAD@example.com'
+      }
+    ]));
+
+    const applications = await getApprovedApplicationsByEmail('lead@example.com');
+
+    expect(applications.map(application => application.city)).toEqual(['Melbourne', 'Perth']);
+  });
+
+  test('does not retain legacy access after an edited lead is removed', async () => {
+    mockClient.listEntities.mockReturnValueOnce(entities([{
+      city: 'Melbourne',
+      status: 'approved',
+      email: 'removed@example.com',
+      secondLeadEmail: 'also-removed@example.com',
+      leadsJson: JSON.stringify([{ email: 'current@example.com' }])
+    }]));
+
+    const application = await getApprovedApplicationByEmail('removed@example.com');
+
+    expect(application).toBeNull();
   });
 });

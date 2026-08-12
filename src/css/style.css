@@ -2169,6 +2169,53 @@ button:focus-visible {
   min-width: 120px;
 }
 
+.bulk-speaker-panel {
+  max-width: 760px;
+  margin: 0 0 var(--space-2xl);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.bulk-speaker-panel summary {
+  padding: var(--space-lg);
+  color: var(--color-primary-navy);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bulk-speaker-panel summary:hover {
+  color: var(--color-primary-teal);
+}
+
+.bulk-speaker-panel__content {
+  padding: 0 var(--space-lg) var(--space-lg);
+}
+
+.bulk-speaker-panel__content .form-group {
+  max-width: none;
+}
+
+.bulk-speaker-results {
+  margin-top: var(--space-lg);
+}
+
+.bulk-speaker-results__table {
+  overflow-x: auto;
+}
+
+.bulk-result {
+  font-weight: 600;
+}
+
+.bulk-result--success {
+  color: var(--color-text-success);
+}
+
+.bulk-result--error {
+  color: var(--color-text-danger);
+}
+
 /* Dashboard detail panel — 4-column grid */
 .detail-panel {
   display: grid;
@@ -2234,11 +2281,16 @@ button:focus-visible {
 
 /* Scanner page */
 .scanner-setup {
-  max-width: 400px;
+  max-width: 640px;
 }
 
 .btn-start-scanner {
   margin-top: var(--space-sm);
+}
+
+.scanner-setup button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .scan-result {

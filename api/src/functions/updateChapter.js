@@ -80,8 +80,8 @@ module.exports = async function (request, context) {
       updatedAt: new Date().toISOString()
     }, 'Merge');
 
-    // Regenerate the chapter markdown page via GitHub Contents API
-    let pageUpdated = false;
+    // Queue an automated PR because main is protected from direct writes.
+    let pageUpdateQueued = false;
     try {
       const appId = process.env.GITHUB_APP_ID;
       const privateKey = (process.env.GITHUB_APP_PRIVATE_KEY || '').replace(/\\n/g, '\n');
@@ -96,17 +96,12 @@ module.exports = async function (request, context) {
         });
 
         const filePath = `src/chapters/${chapterSlug}/index.md`;
-
-        // Get current file SHA and existing coordinates (needed for update)
-        let sha = '';
         let existingLatitude = '';
         let existingLongitude = '';
         try {
           const { data } = await octokit.repos.getContent({
             owner: repoOwner, repo: repoName, path: filePath, ref: 'main'
           });
-          sha = data.sha;
-          // Extract existing coordinates from the file so they are preserved
           const fileContent = Buffer.from(data.content, 'base64').toString('utf8');
           const latMatch = fileContent.match(/^latitude:\s*(-?[\d.]+)/m);
           const lngMatch = fileContent.match(/^longitude:\s*(-?[\d.]+)/m);
@@ -127,27 +122,29 @@ module.exports = async function (request, context) {
           longitude: existingLongitude
         });
 
-        const params = {
+        await octokit.repos.createDispatchEvent({
           owner: repoOwner,
           repo: repoName,
-          path: filePath,
-          message: `Update chapter page for ${application.city}\n\nUpdated by ${user.userDetails} via dashboard.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`,
-          content: Buffer.from(markdown).toString('base64'),
-          branch: 'main'
-        };
-        if (sha) params.sha = sha;
-
-        await octokit.repos.createOrUpdateFileContents(params);
-        pageUpdated = true;
-        context.log(`Chapter page updated for ${chapterSlug}`);
+          event_type: 'chapter-updated',
+          client_payload: {
+            chapter_slug: chapterSlug,
+            chapter_city: application.city,
+            chapter_markdown_base64: Buffer.from(markdown).toString('base64')
+          }
+        });
+        pageUpdateQueued = true;
+        context.log(`Chapter page update queued for ${chapterSlug}`);
       } else {
-        context.log('GitHub App configuration missing — page update skipped');
+        context.log('GitHub App configuration missing — page update PR skipped');
       }
     } catch (err) {
-      context.log(`GitHub page update failed: ${err.message}`);
+      context.log(`GitHub page update dispatch failed: ${err.message}`);
     }
 
-    logAudit('chapter', chapterSlug, 'chapter_updated', user.userDetails, { leadCount: sanitisedLeads.length, pageUpdated }, context);
+    logAudit('chapter', chapterSlug, 'chapter_updated', user.userDetails, {
+      leadCount: sanitisedLeads.length,
+      pageUpdateQueued
+    }, context);
 
     return {
       status: 200,
@@ -155,7 +152,8 @@ module.exports = async function (request, context) {
       body: JSON.stringify({
         success: true,
         leads: sanitisedLeads.map(l => ({ name: l.name, email: l.email })),
-        pageUpdated
+        pageUpdated: pageUpdateQueued,
+        pageUpdateQueued
       })
     };
   } catch (error) {

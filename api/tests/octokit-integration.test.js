@@ -9,7 +9,12 @@ process.env.DISCORD_NOTIFICATIONS_CHANNEL_ID = 'test-notif-channel';
 
 // Track Octokit mock calls
 const mockCreateDispatchEvent = jest.fn().mockResolvedValue({});
-const mockGetContent = jest.fn().mockResolvedValue({ data: { sha: 'abc123' } });
+const mockGetContent = jest.fn().mockResolvedValue({
+  data: {
+    sha: 'abc123',
+    content: Buffer.from('latitude: -31.95\nlongitude: 115.86\n').toString('base64')
+  }
+});
 const mockCreateOrUpdateFileContents = jest.fn().mockResolvedValue({});
 const mockOctokitConstructor = jest.fn().mockImplementation(() => ({
   repos: {
@@ -407,7 +412,7 @@ describe('createEvent — GitHub dispatch integration', () => {
 
 // ─── updateChapter — Octokit integration ───────────────────────────
 
-describe('updateChapter — GitHub Contents API integration', () => {
+describe('updateChapter — automated PR dispatch integration', () => {
   const updateChapter = require('../src/functions/updateChapter');
 
   const validLeads = {
@@ -453,41 +458,44 @@ describe('updateChapter — GitHub Contents API integration', () => {
     });
   });
 
-  test('passes SHA to createOrUpdateFileContents when file exists', async () => {
+  test('dispatches a chapter update with generated markdown', async () => {
     setGitHubEnv();
-    mockGetContent.mockResolvedValueOnce({ data: { sha: 'existing-sha-456' } });
     await updateChapter(makeAuthRequest('POST', validLeads, ['admin']), context);
 
-    expect(mockCreateOrUpdateFileContents).toHaveBeenCalledWith(
+    expect(mockCreateDispatchEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         owner: 'Global-Security-Community',
         repo: 'core-website',
-        path: 'src/chapters/perth/index.md',
-        branch: 'main',
-        sha: 'existing-sha-456',
-        content: expect.any(String),
-        message: expect.stringContaining('Update chapter page for Perth')
+        event_type: 'chapter-updated',
+        client_payload: expect.objectContaining({
+          chapter_slug: 'perth',
+          chapter_city: 'Perth',
+          chapter_markdown_base64: expect.any(String)
+        })
       })
     );
   });
 
-  test('omits SHA when getContent fails (new file)', async () => {
+  test('still dispatches when the existing page cannot be read', async () => {
     setGitHubEnv();
     mockGetContent.mockRejectedValueOnce(new Error('Not found'));
     await updateChapter(makeAuthRequest('POST', validLeads, ['admin']), context);
 
-    const callArgs = mockCreateOrUpdateFileContents.mock.calls[0][0];
-    expect(callArgs.sha).toBeUndefined();
+    expect(mockCreateDispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ event_type: 'chapter-updated' })
+    );
   });
 
   test('encodes markdown content as base64', async () => {
     setGitHubEnv();
     await updateChapter(makeAuthRequest('POST', validLeads, ['admin']), context);
 
-    const callArgs = mockCreateOrUpdateFileContents.mock.calls[0][0];
-    const decoded = Buffer.from(callArgs.content, 'base64').toString('utf-8');
+    const payload = mockCreateDispatchEvent.mock.calls[0][0].client_payload;
+    const decoded = Buffer.from(payload.chapter_markdown_base64, 'base64').toString('utf-8');
     expect(decoded).toContain('Perth');
     expect(decoded).toContain('layout:');
+    expect(decoded).toContain('latitude: -31.95');
+    expect(decoded).not.toContain('alice@test.com');
   });
 
   test('skips GitHub update when env vars are missing', async () => {
@@ -498,23 +506,24 @@ describe('updateChapter — GitHub Contents API integration', () => {
     expect(mockGetContent).not.toHaveBeenCalled();
   });
 
-  test('continues on createOrUpdateFileContents failure', async () => {
+  test('continues when the update workflow cannot be dispatched', async () => {
     setGitHubEnv();
-    mockCreateOrUpdateFileContents.mockRejectedValueOnce(new Error('Conflict'));
+    mockCreateDispatchEvent.mockRejectedValueOnce(new Error('Dispatch failed'));
     const res = await updateChapter(makeAuthRequest('POST', validLeads, ['admin']), context);
 
     expect(res.status).toBe(200);
     const body = JSON.parse(res.body);
     expect(body.pageUpdated).toBe(false);
+    expect(body.pageUpdateQueued).toBe(false);
   });
 
-  test('commit message includes city name and co-author', async () => {
+  test('reports that the automated page update was queued', async () => {
     setGitHubEnv();
-    await updateChapter(makeAuthRequest('POST', validLeads, ['admin']), context);
+    const res = await updateChapter(makeAuthRequest('POST', validLeads, ['admin']), context);
 
-    const callArgs = mockCreateOrUpdateFileContents.mock.calls[0][0];
-    expect(callArgs.message).toContain('Perth');
-    expect(callArgs.message).toContain('Co-authored-by: Copilot');
+    const body = JSON.parse(res.body);
+    expect(body.pageUpdated).toBe(true);
+    expect(body.pageUpdateQueued).toBe(true);
   });
 });
 

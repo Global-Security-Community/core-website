@@ -4,12 +4,57 @@
   var totalCheckedIn = 0;
   var totalRegistered = 0;
   var scanner = null;
+  var eventSelect = document.getElementById('scanner-event-id');
+  var startButton = document.getElementById('start-scanner-btn');
+  var eventHelp = document.getElementById('scanner-event-help');
 
-  document.getElementById('start-scanner-btn').addEventListener('click', function() {
-    eventId = document.getElementById('scanner-event-id').value.trim();
-    if (!eventId) { alert('Please enter an event ID.'); return; }
+  loadScannerEvents();
+
+  function loadScannerEvents() {
+    GSC.fetch('/api/scannerEvents')
+      .then(function(response) {
+        return response.json().then(function(data) {
+          if (!response.ok) throw new Error(data.error || 'Unable to load scanner events.');
+          return data;
+        });
+      })
+      .then(function(data) {
+        var events = data.events || [];
+        if (!events.length) {
+          eventSelect.innerHTML = '<option value="">No assigned events</option>';
+          eventHelp.textContent = 'You are not currently assigned to any active events.';
+          return;
+        }
+
+        var options = '<option value="">Choose an event</option>';
+        events.forEach(function(event) {
+          var details = [event.date, event.location].filter(Boolean).join(' - ');
+          var label = event.title + (details ? ' - ' + details : '');
+          options += '<option value="' + GSC.esc(event.id) + '">' + GSC.esc(label) + '</option>';
+        });
+        eventSelect.innerHTML = options;
+        eventSelect.disabled = false;
+        startButton.disabled = false;
+        eventHelp.textContent = events.length === 1
+          ? 'One event is available for check-in.'
+          : events.length + ' events are available for check-in.';
+      })
+      .catch(function(error) {
+        eventSelect.innerHTML = '<option value="">Events unavailable</option>';
+        eventHelp.textContent = error.message || 'Unable to load scanner events. Refresh the page to try again.';
+      });
+  }
+
+  startButton.addEventListener('click', function() {
+    eventId = eventSelect.value;
+    if (!eventId) {
+      eventHelp.textContent = 'Choose an event before starting the scanner.';
+      eventSelect.focus();
+      return;
+    }
 
     document.getElementById('scanner-wrap').style.display = 'block';
+    eventSelect.disabled = true;
     this.disabled = true;
     this.textContent = 'Scanner Active';
 
