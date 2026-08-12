@@ -84,6 +84,11 @@
       "headers": { "Cache-Control": "private, no-store" }
     },
     {
+      "route": "/api/scannerEvents",
+      "allowedRoles": ["admin", "volunteer"],
+      "headers": { "Cache-Control": "private, no-store" }
+    },
+    {
       "route": "/api/issueBadges",
       "allowedRoles": ["admin"],
       "headers": { "Cache-Control": "private, no-store" }

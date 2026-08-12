@@ -553,7 +553,65 @@ async function isVolunteerOrOrganiserByRegistration(email, eventId) {
   return null;
 }
 
+async function getScannerEventIdsByEmail(email) {
+  const normalised = email.trim().toLowerCase();
+  const eventIds = new Set();
+  const registrationClient = getTableClient('EventRegistrations');
+
+  const registrations = registrationClient.listEntities({
+    queryOptions: { filter: `normalisedEmail eq '${normalised.replace(/'/g, "''")}'` }
+  });
+  for await (const entity of registrations) {
+    if (entity.role === 'volunteer' || entity.role === 'organiser') {
+      eventIds.add(entity.partitionKey);
+    }
+  }
+
+  // Existing registrations predate normalisedEmail, so compare role records in code.
+  const legacyRegistrations = registrationClient.listEntities({
+    queryOptions: {
+      filter: "(role eq 'volunteer' or role eq 'organiser')",
+      select: ['PartitionKey', 'email', 'role']
+    }
+  });
+  for await (const entity of legacyRegistrations) {
+    if (String(entity.email || '').trim().toLowerCase() === normalised) {
+      eventIds.add(entity.partitionKey);
+    }
+  }
+
+  const volunteerClient = getTableClient('EventVolunteers');
+  const volunteers = volunteerClient.listEntities({
+    queryOptions: { filter: `email eq '${normalised.replace(/'/g, "''")}'`, select: ['PartitionKey'] }
+  });
+  for await (const entity of volunteers) {
+    eventIds.add(entity.partitionKey);
+  }
+
+  return [...eventIds].filter(Boolean);
+}
+
 // ─── Chapter Leads (for role assignment) ───
+
+function applicationHasLeadEmail(application, normalisedEmail) {
+  if (application.leadsJson) {
+    try {
+      const leads = JSON.parse(application.leadsJson);
+      if (Array.isArray(leads)) {
+        return leads.some(lead =>
+          String(lead?.email || '').trim().toLowerCase() === normalisedEmail
+        );
+      }
+    } catch {
+      // Fall back to original application fields if stored JSON is malformed.
+    }
+  }
+
+  return (
+    String(application.email || '').trim().toLowerCase() === normalisedEmail ||
+    String(application.secondLeadEmail || '').trim().toLowerCase() === normalisedEmail
+  );
+}
 
 async function getApprovedApplicationByEmail(email) {
   const client = getTableClient('ChapterApplications');
@@ -562,8 +620,7 @@ async function getApprovedApplicationByEmail(email) {
     queryOptions: { filter: `status eq 'approved'` }
   });
   for await (const entity of entities) {
-    if (entity.email && entity.email.toLowerCase() === normalised) return entity;
-    if (entity.secondLeadEmail && entity.secondLeadEmail.toLowerCase() === normalised) return entity;
+    if (applicationHasLeadEmail(entity, normalised)) return entity;
   }
   return null;
 }
@@ -580,8 +637,7 @@ async function getApprovedApplicationsByEmail(email) {
   });
   const results = [];
   for await (const entity of entities) {
-    if ((entity.email && entity.email.toLowerCase() === normalised) ||
-        (entity.secondLeadEmail && entity.secondLeadEmail.toLowerCase() === normalised)) {
+    if (applicationHasLeadEmail(entity, normalised)) {
       results.push(entity);
     }
   }
@@ -811,7 +867,7 @@ module.exports = {
   getPostEventJob, upsertPostEventJob, createPostEventJob, updatePostEventJob,
   getPostEventDeliveries, upsertPostEventDelivery, createPostEventDelivery, updatePostEventDelivery,
   storeVolunteer, getVolunteersByEvent, removeVolunteer, isVolunteerForAnyEvent,
-  getRegistrationsByRole, isVolunteerOrOrganiserByRegistration, VALID_ROLES,
+  getRegistrationsByRole, isVolunteerOrOrganiserByRegistration, getScannerEventIdsByEmail, VALID_ROLES,
   getApprovedApplicationByEmail, getApprovedApplicationsByEmail,
   storeSessionizeCache, getSessionizeCache,
   storeSubscription, removeSubscription, getSubscriptionsByChapter, isSubscribed,

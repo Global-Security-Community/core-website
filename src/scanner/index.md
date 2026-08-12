@@ -7,9 +7,12 @@ title: Check-in Scanner
   <h1>Check-in Scanner</h1>
 
   <div class="form-group scanner-setup">
-    <label for="scanner-event-id">Event ID *</label>
-    <input type="text" id="scanner-event-id" placeholder="Paste the event ID from your dashboard">
-    <button id="start-scanner-btn" type="button" class="btn-start-scanner">Start Scanner</button>
+    <label for="scanner-event-id">Event</label>
+    <select id="scanner-event-id" disabled>
+      <option value="">Loading your events...</option>
+    </select>
+    <p id="scanner-event-help" class="char-hint" role="status" aria-live="polite">Finding events you can check in.</p>
+    <button id="start-scanner-btn" type="button" class="btn-start-scanner" disabled>Start Scanner</button>
   </div>
 
   <div id="scanner-wrap" class="is-hidden">

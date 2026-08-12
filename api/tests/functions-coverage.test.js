@@ -40,6 +40,7 @@ jest.mock('../src/helpers/tableStorage', () => ({
   getBadgesByEvent: jest.fn().mockResolvedValue([]),
   getRegistrationsByRole: jest.fn().mockResolvedValue([]),
   isVolunteerOrOrganiserByRegistration: jest.fn().mockResolvedValue(null),
+  getScannerEventIdsByEmail: jest.fn().mockResolvedValue([]),
   isVolunteerForAnyEvent: jest.fn().mockResolvedValue(null),
   VALID_ROLES: ['attendee', 'volunteer', 'speaker', 'sponsor', 'organiser'],
   getApprovedApplicationByEmail: jest.fn(),

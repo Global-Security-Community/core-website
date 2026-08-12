@@ -561,7 +561,8 @@
 
         // Load attendees with role support
         var adminRegBtn = document.getElementById('admin-reg-btn');
-        adminRegBtn.addEventListener('click', function() { adminRegister(eventId); });
+        adminRegBtn.onclick = function() { adminRegister(eventId); };
+        document.getElementById('bulk-speaker-btn').onclick = function() { bulkRegisterSpeakers(eventId); };
 
         if (!data.attendees || data.attendees.length === 0) {
           document.getElementById('detail-attendees').innerHTML = '<p>No registrations yet.</p>';
@@ -1575,6 +1576,7 @@
       'event_deleted': 'Deleted event',
       'status_changed': 'Changed status',
       'registration_admin_created': 'Admin registered attendee',
+      'speaker_bulk_registered': 'Bulk registered speakers',
       'registration_role_updated': 'Updated roles',
       'attendee_checked_in': 'Checked in attendee',
       'partner_added': 'Added partner',
@@ -1591,6 +1593,7 @@
   function formatAuditDetails(action, d) {
     if (action === 'status_changed') return GSC.esc(d.from || '?') + ' → ' + GSC.esc(d.to || '?');
     if (action === 'registration_admin_created') return GSC.esc(d.email || '') + ' as ' + GSC.esc(d.role || 'attendee');
+    if (action === 'speaker_bulk_registered') return GSC.esc((d.registered || 0) + '') + ' registered' + (d.failed ? ', ' + d.failed + ' failed' : '');
     if (action === 'registration_role_updated') return GSC.esc((d.count || 0) + '') + ' attendee(s) → ' + GSC.esc(d.role || '');
     if (action === 'attendee_checked_in') return GSC.esc(d.attendee || '');
     if (action === 'email_resent') return GSC.esc((d.sent || 0) + '') + ' sent' + (d.failed ? ', ' + d.failed + ' failed' : '');
@@ -1624,6 +1627,108 @@
       }
     })
     .catch(function() { alert('Network error.'); });
+  }
+
+  function parseSpeakerRows(value) {
+    return value.split(/\r?\n/).map(function(line, index) {
+      var trimmed = line.trim();
+      if (!trimmed) return null;
+      var separator = trimmed.indexOf('\t') !== -1 ? '\t' : ',';
+      var separatorIndex = trimmed.lastIndexOf(separator);
+      if (separatorIndex === -1) {
+        return { row: index + 1, error: 'Use Name, email format.' };
+      }
+      var name = trimmed.slice(0, separatorIndex).trim().replace(/^"|"$/g, '');
+      var email = trimmed.slice(separatorIndex + 1).trim().replace(/^"|"$/g, '');
+      if (index === 0 && /^(name|speaker)$/i.test(name) && /^email/i.test(email)) return null;
+      if (!name || !email) return { row: index + 1, name: name, email: email, error: 'Name and email are required.' };
+      return { row: index + 1, name: name, email: email };
+    }).filter(Boolean);
+  }
+
+  function bulkRegisterSpeakers(eventId) {
+    var input = document.getElementById('bulk-speaker-input');
+    var button = document.getElementById('bulk-speaker-btn');
+    var status = document.getElementById('bulk-speaker-status');
+    var resultsEl = document.getElementById('bulk-speaker-results');
+    var rows = parseSpeakerRows(input.value);
+    var invalidRows = rows.filter(function(row) { return row.error; });
+
+    status.className = 'form-message';
+    resultsEl.innerHTML = '';
+    if (!rows.length) {
+      status.classList.add('form-message--error');
+      status.textContent = 'Paste at least one speaker name and email address.';
+      return;
+    }
+    if (rows.length > 50) {
+      status.classList.add('form-message--error');
+      status.textContent = 'You can register up to 50 speakers at a time.';
+      return;
+    }
+    if (invalidRows.length) {
+      status.classList.add('form-message--error');
+      status.textContent = 'Fix the formatting on row' + (invalidRows.length === 1 ? ' ' : 's ') +
+        invalidRows.map(function(row) { return row.row; }).join(', ') + '.';
+      renderBulkSpeakerResults(rows.map(function(row) {
+        return { row: row.row, name: row.name || '', email: row.email || '', success: !row.error, error: row.error || 'Ready' };
+      }));
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = 'Registering...';
+    status.classList.add('form-message--warning');
+    status.textContent = 'Registering ' + rows.length + ' speaker' + (rows.length === 1 ? '' : 's') + ' and sending tickets...';
+
+    GSC.fetch('/api/manualRegister', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        eventId: eventId,
+        registrations: rows.map(function(row) { return { name: row.name, email: row.email, role: 'speaker' }; })
+      })
+    })
+    .then(function(response) {
+      return response.json().then(function(data) {
+        if (!response.ok) throw new Error(data.error || 'Bulk registration failed.');
+        return data;
+      });
+    })
+    .then(function(data) {
+      button.disabled = false;
+      button.textContent = 'Register Speakers';
+      status.className = 'form-message ' + (data.failed ? 'form-message--warning' : 'form-message--success');
+      status.textContent = data.registered + ' registered' + (data.failed ? ', ' + data.failed + ' need attention.' : '.');
+      renderBulkSpeakerResults(data.results || []);
+      if (!data.failed) input.value = '';
+      if (data.registered) {
+        viewEvent(eventId, currentChapterSlug, document.getElementById('detail-title').textContent);
+      }
+    })
+    .catch(function(error) {
+      button.disabled = false;
+      button.textContent = 'Register Speakers';
+      status.className = 'form-message form-message--error';
+      status.textContent = error.message || 'Unable to register speakers. Try again.';
+    });
+  }
+
+  function renderBulkSpeakerResults(results) {
+    var resultsEl = document.getElementById('bulk-speaker-results');
+    if (!results.length) {
+      resultsEl.innerHTML = '';
+      return;
+    }
+    var html = '<div class="bulk-speaker-results__table"><table><thead><tr><th>Speaker</th><th>Email</th><th>Result</th></tr></thead><tbody>';
+    results.forEach(function(result) {
+      html += '<tr><td>' + GSC.esc(result.name || '') + '</td><td>' + GSC.esc(result.email || '') + '</td><td>' +
+        (result.success
+          ? '<span class="bulk-result bulk-result--success">Registered</span>'
+          : '<span class="bulk-result bulk-result--error">' + GSC.esc(result.error || 'Failed') + '</span>') +
+        '</td></tr>';
+    });
+    resultsEl.innerHTML = html + '</tbody></table></div>';
   }
 
   // ─── Edit Event ───
@@ -1918,7 +2023,7 @@
       if (d.success) {
         msg.style.display = 'block';
         msg.style.backgroundColor = '#d4edda'; msg.style.color = '#155724';
-        msg.textContent = 'Chapter updated.' + (d.pageUpdated ? ' Page will redeploy shortly.' : ' Page could not be updated automatically.');
+        msg.textContent = 'Chapter updated.' + (d.pageUpdateQueued ? ' Page update queued for automated checks.' : ' Page update could not be queued automatically.');
       } else {
         msg.style.display = 'block';
         msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24';

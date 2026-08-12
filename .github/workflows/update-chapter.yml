@@ -1,0 +1,93 @@
+name: Update Chapter Page
+
+on:
+  repository_dispatch:
+    types: [chapter-updated]
+
+permissions:
+  contents: write
+  actions: write
+  pull-requests: write
+
+concurrency:
+  group: update-chapter-${{ github.event.client_payload.chapter_slug }}
+  cancel-in-progress: false
+
+jobs:
+  update-chapter:
+    runs-on: ubuntu-latest
+    env:
+      CITY: ${{ github.event.client_payload.chapter_city }}
+      SLUG: ${{ github.event.client_payload.chapter_slug }}
+      MARKDOWN_BASE64: ${{ github.event.client_payload.chapter_markdown_base64 }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Validate update payload
+        run: |
+          if ! [[ "$SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            echo "::error::Invalid chapter slug"
+            exit 1
+          fi
+          if [ -z "$CITY" ] || [ -z "$MARKDOWN_BASE64" ]; then
+            echo "::error::Chapter city and content are required"
+            exit 1
+          fi
+
+      - name: Create chapter update branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          mkdir -p "src/chapters/${SLUG}"
+          printf '%s' "$MARKDOWN_BASE64" | base64 --decode > "src/chapters/${SLUG}/index.md"
+          git add "src/chapters/${SLUG}/index.md"
+
+          if git diff --cached --quiet; then
+            echo "No chapter page changes to publish"
+            exit 0
+          fi
+
+          BRANCH="auto/update-chapter-${SLUG}-${GITHUB_RUN_ID}"
+          git checkout -b "$BRANCH"
+          git commit -m "Update chapter page for ${CITY}
+
+          Updated from the chapter dashboard.
+
+          Co-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>"
+          git push origin "$BRANCH"
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
+
+      - name: Open PR and enable auto-merge
+        if: env.BRANCH != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PR_TOKEN }}
+        run: |
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "Update chapter page for ${CITY}" \
+            --body "Automated chapter lead and profile update from the admin dashboard."
+          PR_NUMBER=$(gh pr view "$BRANCH" --json number -q .number)
+
+          GH_TOKEN="${{ secrets.GITHUB_TOKEN }}" gh workflow run ci.yml --ref "$BRANCH"
+          gh pr merge "$PR_NUMBER" --auto --squash
+
+          echo "Waiting for PR #$PR_NUMBER to merge..."
+          for i in $(seq 1 40); do
+            STATE=$(gh pr view "$PR_NUMBER" --json state -q .state)
+            if [ "$STATE" = "MERGED" ]; then
+              echo "PR #$PR_NUMBER merged"
+              exit 0
+            fi
+            if [ "$STATE" = "CLOSED" ]; then
+              echo "::error::PR #$PR_NUMBER was closed without merging"
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "::error::Timed out waiting for PR #$PR_NUMBER to merge"
+          exit 1
