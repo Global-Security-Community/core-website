@@ -102,7 +102,7 @@ templateEngineOverride: njk
       </div>
       <div class="stat-item">
         <span class="stat-value" id="total-registrations">{{ communityMetrics.totalRegistrations | safe }}</span>
-        <span class="stat-desc">Event registrations</span>
+        <span class="stat-desc">Community sign-ups</span>
       </div>
     </div>
     <script src="/js/community-metrics.js?v={{ cacheBust }}"></script>
