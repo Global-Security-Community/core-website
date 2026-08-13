@@ -69,16 +69,19 @@ describe('badgeGenerator', () => {
       eventDate: baseOpts.eventDate,
       eventLocation: baseOpts.eventLocation
     };
-    const [attendee, speaker, organiser] = await Promise.all([
+    const [attendee, volunteer, speaker, organiser] = await Promise.all([
       generateSharedEventBadgePng({ ...details, badgeType: 'Attendee' }, null),
+      generateSharedEventBadgePng({ ...details, badgeType: 'Volunteer' }, null),
       generateSharedEventBadgePng({ ...details, badgeType: 'Speaker' }, null),
       generateSharedEventBadgePng({ ...details, badgeType: 'Organiser' }, null)
     ]);
 
     expect(attendee.equals(speaker)).toBe(false);
+    expect(attendee.equals(volunteer)).toBe(false);
     expect(speaker.equals(organiser)).toBe(false);
     await expect(sharp(attendee).metadata()).resolves.toMatchObject({ width: 1024, height: 1024, format: 'png' });
     await expect(sharp(speaker).metadata()).resolves.toMatchObject({ width: 1024, height: 1024, format: 'png' });
+    await expect(sharp(volunteer).metadata()).resolves.toMatchObject({ width: 1024, height: 1024, format: 'png' });
     await expect(sharp(organiser).metadata()).resolves.toMatchObject({ width: 1024, height: 1024, format: 'png' });
   });
 });

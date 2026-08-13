@@ -97,6 +97,7 @@ jest.mock('../src/helpers/imageGenerator', () => ({
   generateChapterShield: jest.fn().mockResolvedValue('https://gsccoresa.blob.core.windows.net/generated-images/chapters/test-shield.png'),
   generateEventBadgeBackground: jest.fn().mockResolvedValue({
     attendeeImageUrl: 'https://gsccoresa.blob.core.windows.net/generated-images/events/test-attendee.png',
+    volunteerImageUrl: 'https://gsccoresa.blob.core.windows.net/generated-images/events/test-volunteer.png',
     speakerImageUrl: 'https://gsccoresa.blob.core.windows.net/generated-images/events/test-speaker.png',
     organiserImageUrl: 'https://gsccoresa.blob.core.windows.net/generated-images/events/test-organiser.png',
     themeYear: 2026,
@@ -1077,6 +1078,7 @@ describe('issueBadges function', () => {
     storage.getBadgesByEvent.mockResolvedValueOnce([]);
     storage.getRegistrationsByEvent.mockResolvedValueOnce([
       { rowKey: 'r1', fullName: 'Alice', email: 'alice@test.com', checkedIn: true, role: 'attendee', userId: 'u1' },
+      { rowKey: 'r5', fullName: 'Vera', email: 'vera@test.com', checkedIn: true, role: 'volunteer', userId: 'u5' },
       { rowKey: 'r2', fullName: 'Bob', email: 'bob@test.com', checkedIn: true, role: 'speaker', userId: 'u2' },
       { rowKey: 'r4', fullName: 'Dana', email: 'dana@test.com', checkedIn: true, role: 'organiser', userId: 'u4' },
       { rowKey: 'r3', fullName: 'Charlie', email: 'c@test.com', checkedIn: false }
@@ -1084,10 +1086,19 @@ describe('issueBadges function', () => {
     const res = await issueBadges(makeAuthRequest('POST', { eventId: 'ev-1', chapterSlug: 'perth' }, ['admin']), context);
     expect(res.status).toBe(200);
     const body = JSON.parse(res.body);
-    expect(body.issued).toBe(3);
-    expect(body.total).toBe(3);
-    expect(storage.storeBadge).toHaveBeenCalledTimes(3);
-    expect(emailService.sendBadgeEmail).toHaveBeenCalledTimes(3);
+    expect(body.issued).toBe(4);
+    expect(body.total).toBe(4);
+    expect(storage.storeBadge).toHaveBeenCalledTimes(4);
+    expect(emailService.sendBadgeEmail).toHaveBeenCalledTimes(4);
+    expect(emailService.sendBadgeEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'vera@test.com' }),
+      expect.any(String),
+      expect.any(Object),
+      'Volunteer',
+      context,
+      'image/png',
+      'gsc-volunteer-badge.png'
+    );
     expect(emailService.sendBadgeEmail).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'bob@test.com' }),
       expect.any(String),
@@ -1692,6 +1703,7 @@ describe('regenerateImage function', () => {
     expect(res.jsonBody.attendeeImageDataUrl).toBe(`data:image/png;base64,${Buffer.from('generated-image').toString('base64')}`);
     expect(res.jsonBody.speakerImageDataUrl).toBe(`data:image/png;base64,${Buffer.from('generated-image').toString('base64')}`);
     expect(res.jsonBody.organiserImageDataUrl).toBe(`data:image/png;base64,${Buffer.from('generated-image').toString('base64')}`);
+    expect(res.jsonBody.volunteerImageDataUrl).toBe(`data:image/png;base64,${Buffer.from('generated-image').toString('base64')}`);
     expect(res.jsonBody).toMatchObject({
       themeYear: 2026,
       themeCreated: true,
@@ -1707,6 +1719,7 @@ describe('regenerateImage function', () => {
     );
     expect(storage.updateEvent).toHaveBeenCalledWith('perth', 'ev-1', {
       badgeImageUrl: 'https://gsccoresa.blob.core.windows.net/generated-images/events/test-attendee.png',
+      volunteerBadgeImageUrl: 'https://gsccoresa.blob.core.windows.net/generated-images/events/test-volunteer.png',
       speakerBadgeImageUrl: 'https://gsccoresa.blob.core.windows.net/generated-images/events/test-speaker.png',
       organiserBadgeImageUrl: 'https://gsccoresa.blob.core.windows.net/generated-images/events/test-organiser.png'
     });
