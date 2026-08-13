@@ -55,12 +55,14 @@ module.exports = async function (request, context) {
     );
     await updateEvent(chapterSlug, eventId, {
       badgeImageUrl: artwork.attendeeImageUrl,
+      volunteerBadgeImageUrl: artwork.volunteerImageUrl,
       speakerBadgeImageUrl: artwork.speakerImageUrl,
       organiserBadgeImageUrl: artwork.organiserImageUrl
     });
 
-    const [attendeeBuffer, speakerBuffer, organiserBuffer] = await Promise.all([
+    const [attendeeBuffer, volunteerBuffer, speakerBuffer, organiserBuffer] = await Promise.all([
       downloadGeneratedImage(artwork.attendeeImageUrl),
+      downloadGeneratedImage(artwork.volunteerImageUrl),
       downloadGeneratedImage(artwork.speakerImageUrl),
       downloadGeneratedImage(artwork.organiserImageUrl)
     ]);
@@ -71,6 +73,7 @@ module.exports = async function (request, context) {
       jsonBody: {
         success: true,
         attendeeImageDataUrl: `data:image/png;base64,${attendeeBuffer.toString('base64')}`,
+        volunteerImageDataUrl: `data:image/png;base64,${volunteerBuffer.toString('base64')}`,
         speakerImageDataUrl: `data:image/png;base64,${speakerBuffer.toString('base64')}`,
         organiserImageDataUrl: `data:image/png;base64,${organiserBuffer.toString('base64')}`,
         themeYear: artwork.themeYear,

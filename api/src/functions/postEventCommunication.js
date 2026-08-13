@@ -389,10 +389,11 @@ async function loadBadgeBuffers(event, context) {
   const buffers = {};
   const storedUrls = {
     Attendee: event.badgeImageUrl,
+    Volunteer: event.volunteerBadgeImageUrl,
     Speaker: event.speakerBadgeImageUrl,
     Organiser: event.organiserBadgeImageUrl
   };
-  for (const badgeType of ['Attendee', 'Speaker', 'Organiser']) {
+  for (const badgeType of ['Attendee', 'Volunteer', 'Speaker', 'Organiser']) {
     if (storedUrls[badgeType]) {
       try {
         buffers[badgeType] = await downloadGeneratedImage(storedUrls[badgeType]);

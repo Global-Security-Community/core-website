@@ -691,6 +691,7 @@
       preview.innerHTML =
         '<div class="badge-artwork-preview-grid">' +
           '<figure><img src="' + GSC.esc(data.attendeeImageDataUrl) + '" alt="Generated attendee badge artwork" class="badge-artwork-preview"><figcaption>Attendee</figcaption></figure>' +
+          '<figure><img src="' + GSC.esc(data.volunteerImageDataUrl) + '" alt="Generated volunteer badge artwork" class="badge-artwork-preview"><figcaption>Volunteer</figcaption></figure>' +
           '<figure><img src="' + GSC.esc(data.speakerImageDataUrl) + '" alt="Generated speaker badge artwork" class="badge-artwork-preview"><figcaption>Speaker</figcaption></figure>' +
           '<figure><img src="' + GSC.esc(data.organiserImageDataUrl) + '" alt="Generated organiser badge artwork" class="badge-artwork-preview"><figcaption>Organiser</figcaption></figure>' +
         '</div>';

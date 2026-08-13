@@ -2,6 +2,7 @@ const { createHash } = require('crypto');
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
 const { getRegistrationsByEvent, getEvent, storeBadge, deleteBadge, getBadgesByEvent } = require('../helpers/tableStorage');
 const { generateSharedEventBadgePng } = require('../helpers/badgeGenerator');
+const { badgeTypeForRole } = require('../helpers/postEventCommunication');
 const { downloadGeneratedImage } = require('../helpers/imageGenerator');
 const { sendBadgeEmail } = require('../helpers/emailService');
 const { logAudit } = require('../helpers/auditLog');
@@ -78,6 +79,7 @@ module.exports = async function (request, context) {
 
     // Download the finalized shared badge variants from private Blob Storage.
     let attendeeBadgeBuffer = null;
+    let volunteerBadgeBuffer = null;
     let speakerBadgeBuffer = null;
     let organiserBadgeBuffer = null;
     if (event.badgeImageUrl) {
@@ -90,6 +92,11 @@ module.exports = async function (request, context) {
         speakerBadgeBuffer = await downloadGeneratedImage(event.speakerBadgeImageUrl);
       } catch (e) { context.log(`Could not fetch speaker badge: ${e.message}`); }
     }
+    if (event.volunteerBadgeImageUrl) {
+      try {
+        volunteerBadgeBuffer = await downloadGeneratedImage(event.volunteerBadgeImageUrl);
+      } catch (e) { context.log(`Could not fetch volunteer badge: ${e.message}`); }
+    }
     if (event.organiserBadgeImageUrl) {
       try {
         organiserBadgeBuffer = await downloadGeneratedImage(event.organiserBadgeImageUrl);
@@ -100,6 +107,12 @@ module.exports = async function (request, context) {
       eventDate: event.date,
       eventLocation: event.location,
       badgeType: 'Attendee'
+    }, null);
+    volunteerBadgeBuffer = volunteerBadgeBuffer || await generateSharedEventBadgePng({
+      eventTitle: event.title,
+      eventDate: event.date,
+      eventLocation: event.location,
+      badgeType: 'Volunteer'
     }, null);
     speakerBadgeBuffer = speakerBadgeBuffer || await generateSharedEventBadgePng({
       eventTitle: event.title,
@@ -115,8 +128,10 @@ module.exports = async function (request, context) {
     }, null);
 
     for (const reg of batch) {
-      const badgeType = reg.role === 'speaker' ? 'Speaker' : reg.role === 'organiser' ? 'Organiser' : 'Attendee';
-      const badgeBuffer = badgeType === 'Speaker'
+      const badgeType = badgeTypeForRole(reg.role);
+      const badgeBuffer = badgeType === 'Volunteer'
+        ? volunteerBadgeBuffer
+        : badgeType === 'Speaker'
         ? speakerBadgeBuffer
         : badgeType === 'Organiser'
           ? organiserBadgeBuffer
