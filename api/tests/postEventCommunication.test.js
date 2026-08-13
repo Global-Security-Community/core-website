@@ -135,6 +135,7 @@ const {
   formatEventDate,
   renderTemplate,
   summariseRecipients,
+  badgeTypeForRole,
   validateTemplates
 } = require('../src/helpers/postEventCommunication');
 
@@ -160,6 +161,10 @@ function request(method, body, query = '') {
 const context = { log: jest.fn() };
 
 describe('post-event communication helpers', () => {
+  test('maps volunteers to Volunteer badges', () => {
+    expect(badgeTypeForRole('volunteer')).toBe('Volunteer');
+    expect(badgeTypeForRole('attendee')).toBe('Attendee');
+  });
   test('summarises only checked-in recipients and deduplicates email addresses', () => {
     expect(summariseRecipients([
       { email: 'one@example.com', checkedIn: true, role: 'speaker' },

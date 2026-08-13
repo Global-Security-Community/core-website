@@ -336,6 +336,10 @@ async function generateEventBadgeBackground(eventTitle, city, chapterSlug, slug,
     ...badgeDetails,
     badgeType: 'Attendee'
   }, generatedArtwork);
+  const volunteerBuffer = await generateSharedEventBadgePng({
+    ...badgeDetails,
+    badgeType: 'Volunteer'
+  }, generatedArtwork);
   const speakerBuffer = await generateSharedEventBadgePng({
     ...badgeDetails,
     badgeType: 'Speaker'
@@ -346,10 +350,12 @@ async function generateEventBadgeBackground(eventTitle, city, chapterSlug, slug,
   }, generatedArtwork);
   const safeSlug = slug || 'event';
   const attendeeImageUrl = await uploadToBlob(attendeeBuffer, `events/${safeSlug}-attendee.png`, context);
+  const volunteerImageUrl = await uploadToBlob(volunteerBuffer, `events/${safeSlug}-volunteer.png`, context);
   const speakerImageUrl = await uploadToBlob(speakerBuffer, `events/${safeSlug}-speaker.png`, context);
   const organiserImageUrl = await uploadToBlob(organiserBuffer, `events/${safeSlug}-organiser.png`, context);
   return {
     attendeeImageUrl,
+    volunteerImageUrl,
     speakerImageUrl,
     organiserImageUrl,
     themeYear,

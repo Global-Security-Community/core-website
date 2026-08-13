@@ -44,6 +44,7 @@ function normaliseRole(role) {
 }
 
 function badgeTypeForRole(role) {
+  if (role === 'volunteer') return 'Volunteer';
   if (role === 'speaker') return 'Speaker';
   if (role === 'organiser') return 'Organiser';
   return 'Attendee';

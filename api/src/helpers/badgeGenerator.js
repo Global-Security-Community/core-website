@@ -116,14 +116,17 @@ async function generateSharedEventBadgePng({ eventTitle, eventDate, eventLocatio
   const title = escSvg(truncate(eventTitle, 42));
   const date = escSvg(truncate(eventDate, 30));
   const location = escSvg(truncate(eventLocation, 35));
+  const isVolunteer = badgeType === 'Volunteer';
   const isSpeaker = badgeType === 'Speaker';
   const isOrganiser = badgeType === 'Organiser';
-  const isCeremonial = isSpeaker || isOrganiser;
-  const label = isSpeaker ? 'SPEAKER' : isOrganiser ? 'ORGANISER' : 'ATTENDEE';
-  const accent = isSpeaker ? '#f0a52b' : isOrganiser ? '#dc3545' : '#20b2aa';
-  const labelWidth = isSpeaker ? 155 : isOrganiser ? 185 : 170;
+  const isCeremonial = isVolunteer || isSpeaker || isOrganiser;
+  const label = isVolunteer ? 'VOLUNTEER' : isSpeaker ? 'SPEAKER' : isOrganiser ? 'ORGANISER' : 'ATTENDEE';
+  const accent = isVolunteer || isSpeaker ? '#f0a52b' : isOrganiser ? '#dc3545' : '#20b2aa';
+  const labelWidth = isVolunteer ? 190 : isSpeaker ? 155 : isOrganiser ? 185 : 170;
   const footer = isSpeaker
     ? 'Thank you for sharing your expertise with the community · globalsecurity.community'
+    : isVolunteer
+      ? 'Thank you for your time and service to the community · globalsecurity.community'
     : isOrganiser
       ? 'Thank you for your leadership and service to the community · globalsecurity.community'
       : 'Thank you for being part of the community · globalsecurity.community';
@@ -134,7 +137,7 @@ async function generateSharedEventBadgePng({ eventTitle, eventDate, eventLocatio
     <rect y="656" width="1024" height="${isCeremonial ? 7 : 4}" fill="${accent}"/>
     <text x="60" y="715" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#aab8c5" letter-spacing="3" font-weight="600">GLOBAL SECURITY COMMUNITY</text>
     <rect x="60" y="740" width="${labelWidth}" height="40" rx="20" fill="${accent}"/>
-    <text x="82" y="767" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="${isSpeaker ? '#001f3f' : 'white'}" font-weight="bold">${label}</text>
+    <text x="82" y="767" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="${isSpeaker || isVolunteer ? '#001f3f' : 'white'}" font-weight="bold">${label}</text>
     <text x="60" y="835" font-family="system-ui, -apple-system, sans-serif" font-size="42" fill="white" font-weight="bold">${title}</text>
     <line x1="60" y1="865" x2="964" y2="865" stroke="${accent}" stroke-width="${isCeremonial ? 3 : 2}" opacity="0.7"/>
     <text x="60" y="915" font-family="system-ui, -apple-system, sans-serif" font-size="22" fill="#d9e2ea">${date}</text>
