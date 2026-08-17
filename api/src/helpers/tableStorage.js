@@ -62,6 +62,93 @@ async function updateApplicationStatus(applicationId, status) {
   return entity;
 }
 
+async function rejectChapterApplication(application) {
+  if (application.status !== 'pending') {
+    return { rejected: false, application };
+  }
+
+  const client = getTableClient('ChapterApplications');
+  const updated = {
+    ...application,
+    status: 'rejected',
+    updatedAt: new Date().toISOString()
+  };
+
+  try {
+    await client.updateEntity(updated, 'Merge', { etag: application.etag });
+    return { rejected: true, application: updated };
+  } catch (error) {
+    if (error.statusCode === 412) {
+      const current = await client.getEntity('applications', application.rowKey);
+      return { rejected: false, application: current };
+    }
+    throw error;
+  }
+}
+
+async function claimChapterPublication(application) {
+  const publicationStatus = application.publicationStatus || '';
+  const updatedAt = Date.parse(application.publicationUpdatedAt || '');
+  const ageMs = Number.isFinite(updatedAt) ? Date.now() - updatedAt : Infinity;
+  const publicationIsActive =
+    publicationStatus === 'published' ||
+    (publicationStatus === 'dispatching' && ageMs < 15 * 60 * 1000) ||
+    (publicationStatus === 'queued' && ageMs < 2 * 60 * 60 * 1000);
+
+  if (application.status === 'rejected' || publicationIsActive) {
+    return { claimed: false, application };
+  }
+  if (application.status !== 'pending' && application.status !== 'approved') {
+    return { claimed: false, application };
+  }
+
+  const client = getTableClient('ChapterApplications');
+  const now = new Date().toISOString();
+  const updated = {
+    ...application,
+    status: 'approved',
+    publicationStatus: 'dispatching',
+    publicationAttempts: Number(application.publicationAttempts || 0) + 1,
+    publicationUpdatedAt: now,
+    updatedAt: now
+  };
+
+  try {
+    await client.updateEntity(updated, 'Merge', { etag: application.etag });
+    return { claimed: true, application: updated };
+  } catch (error) {
+    if (error.statusCode === 412) {
+      const current = await client.getEntity('applications', application.rowKey);
+      return { claimed: false, application: current };
+    }
+    throw error;
+  }
+}
+
+async function updateChapterPublication(applicationId, publicationStatus, details = {}) {
+  const client = getTableClient('ChapterApplications');
+  const entity = await client.getEntity('applications', applicationId);
+  const now = new Date().toISOString();
+
+  entity.publicationStatus = publicationStatus;
+  entity.publicationUpdatedAt = now;
+  entity.updatedAt = now;
+
+  const allowedDetails = [
+    'discordChannelId',
+    'publicationError',
+    'publicationDispatchedAt'
+  ];
+  for (const key of allowedDetails) {
+    if (Object.prototype.hasOwnProperty.call(details, key)) {
+      entity[key] = details[key];
+    }
+  }
+
+  await client.updateEntity(entity, 'Merge', { etag: entity.etag });
+  return entity;
+}
+
 // ─── Events ───
 
 async function storeEvent(event) {
@@ -872,7 +959,8 @@ async function getUserEmail(userId) {
 }
 
 module.exports = {
-  storeApplication, getApplication, updateApplicationStatus, getApprovedApplicationBySlug,
+  storeApplication, getApplication, updateApplicationStatus, rejectChapterApplication,
+  claimChapterPublication, updateChapterPublication, getApprovedApplicationBySlug,
   storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent, moveEventToChapter, deleteEvent,
   storeRegistration, getRegistrationByTicketCode, getRegistrationsByUser,
   getRegistrationsByEvent, countRegistrations, countRegistrationsForEvents, updateRegistration,

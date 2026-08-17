@@ -38,6 +38,9 @@ jest.mock('../src/helpers/tableStorage', () => ({
   storeApplication: jest.fn().mockResolvedValue({}),
   getApplication: jest.fn(),
   updateApplicationStatus: jest.fn().mockResolvedValue({}),
+  rejectChapterApplication: jest.fn(),
+  claimChapterPublication: jest.fn(),
+  updateChapterPublication: jest.fn().mockResolvedValue({}),
   storeEvent: jest.fn().mockResolvedValue({}),
   getEvent: jest.fn(),
   getEventById: jest.fn(),
@@ -197,6 +200,27 @@ describe('chapterApproval — GitHub dispatch integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     clearGitHubEnv();
+    storage.rejectChapterApplication.mockImplementation(async application => ({
+      rejected: application.status === 'pending',
+      application: application.status === 'pending'
+        ? { ...application, status: 'rejected' }
+        : application
+    }));
+    storage.claimChapterPublication.mockImplementation(async application => {
+      if (['dispatching', 'queued', 'published'].includes(application.publicationStatus)) {
+      return { claimed: false, application };
+      }
+      return {
+      claimed: true,
+      application: {
+        ...application,
+        status: 'approved',
+        publicationStatus: 'dispatching',
+        publicationAttempts: Number(application.publicationAttempts || 0) + 1
+      }
+      };
+    });
+    storage.updateChapterPublication.mockResolvedValue({});
   });
 
   test('instantiates Octokit with createAppAuth strategy', async () => {
@@ -237,28 +261,43 @@ describe('chapterApproval — GitHub dispatch integration', () => {
         application_id: 'app-1',
         chapter_city: 'Perth',
         chapter_country: 'Australia',
-        chapter_slug: 'perth',
-        lead_name: 'Alice Smith',
-        lead_email: 'alice@test.com',
-        lead_linkedin: 'https://linkedin.com/in/alice',
-        lead_github: 'https://github.com/alice'
+        chapter_slug: 'perth'
       })
     });
   });
 
-  test('includes second lead data as JSON string in dispatch payload', async () => {
+  test('includes privacy-preserving lead data in dispatch payload', async () => {
     setGitHubEnv();
     storage.getApplication.mockResolvedValueOnce({ ...pendingApplication });
     await chapterApproval(approvalReq({ id: 'app-1', action: 'approve', token: 'tok' }), context);
 
     const payload = mockCreateDispatchEvent.mock.calls[0][0].client_payload;
-    const secondLead = JSON.parse(payload.second_lead);
-    expect(secondLead).toEqual({
-      name: 'Bob Jones',
-      email: 'bob@test.com',
-      linkedin: 'https://linkedin.com/in/bob',
-      github: 'https://github.com/bob'
-    });
+    const leads = JSON.parse(payload.leads);
+    expect(leads).toEqual([
+      {
+        name: 'Alice Smith',
+        email_hash: '88502b57e6a1151ca2b5ba83e0e09480',
+        linkedin: 'https://linkedin.com/in/alice',
+        github: 'https://github.com/alice'
+      },
+      {
+        name: 'Bob Jones',
+        email_hash: 'ebf3a1ca1e3ca553e2bd873b3cd96390',
+        linkedin: 'https://linkedin.com/in/bob',
+        github: 'https://github.com/bob'
+      }
+    ]);
+    expect(payload.leads).not.toContain('alice@test.com');
+  });
+
+  test('keeps the repository dispatch payload within GitHub limits', async () => {
+    setGitHubEnv();
+    storage.getApplication.mockResolvedValueOnce({ ...pendingApplication });
+    await chapterApproval(approvalReq({ id: 'app-1', action: 'approve', token: 'tok' }), context);
+
+    const payload = mockCreateDispatchEvent.mock.calls[0][0].client_payload;
+    expect(Object.keys(payload)).toHaveLength(7);
+    expect(Object.keys(payload).length).toBeLessThanOrEqual(10);
   });
 
   test('generates correct slug from city name (lowercase, no special chars)', async () => {
@@ -290,18 +329,45 @@ describe('chapterApproval — GitHub dispatch integration', () => {
 
     expect(mockOctokitConstructor).not.toHaveBeenCalled();
     expect(mockCreateDispatchEvent).not.toHaveBeenCalled();
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(502);
+    expect(storage.updateChapterPublication).toHaveBeenCalledWith(
+      'app-1',
+      'failed',
+      expect.objectContaining({ publicationError: expect.stringContaining('configuration') })
+    );
   });
 
-  test('continues on dispatch failure (non-critical)', async () => {
+  test('records and surfaces a non-retryable dispatch failure', async () => {
     setGitHubEnv();
     storage.getApplication.mockResolvedValueOnce({ ...pendingApplication });
-    mockCreateDispatchEvent.mockRejectedValueOnce(new Error('GitHub API rate limited'));
+    const error = new Error('Invalid request');
+    error.status = 422;
+    mockCreateDispatchEvent.mockRejectedValueOnce(error);
     const res = await chapterApproval(approvalReq({ id: 'app-1', action: 'approve', token: 'tok' }), context);
 
-    expect(res.status).toBe(200);
-    expect(res.body).toContain('Chapter Approved');
-    expect(context.log).toHaveBeenCalledWith(expect.stringContaining('GitHub dispatch failed'));
+    expect(res.status).toBe(502);
+    expect(res.body).toContain('Publication Failed');
+    expect(storage.updateChapterPublication).toHaveBeenCalledWith(
+      'app-1',
+      'failed',
+      { publicationError: 'Invalid request' }
+    );
+    expect(context.log).toHaveBeenCalledWith(expect.stringContaining('publication dispatch failed'));
+  });
+
+  test('retries transient GitHub dispatch failures', async () => {
+    setGitHubEnv();
+    storage.getApplication.mockResolvedValueOnce({ ...pendingApplication });
+    const error = new Error('GitHub unavailable');
+    error.status = 503;
+    mockCreateDispatchEvent
+      .mockRejectedValueOnce(error)
+      .mockResolvedValueOnce({});
+
+    const res = await chapterApproval(approvalReq({ id: 'app-1', action: 'approve', token: 'tok' }), context);
+
+    expect(res.status).toBe(202);
+    expect(mockCreateDispatchEvent).toHaveBeenCalledTimes(2);
   });
 
   test('handles empty optional fields gracefully', async () => {
@@ -314,10 +380,24 @@ describe('chapterApproval — GitHub dispatch integration', () => {
     await chapterApproval(approvalReq({ id: 'app-1', action: 'approve', token: 'tok' }), context);
 
     const payload = mockCreateDispatchEvent.mock.calls[0][0].client_payload;
-    expect(payload.lead_linkedin).toBe('');
-    expect(payload.lead_github).toBe('');
-    const secondLead = JSON.parse(payload.second_lead);
-    expect(secondLead.name).toBe('');
+    const leads = JSON.parse(payload.leads);
+    expect(leads).toHaveLength(1);
+    expect(leads[0].linkedin).toBe('');
+    expect(leads[0].github).toBe('');
+  });
+
+  test('replays a legacy approved application without publication state', async () => {
+    setGitHubEnv();
+    storage.getApplication.mockResolvedValueOnce({
+      ...pendingApplication,
+      status: 'approved'
+    });
+
+    const res = await chapterApproval(approvalReq({ id: 'app-1', action: 'approve', token: 'tok' }), context);
+
+    expect(res.status).toBe(202);
+    expect(storage.claimChapterPublication).toHaveBeenCalled();
+    expect(mockCreateDispatchEvent).toHaveBeenCalledTimes(1);
   });
 });
 
