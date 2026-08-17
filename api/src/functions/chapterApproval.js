@@ -1,12 +1,71 @@
+const crypto = require('crypto');
 const { verifyApprovalToken } = require('../helpers/tokenHelper');
-const { getApplication, updateApplicationStatus } = require('../helpers/tableStorage');
-const { createChapterChannel } = require('../helpers/discordBot');
+const {
+  getApplication,
+  rejectChapterApplication,
+  claimChapterPublication,
+  updateChapterPublication
+} = require('../helpers/tableStorage');
+const { createChapterChannel, sendMessage } = require('../helpers/discordBot');
 const { logAudit } = require('../helpers/auditLog');
 const { stripHtml } = require('../helpers/sanitise');
 const { ensureChapterBadgeTheme, ACTIVE_BADGE_THEME_YEAR } = require('../helpers/imageGenerator');
 const { isImageConfigured } = require('../helpers/aiProvider');
 const { Octokit } = require('@octokit/rest');
 const { createAppAuth } = require('@octokit/auth-app');
+
+function chapterSlug(city) {
+  return city
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function emailHash(email) {
+  return crypto.createHash('md5').update(String(email || '').trim().toLowerCase()).digest('hex');
+}
+
+function buildLeads(application) {
+  const leads = [{
+    name: application.fullName,
+    email_hash: emailHash(application.email),
+    linkedin: application.linkedIn || '',
+    github: application.github || ''
+  }];
+
+  if (application.secondLeadName) {
+    leads.push({
+      name: application.secondLeadName,
+      email_hash: emailHash(application.secondLeadEmail),
+      linkedin: application.secondLeadLinkedIn || '',
+      github: application.secondLeadGitHub || ''
+    });
+  }
+  return leads;
+}
+
+function logError(context, message) {
+  if (typeof context.error === 'function') context.error(message);
+  else context.log(message);
+}
+
+function isRetryableGitHubError(error) {
+  return error.status === 429 || error.status >= 500 || !error.status;
+}
+
+async function dispatchWithRetry(octokit, request) {
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      await octokit.repos.createDispatchEvent(request);
+      return;
+    } catch (error) {
+      if (attempt === 3 || !isRetryableGitHubError(error)) throw error;
+      await new Promise(resolve => setTimeout(resolve, attempt * 250));
+    }
+  }
+}
 
 module.exports = async function (request, context) {
   context.log('Chapter approval request received');
@@ -45,10 +104,9 @@ module.exports = async function (request, context) {
       return htmlResponse(404, '🔍 Not Found', 'This application was not found.');
     }
 
-    // Check if already processed — show friendly message
-    if (application.status === 'approved') {
+    if (application.status === 'approved' && action !== 'approve') {
       return htmlResponse(200, '✅ Already Approved',
-        `The chapter in <strong>${application.city}, ${application.country}</strong> has already been approved.<br><br>No further action needed.`
+        `The chapter in <strong>${stripHtml(application.city)}, ${stripHtml(application.country)}</strong> has already been approved.`
       );
     }
     if (application.status === 'rejected') {
@@ -58,35 +116,121 @@ module.exports = async function (request, context) {
     }
 
     if (action === 'reject') {
-      await updateApplicationStatus(applicationId, 'rejected');
+      const rejection = await rejectChapterApplication(application);
+      if (!rejection.rejected) {
+        return htmlResponse(200, '⚠️ Already Processed',
+          'This application was processed by another approval request.'
+        );
+      }
       logAudit('chapter', application.city.toLowerCase().replace(/\s+/g, '-'), 'chapter_rejected', 'approval-link', { applicationId, city: application.city }, context);
       return htmlResponse(200, '❌ Application Rejected',
         `The chapter application for <strong>${application.city}, ${application.country}</strong> has been rejected.`
       );
     }
 
-    // --- Approve flow: update status FIRST to prevent concurrent replays ---
+    const claim = await claimChapterPublication(application);
+    if (!claim.claimed) {
+      return htmlResponse(200, '✅ Approval In Progress',
+        `The chapter in <strong>${stripHtml(claim.application.city)}, ${stripHtml(claim.application.country)}</strong> is already being processed.`
+      );
+    }
+    application = claim.application;
 
-    // Atomically mark as approved before running side effects
-    await updateApplicationStatus(applicationId, 'approved');
-    logAudit('chapter', application.city.toLowerCase().replace(/\s+/g, '-'), 'chapter_approved', 'approval-link', { applicationId, city: application.city, country: application.country }, context);
+    const citySlug = chapterSlug(application.city);
+    await logAudit('chapter', citySlug, 'chapter_approved', 'approval-link', {
+      applicationId,
+      city: application.city,
+      country: application.country,
+      publicationAttempt: application.publicationAttempts
+    }, context);
 
-    // 1. Create Discord channel (non-critical — continue if it fails)
-    var discordChannel = null;
-    try {
-      discordChannel = await createChapterChannel(application.city, context);
-    } catch (err) {
-      context.log(`Discord channel creation failed (non-critical): ${err.message}`);
+    // Replays reuse the persisted channel, and channel creation also looks up by name.
+    var discordChannel = application.discordChannelId
+      ? { channelId: application.discordChannelId, channelName: citySlug }
+      : null;
+    if (!discordChannel) {
+      try {
+        discordChannel = await createChapterChannel(application.city, context);
+        if (discordChannel) {
+          await updateChapterPublication(applicationId, 'dispatching', {
+            discordChannelId: discordChannel.channelId
+          });
+        }
+      } catch (err) {
+        context.log(`Discord channel creation failed (non-critical): ${err.message}`);
+      }
     }
 
-    // 2. Generate the chapter's current annual artwork (non-critical)
-    var artworkGenerated = false;
-    const citySlug = application.city
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
+    // Publication dispatch is critical: never report success if GitHub rejected it.
+    try {
+      const appId = process.env.GITHUB_APP_ID;
+      const privateKey = (process.env.GITHUB_APP_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+      const installationId = process.env.GITHUB_APP_INSTALLATION_ID;
+      const repoOwner = process.env.GITHUB_REPO_OWNER;
+      const repoName = process.env.GITHUB_REPO_NAME;
+
+      if (!appId || !privateKey || !installationId || !repoOwner || !repoName) {
+        throw new Error('GitHub App configuration is incomplete');
+      }
+
+      const octokit = new Octokit({
+        authStrategy: createAppAuth,
+        auth: { appId, privateKey, installationId }
+      });
+
+      await dispatchWithRetry(octokit, {
+        owner: repoOwner,
+        repo: repoName,
+        event_type: 'chapter-approved',
+        client_payload: {
+          application_id: applicationId,
+          chapter_city: application.city,
+          chapter_country: application.country,
+          chapter_slug: citySlug,
+          leads: JSON.stringify(buildLeads(application)),
+          discord_channel_id: discordChannel ? discordChannel.channelId : '',
+          notification_channel_id: process.env.DISCORD_NOTIFICATIONS_CHANNEL_ID || ''
+        }
+      });
+
+      await updateChapterPublication(applicationId, 'queued', {
+        publicationError: '',
+        publicationDispatchedAt: new Date().toISOString()
+      });
+      await logAudit('chapter', citySlug, 'chapter_publication_queued', 'approval-link', {
+        applicationId,
+        publicationAttempt: application.publicationAttempts
+      }, context);
+    } catch (err) {
+      const errorMessage = String(err.message || 'Unknown GitHub dispatch error').slice(0, 500);
+      await updateChapterPublication(applicationId, 'failed', {
+        publicationError: errorMessage
+      });
+      await logAudit('chapter', citySlug, 'chapter_publication_failed', 'approval-link', {
+        applicationId,
+        error: errorMessage,
+        publicationAttempt: application.publicationAttempts
+      }, context);
+      logError(context, `Chapter publication dispatch failed for ${applicationId}: ${errorMessage}`);
+
+      const notificationChannelId = process.env.DISCORD_NOTIFICATIONS_CHANNEL_ID;
+      if (notificationChannelId) {
+        await sendMessage(notificationChannelId, {
+          embeds: [{
+            title: 'Chapter publication failed',
+            description: `The approved **${stripHtml(application.city)}** chapter could not be queued for publication.`,
+            color: 0xcc3333,
+            footer: { text: `Application ${applicationId}` }
+          }]
+        }, context);
+      }
+
+      return htmlResponse(502, '❌ Publication Failed',
+        'The chapter was approved, but publication could not be started. The failure has been logged and this approval link can be used to retry safely.'
+      );
+    }
+
+    // Artwork is non-critical and starts only after the page publication is safely queued.
     if (isImageConfigured()) {
       try {
         await ensureChapterBadgeTheme(
@@ -96,78 +240,14 @@ module.exports = async function (request, context) {
           application.country,
           context
         );
-        artworkGenerated = true;
       } catch (imgErr) {
         context.log(`Chapter artwork generation failed (non-critical): ${imgErr.message}`);
       }
-    } else {
-      context.log('Image generation configuration missing — chapter artwork skipped');
     }
 
-    // 3. Trigger GitHub Action to generate chapter page (non-critical)
-    var pageTriggered = false;
-    try {
-      const appId = process.env.GITHUB_APP_ID;
-      const privateKey = (process.env.GITHUB_APP_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-      const installationId = process.env.GITHUB_APP_INSTALLATION_ID;
-      const repoOwner = process.env.GITHUB_REPO_OWNER;
-      const repoName = process.env.GITHUB_REPO_NAME;
-
-      if (appId && privateKey && installationId && repoOwner && repoName) {
-        const octokit = new Octokit({
-          authStrategy: createAppAuth,
-          auth: { appId, privateKey, installationId }
-        });
-
-        await octokit.repos.createDispatchEvent({
-          owner: repoOwner,
-          repo: repoName,
-          event_type: 'chapter-approved',
-          client_payload: {
-            application_id: applicationId,
-            chapter_city: application.city,
-            chapter_country: application.country,
-            chapter_slug: citySlug,
-            lead_name: application.fullName,
-            lead_email: application.email,
-            lead_linkedin: application.linkedIn || '',
-            lead_github: application.github || '',
-            second_lead: JSON.stringify({
-              name: application.secondLeadName || '',
-              email: application.secondLeadEmail || '',
-              linkedin: application.secondLeadLinkedIn || '',
-              github: application.secondLeadGitHub || ''
-            }),
-            discord_channel_id: discordChannel ? discordChannel.channelId : '',
-            notification_channel_id: process.env.DISCORD_NOTIFICATIONS_CHANNEL_ID || ''
-          }
-        });
-        pageTriggered = true;
-      } else {
-        context.log('GitHub App configuration missing — chapter page generation skipped');
-      }
-    } catch (err) {
-      context.log(`GitHub dispatch failed (non-critical): ${err.message}`);
-    }
-
-    // Build success message with details about what happened
-    var details = [`The chapter in <strong>${stripHtml(application.city)}, ${stripHtml(application.country)}</strong> has been approved!`];
-    if (discordChannel) {
-      details.push('✅ Discord channel created');
-    } else {
-      details.push('⚠️ Discord channel could not be created — set up manually');
-    }
-    if (pageTriggered) {
-      details.push('✅ Chapter page generation triggered');
-    } else {
-      details.push('⚠️ Chapter page could not be auto-generated — create manually');
-    }
-    details.push(artworkGenerated
-      ? `✅ ${ACTIVE_BADGE_THEME_YEAR} chapter artwork created`
-      : '⚠️ Chapter artwork could not be created — the standard shield will be used');
-
-    return htmlResponse(200, '✅ Chapter Approved',
-      details.join('<br>'));
+    return htmlResponse(202, '✅ Chapter Approved',
+      `The chapter in <strong>${stripHtml(application.city)}, ${stripHtml(application.country)}</strong> has been approved. Its page is being tested and will be published automatically.`
+    );
 
   } catch (error) {
     context.log(`Error: ${error.message}`);

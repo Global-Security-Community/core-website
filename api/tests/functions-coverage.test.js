@@ -17,6 +17,9 @@ jest.mock('../src/helpers/tableStorage', () => ({
   storeApplication: jest.fn().mockResolvedValue({}),
   getApplication: jest.fn(),
   updateApplicationStatus: jest.fn().mockResolvedValue({}),
+  rejectChapterApplication: jest.fn(),
+  claimChapterPublication: jest.fn(),
+  updateChapterPublication: jest.fn().mockResolvedValue({}),
   storeEvent: jest.fn().mockResolvedValue({}),
   getEvent: jest.fn(),
   getEventById: jest.fn(),
@@ -457,7 +460,43 @@ describe('chapterApplication function', () => {
 describe('chapterApproval function', () => {
   const chapterApproval = require('../src/functions/chapterApproval');
 
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env.GITHUB_APP_ID = 'test-app-id';
+    process.env.GITHUB_APP_PRIVATE_KEY = 'test-private-key';
+    process.env.GITHUB_APP_INSTALLATION_ID = 'test-install-id';
+    process.env.GITHUB_REPO_OWNER = 'Global-Security-Community';
+    process.env.GITHUB_REPO_NAME = 'core-website';
+    storage.rejectChapterApplication.mockImplementation(async application => ({
+      rejected: application.status === 'pending',
+      application: application.status === 'pending'
+        ? { ...application, status: 'rejected' }
+        : application
+    }));
+    storage.claimChapterPublication.mockImplementation(async application => {
+      if (['dispatching', 'queued', 'published'].includes(application.publicationStatus)) {
+      return { claimed: false, application };
+      }
+      return {
+      claimed: true,
+      application: {
+        ...application,
+        status: 'approved',
+        publicationStatus: 'dispatching',
+        publicationAttempts: Number(application.publicationAttempts || 0) + 1
+      }
+      };
+    });
+    storage.updateChapterPublication.mockResolvedValue({});
+  });
+
+  afterEach(() => {
+    delete process.env.GITHUB_APP_ID;
+    delete process.env.GITHUB_APP_PRIVATE_KEY;
+    delete process.env.GITHUB_APP_INSTALLATION_ID;
+    delete process.env.GITHUB_REPO_OWNER;
+    delete process.env.GITHUB_REPO_NAME;
+  });
 
   function approvalReq(params) {
     const qs = new URLSearchParams(params).toString();
@@ -502,10 +541,15 @@ describe('chapterApproval function', () => {
   });
 
   test('returns already approved message', async () => {
-    storage.getApplication.mockResolvedValueOnce({ status: 'approved', city: 'Perth', country: 'Australia' });
+    storage.getApplication.mockResolvedValueOnce({
+      status: 'approved',
+      publicationStatus: 'queued',
+      city: 'Perth',
+      country: 'Australia'
+    });
     const res = await chapterApproval(approvalReq({ id: 'app-1', action: 'approve', token: 'tok' }), context);
     expect(res.status).toBe(200);
-    expect(res.body).toContain('Already Approved');
+    expect(res.body).toContain('Approval In Progress');
   });
 
   test('returns already rejected message', async () => {
@@ -520,7 +564,9 @@ describe('chapterApproval function', () => {
     const res = await chapterApproval(approvalReq({ id: 'app-1', action: 'reject', token: 'tok' }), context);
     expect(res.status).toBe(200);
     expect(res.body).toContain('Application Rejected');
-    expect(storage.updateApplicationStatus).toHaveBeenCalledWith('app-1', 'rejected');
+    expect(storage.rejectChapterApplication).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'pending' })
+    );
   });
 
   test('approves application with Discord and status update', async () => {
@@ -529,10 +575,15 @@ describe('chapterApproval function', () => {
       fullName: 'Alice', email: 'alice@test.com'
     });
     const res = await chapterApproval(approvalReq({ id: 'app-1', action: 'approve', token: 'tok' }), context);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(202);
     expect(res.body).toContain('Chapter Approved');
     expect(discord.createChapterChannel).toHaveBeenCalledWith('Perth', context);
-    expect(storage.updateApplicationStatus).toHaveBeenCalledWith('app-1', 'approved');
+    expect(storage.claimChapterPublication).toHaveBeenCalled();
+    expect(storage.updateChapterPublication).toHaveBeenCalledWith(
+      'app-1',
+      'queued',
+      expect.objectContaining({ publicationDispatchedAt: expect.any(String) })
+    );
   });
 });
 

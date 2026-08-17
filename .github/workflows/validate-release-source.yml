@@ -13,24 +13,76 @@ jobs:
     name: Validate Release Source
     runs-on: ubuntu-latest
     steps:
-      - name: Require main as the source branch
+      - name: Checkout proposed release
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Validate production release source
         env:
           HEAD_REF: ${{ github.head_ref }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_BODY: ${{ github.event.pull_request.body }}
           TARGET_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "$HEAD_REF" != "main" ] || [ "$HEAD_REPO" != "$TARGET_REPO" ]; then
-            echo "::error::Production releases must originate from ${TARGET_REPO}:main"
+          if [ "$HEAD_REPO" != "$TARGET_REPO" ]; then
+            echo "::error::Production releases must originate from ${TARGET_REPO}"
             exit 1
           fi
-          if ! [[ "$PR_BODY" =~ approved-main-sha:([a-f0-9]{40}) ]]; then
-            echo "::error::Production release is missing an approved main SHA"
+
+          if [ "$HEAD_REF" = "main" ]; then
+            if ! [[ "$PR_BODY" =~ approved-main-sha:([a-f0-9]{40}) ]]; then
+              echo "::error::Production release is missing an approved main SHA"
+              exit 1
+            fi
+            APPROVED_SHA="${BASH_REMATCH[1]}"
+            if [ "$HEAD_SHA" != "$APPROVED_SHA" ]; then
+              echo "::error::Main changed after approval. Expected $APPROVED_SHA but found $HEAD_SHA"
+              exit 1
+            fi
+            exit 0
+          fi
+
+          if [[ "$HEAD_REF" != auto/release-chapter-* ]] ||
+             [[ "$PR_BODY" != *"<!-- automated-chapter-release -->"* ]]; then
+            echo "::error::Production releases must come from main or the chapter automation"
             exit 1
           fi
-          APPROVED_SHA="${BASH_REMATCH[1]}"
-          if [ "$HEAD_SHA" != "$APPROVED_SHA" ]; then
-            echo "::error::Main changed after approval. Expected $APPROVED_SHA but found $HEAD_SHA"
+
+          if ! [[ "$PR_BODY" =~ chapter-slug:([a-z0-9][a-z0-9-]{0,60}[a-z0-9]) ]]; then
+            echo "::error::Automated chapter release has an invalid slug"
+            exit 1
+          fi
+          SLUG="${BASH_REMATCH[1]}"
+          if ! [[ "$PR_BODY" =~ source-main-sha:([a-f0-9]{40}) ]]; then
+            echo "::error::Automated chapter release has no valid main source SHA"
+            exit 1
+          fi
+          SOURCE_SHA="${BASH_REMATCH[1]}"
+          CHAPTER_PATH="src/chapters/${SLUG}/index.md"
+
+          git fetch origin main
+          if ! git merge-base --is-ancestor "$SOURCE_SHA" origin/main; then
+            echo "::error::Chapter source commit is not present on main"
+            exit 1
+          fi
+
+          mapfile -t CHANGED_FILES < <(gh api \
+            "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" \
+            --paginate \
+            --jq '.[].filename')
+          if [ "${#CHANGED_FILES[@]}" -ne 1 ] || [ "${CHANGED_FILES[0]}" != "$CHAPTER_PATH" ]; then
+            echo "::error::Automated chapter releases may change only ${CHAPTER_PATH}"
+            printf 'Changed file: %s\n' "${CHANGED_FILES[@]}"
+            exit 1
+          fi
+
+          git show "${SOURCE_SHA}:${CHAPTER_PATH}" > /tmp/source-chapter
+          if ! cmp --silent /tmp/source-chapter "$CHAPTER_PATH"; then
+            echo "::error::Production chapter page differs from the approved main source"
             exit 1
           fi
