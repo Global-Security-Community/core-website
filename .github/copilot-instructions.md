@@ -251,7 +251,7 @@ The chapters listing page (`/chapters/`) features an interactive map powered by 
   gh workflow run release-production.yml
   ```
 - **Generation workflows** (`generate-event.yml`, `generate-chapter.yml`, `delete-chapter.yml`) create squash-auto-merge PRs into `main`. They do not release to production automatically.
-- After a generated chapter merges into `main`, `generate-chapter.yml` posts a Discord release request bound to the exact `main` SHA. `/api/releaseApproval` requires the `admin` role and dispatches `release-approved`; the release workflow rejects the request if `main` has changed.
+- After a generated chapter merges into `main`, `generate-chapter.yml` creates an isolated pull request containing only that chapter page against `live-version-swa`. Required source validation, CI, CodeQL, and SWA checks must pass before auto-merge and production deployment. No second approval is required.
 - **Never push directly to `main` or `live-version-swa`** — both branches require pull requests and passing checks.
 
 ---

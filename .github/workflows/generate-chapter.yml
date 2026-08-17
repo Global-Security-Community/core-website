@@ -9,6 +9,10 @@ permissions:
   actions: write
   pull-requests: write
 
+concurrency:
+  group: generate-chapter-${{ github.event.client_payload.chapter_slug }}
+  cancel-in-progress: false
+
 jobs:
   generate-chapter:
     runs-on: ubuntu-latest
@@ -17,6 +21,9 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
+
+      - name: Update main checkout
+        run: git pull --ff-only origin main
 
       - name: Geocode chapter location
         run: |
@@ -47,13 +54,9 @@ jobs:
           CITY: ${{ github.event.client_payload.chapter_city }}
           COUNTRY: ${{ github.event.client_payload.chapter_country }}
           SLUG: ${{ github.event.client_payload.chapter_slug }}
-          LEAD_NAME: ${{ github.event.client_payload.lead_name }}
-          LEAD_LINKEDIN: ${{ github.event.client_payload.lead_linkedin }}
-          LEAD_GITHUB: ${{ github.event.client_payload.lead_github }}
+          LEADS_JSON: ${{ github.event.client_payload.leads }}
           DISCORD_CHANNEL_ID: ${{ github.event.client_payload.discord_channel_id }}
-          DISCORD_GUILD_ID: ${{ vars.DISCORD_GUILD_ID }}
-          SECOND_LEAD_JSON: ${{ github.event.client_payload.second_lead }}
-          LEAD_EMAIL: ${{ github.event.client_payload.lead_email }}
+          DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
         run: |
           # Validate slug format (alphanumeric and hyphens only)
           if ! [[ "$SLUG" =~ ^[a-z0-9][a-z0-9-]{0,60}[a-z0-9]$ ]]; then
@@ -70,16 +73,16 @@ jobs:
             exit 1
           fi
 
-          # Parse second lead from JSON string safely via env var
-          SECOND_LEAD_NAME=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('name',''))" 2>/dev/null || echo "")
-          SECOND_LEAD_EMAIL=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('email',''))" 2>/dev/null || echo "")
-          SECOND_LEAD_LINKEDIN=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('linkedin',''))" 2>/dev/null || echo "")
-          SECOND_LEAD_GITHUB=$(echo "${SECOND_LEAD_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('github',''))" 2>/dev/null || echo "")
+          LEAD_NAME=$(echo "${LEADS_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0].get('name',''))")
+          LEAD_HASH=$(echo "${LEADS_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0].get('email_hash',''))")
+          LEAD_LINKEDIN=$(echo "${LEADS_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0].get('linkedin',''))")
+          LEAD_GITHUB=$(echo "${LEADS_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0].get('github',''))")
+          SECOND_LEAD_NAME=$(echo "${LEADS_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[1].get('name','') if len(d) > 1 else '')")
+          SECOND_LEAD_HASH=$(echo "${LEADS_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[1].get('email_hash','') if len(d) > 1 else '')")
+          SECOND_LEAD_LINKEDIN=$(echo "${LEADS_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[1].get('linkedin','') if len(d) > 1 else '')")
+          SECOND_LEAD_GITHUB=$(echo "${LEADS_JSON}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[1].get('github','') if len(d) > 1 else '')")
 
           mkdir -p "$TARGET_DIR"
-
-          # Build the YAML leads list with Gravatar email hashes
-          LEAD_HASH=$(echo -n "${LEAD_EMAIL}" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | md5sum | cut -d' ' -f1)
 
           # Build chapter page with proper YAML indentation using printf for safety
           {
@@ -103,9 +106,8 @@ jobs:
               printf '    linkedin: "%s"\n' "${LEAD_LINKEDIN}"
             fi
             if [ -n "${SECOND_LEAD_NAME}" ]; then
-              SECOND_HASH=$(echo -n "${SECOND_LEAD_EMAIL}" | tr '[:upper:]' '[:lower:]' | tr -d ' ' | md5sum | cut -d' ' -f1)
               printf '  - name: "%s"\n' "${SECOND_LEAD_NAME}"
-              printf '    email_hash: "%s"\n' "${SECOND_HASH}"
+              printf '    email_hash: "%s"\n' "${SECOND_LEAD_HASH}"
               if [ -n "${SECOND_LEAD_GITHUB}" ]; then
                 printf '    github: "%s"\n' "${SECOND_LEAD_GITHUB}"
               fi
@@ -125,11 +127,21 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Pull latest changes before branching
-          git pull --rebase origin main
-          git add "src/chapters/${SLUG}/index.md"
-          git diff --cached --quiet && echo "No changes" && exit 0
-          BRANCH="auto/chapter-${SLUG}"
+          CHAPTER_PATH="src/chapters/${SLUG}/index.md"
+          echo "CHAPTER_PATH=${CHAPTER_PATH}" >> "$GITHUB_ENV"
+          git add "$CHAPTER_PATH"
+          if git diff --cached --quiet; then
+            SOURCE_SHA=$(git log -1 --format=%H -- "$CHAPTER_PATH")
+            if [ -z "$SOURCE_SHA" ]; then
+              echo "::error::Chapter page is unchanged but has no source commit"
+              exit 1
+            fi
+            echo "Chapter page already exists on main at ${SOURCE_SHA}"
+            echo "SOURCE_SHA=${SOURCE_SHA}" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          BRANCH="auto/chapter-${SLUG}-${GITHUB_RUN_ID}"
           git checkout -b "${BRANCH}"
           git commit -m "Add chapter page for ${CITY}
 
@@ -167,11 +179,13 @@ jobs:
           gh pr merge "$PR_NUMBER" --auto --squash
 
           echo "Waiting for PR #$PR_NUMBER to merge..."
+          MERGED=false
           for i in $(seq 1 40); do
             STATE=$(gh pr view "$PR_NUMBER" --json state -q .state)
             if [ "$STATE" = "MERGED" ]; then
               echo "✅ PR #$PR_NUMBER merged"
-              exit 0
+              MERGED=true
+              break
             fi
             if [ "$STATE" = "CLOSED" ]; then
               echo "::error::PR #$PR_NUMBER was closed without merging"
@@ -179,43 +193,138 @@ jobs:
             fi
             sleep 15
           done
-          echo "::error::Timed out waiting for PR #$PR_NUMBER to merge (CI may have failed)"
+          if [ "$MERGED" != "true" ]; then
+            echo "::error::Timed out waiting for PR #$PR_NUMBER to merge (CI may have failed)"
+            exit 1
+          fi
+
+          SOURCE_SHA=$(gh pr view "$PR_NUMBER" --json mergeCommit -q .mergeCommit.oid)
+          if ! [[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "::error::Could not resolve the merged chapter commit"
+            exit 1
+          fi
+          echo "SOURCE_SHA=${SOURCE_SHA}" >> "$GITHUB_ENV"
+
+      - name: Prepare isolated production release
+        env:
+          SLUG: ${{ github.event.client_payload.chapter_slug }}
+          CITY: ${{ github.event.client_payload.chapter_city }}
+        run: |
+          if ! [[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "::error::Invalid chapter source SHA"
+            exit 1
+          fi
+
+          git fetch origin live-version-swa main
+          RELEASE_BRANCH="auto/release-chapter-${SLUG}-${GITHUB_RUN_ID}"
+          git checkout -B "$RELEASE_BRANCH" origin/live-version-swa
+          git checkout "$SOURCE_SHA" -- "$CHAPTER_PATH"
+          git add "$CHAPTER_PATH"
+
+          if git diff --cached --quiet; then
+            echo "Chapter page is already present in production"
+            echo "RELEASE_NEEDED=false" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          git commit -m "Release chapter page for ${CITY}
+
+          Source-main-sha: ${SOURCE_SHA}
+
+          Co-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>"
+          git push origin "$RELEASE_BRANCH"
+          echo "RELEASE_BRANCH=${RELEASE_BRANCH}" >> "$GITHUB_ENV"
+          echo "RELEASE_NEEDED=true" >> "$GITHUB_ENV"
+
+      - name: Open production PR and wait for deployment
+        if: env.RELEASE_NEEDED == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_PR_TOKEN }}
+          CITY: ${{ github.event.client_payload.chapter_city }}
+          SLUG: ${{ github.event.client_payload.chapter_slug }}
+        run: |
+          gh pr create \
+            --base live-version-swa \
+            --head "$RELEASE_BRANCH" \
+            --title "Release chapter page for ${CITY}" \
+            --body "Automatically publishes the approved **${CITY}** chapter without including unrelated changes from \`main\`.
+
+          <!-- automated-chapter-release -->
+          <!-- chapter-slug:${SLUG} -->
+          <!-- source-main-sha:${SOURCE_SHA} -->"
+          PR_NUMBER=$(gh pr view "$RELEASE_BRANCH" --json number -q .number)
+          gh pr merge "$PR_NUMBER" --auto --merge
+
+          echo "Waiting for production PR #$PR_NUMBER to merge..."
+          MERGED=false
+          for i in $(seq 1 80); do
+            STATE=$(gh pr view "$PR_NUMBER" --json state -q .state)
+            if [ "$STATE" = "MERGED" ]; then
+              MERGED=true
+              break
+            fi
+            if [ "$STATE" = "CLOSED" ]; then
+              echo "::error::Production PR #$PR_NUMBER was closed without merging"
+              exit 1
+            fi
+            sleep 15
+          done
+          if [ "$MERGED" != "true" ]; then
+            echo "::error::Timed out waiting for production PR #$PR_NUMBER"
+            exit 1
+          fi
+
+          PRODUCTION_SHA=$(gh pr view "$PR_NUMBER" --json mergeCommit -q .mergeCommit.oid)
+          echo "Production PR merged at ${PRODUCTION_SHA}; waiting for SWA deployment"
+
+          export GH_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          for i in $(seq 1 80); do
+            RUN=$(gh run list \
+              --workflow azure-static-web-apps-lively-desert-0f1f18c10.yml \
+              --commit "$PRODUCTION_SHA" \
+              --event push \
+              --limit 1 \
+              --json status,conclusion,url \
+              --jq '.[0] // empty')
+            if [ -n "$RUN" ]; then
+              STATUS=$(echo "$RUN" | jq -r .status)
+              CONCLUSION=$(echo "$RUN" | jq -r '.conclusion // ""')
+              if [ "$STATUS" = "completed" ] && [ "$CONCLUSION" = "success" ]; then
+                echo "✅ Production deployment completed: $(echo "$RUN" | jq -r .url)"
+                exit 0
+              fi
+              if [ "$STATUS" = "completed" ]; then
+                echo "::error::Production deployment concluded with ${CONCLUSION}"
+                exit 1
+              fi
+            fi
+            sleep 15
+          done
+          echo "::error::Timed out waiting for the production deployment"
           exit 1
 
-      - name: Request production release approval
-        if: env.BRANCH != ''
+      - name: Notify Discord of publication
+        if: success()
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           CHANNEL_ID: ${{ github.event.client_payload.notification_channel_id }}
           CITY: ${{ github.event.client_payload.chapter_city }}
           SLUG: ${{ github.event.client_payload.chapter_slug }}
         run: |
           if [ -z "$BOT_TOKEN" ] || ! [[ "$CHANNEL_ID" =~ ^[0-9]+$ ]]; then
-            echo "::error::Discord release approval configuration is missing"
-            exit 1
+            echo "::warning::Discord publication notification configuration is missing"
+            exit 0
           fi
 
-          MAIN_SHA=$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)
-          APPROVAL_PATH="/api/releaseApproval?sha=${MAIN_SHA}&chapter=${SLUG}"
-          APPROVAL_REDIRECT=$(jq -rn --arg value "$APPROVAL_PATH" '$value | @uri')
-          APPROVAL_URL="https://globalsecurity.community/.auth/login/ciam?post_login_redirect_uri=${APPROVAL_REDIRECT}"
-          REVIEW_URL="https://github.com/${GITHUB_REPOSITORY}/compare/live-version-swa...${MAIN_SHA}"
           PAYLOAD=$(jq -n \
             --arg city "$CITY" \
-            --arg sha "$MAIN_SHA" \
-            --arg approvalUrl "$APPROVAL_URL" \
-            --arg reviewUrl "$REVIEW_URL" \
+            --arg url "https://globalsecurity.community/chapters/${SLUG}/" \
             '{
               embeds: [{
-                title: "Chapter ready for production approval",
-                description: ("The generated **" + $city + "** chapter has passed checks and merged into `main`."),
+                title: "Chapter published",
+                description: ("The **" + $city + "** chapter passed all checks and is now live."),
                 color: 2142890,
-                fields: [
-                  { name: "Approved main commit", value: ("`" + $sha + "`"), inline: false },
-                  { name: "Actions", value: ("[Review all release changes](" + $reviewUrl + ") | [Approve production release](" + $approvalUrl + ")"), inline: false }
-                ],
-                footer: { text: "Approval is valid only while main remains at this commit." }
+                fields: [{ name: "Chapter page", value: ("[View chapter](" + $url + ")"), inline: false }]
               }]
             }')
 
@@ -223,4 +332,36 @@ jobs:
             -X POST "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages" \
             -H "Authorization: Bot ${BOT_TOKEN}" \
             -H "Content-Type: application/json" \
-            --data "$PAYLOAD"
+            --data "$PAYLOAD" ||
+            echo "::warning::Could not send Discord publication notification"
+
+      - name: Notify Discord of failure
+        if: failure()
+        env:
+          BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ github.event.client_payload.notification_channel_id }}
+          CITY: ${{ github.event.client_payload.chapter_city }}
+        run: |
+          if [ -z "$BOT_TOKEN" ] || ! [[ "$CHANNEL_ID" =~ ^[0-9]+$ ]]; then
+            echo "::warning::Discord failure notification configuration is missing"
+            exit 0
+          fi
+
+          PAYLOAD=$(jq -n \
+            --arg city "$CITY" \
+            --arg runUrl "https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            '{
+              embeds: [{
+                title: "Chapter publication failed",
+                description: ("The approved **" + $city + "** chapter needs attention."),
+                color: 13382451,
+                fields: [{ name: "Workflow", value: ("[View failure](" + $runUrl + ")"), inline: false }]
+              }]
+            }')
+
+          curl --fail-with-body --silent --show-error \
+            -X POST "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages" \
+            -H "Authorization: Bot ${BOT_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "$PAYLOAD" ||
+            echo "::warning::Could not send Discord failure notification"

@@ -51,6 +51,24 @@ async function createChapterChannel(cityName, context) {
 
   const channelName = `${cityName.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')}`;
 
+  const channelsResponse = await fetch(`${DISCORD_API}/guilds/${DISCORD_GUILD_ID}/channels`, {
+    headers: botHeaders()
+  });
+  if (channelsResponse.ok) {
+    const channels = await channelsResponse.json();
+    const existing = channels.find(channel =>
+      channel.type === 0 &&
+      channel.name === channelName &&
+      (!DISCORD_CHAPTERS_CATEGORY_ID || channel.parent_id === DISCORD_CHAPTERS_CATEGORY_ID)
+    );
+    if (existing) {
+      context.log(`Reusing Discord channel #${existing.name} (${existing.id})`);
+      return { channelId: existing.id, channelName: existing.name };
+    }
+  } else {
+    context.log(`Discord channel lookup failed: ${channelsResponse.status}; attempting creation`);
+  }
+
   const body = {
     name: channelName,
     type: 0, // GUILD_TEXT
