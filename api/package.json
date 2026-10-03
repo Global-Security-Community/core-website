@@ -18,8 +18,8 @@
     "@octokit/rest": "^22.0.1",
     "html-to-text": "^9.0.5",
     "qrcode": "^1.5.4",
-    "sanitize-html": "^2.17.5",
-    "sharp": "^0.35.3"
+    "sanitize-html": "^2.18.0",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "jest": "^30.4.2"
