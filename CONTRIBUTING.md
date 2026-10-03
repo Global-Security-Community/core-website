@@ -3,7 +3,7 @@
 ## Quick Start
 
 ```bash
-nvm use 22                          # Node 22 required
+nvm install 22 && nvm use 22       # Node 22.12+ required
 npm install && cd api && npm install && cd ..
 npx @11ty/eleventy                  # Build static site
 npx swa start _site --api-location api  # http://localhost:4280

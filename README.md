@@ -8,12 +8,13 @@ A nonprofit platform connecting cybersecurity professionals through local chapte
 ## Quick Start
 
 ```bash
+# Use the supported Node 22 release line (22.12 or newer)
+nvm install 22
+nvm use 22
+
 # Install dependencies
 npm install
 cd api && npm install && cd ..
-
-# Switch to Node 22 (required for Azure Functions)
-nvm use 22
 
 # Build the static site
 npx @11ty/eleventy
