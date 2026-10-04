@@ -1,4 +1,4 @@
-const { stripHtml, sanitiseFields } = require('../src/helpers/sanitise');
+const { stripHtml, sanitiseFields, sanitiseRichText } = require('../src/helpers/sanitise');
 
 describe('sanitise helper', () => {
   describe('stripHtml', () => {
@@ -63,6 +63,34 @@ describe('sanitise helper', () => {
       const result = sanitiseFields(input, ['name', 'nonexistent']);
       expect(result.name).toBe('Alice');
       expect(result.nonexistent).toBeUndefined();
+    });
+  });
+
+  describe('sanitiseRichText', () => {
+    test('preserves allowlisted formatting and hardens links', () => {
+      expect(sanitiseRichText(
+        '<p>Hello <strong>world</strong> <a href="https://example.com">link</a></p>'
+      )).toBe(
+        '<p>Hello <strong>world</strong> <a href="https://example.com" rel="noopener noreferrer" target="_blank">link</a></p>'
+      );
+    });
+
+    test('blocks textarea mutation XSS payloads', () => {
+      const result = sanitiseRichText(
+        '<textarea></textarea/><img src=x onerror=alert(1)>'
+      );
+
+      expect(result).not.toContain('<img');
+      expect(result).not.toContain('onerror');
+    });
+
+    test('blocks SVG animation URL scheme bypasses', () => {
+      const result = sanitiseRichText(
+        '<svg><a href="#safe"><animate attributeName="href" values="#safe;javascript:alert(1)"/></a></svg>'
+      );
+
+      expect(result).not.toContain('<animate');
+      expect(result).not.toContain('javascript:');
     });
   });
 });

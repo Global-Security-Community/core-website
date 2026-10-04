@@ -269,7 +269,7 @@ The chapters listing page (`/chapters/`) features an interactive map powered by 
 
 ### Prerequisites
 
-- **Node.js 22** (Azure Functions Core Tools v4 requires ≤22)
+- **Node.js 22.12 or newer in the 22.x release line** (`sanitize-html` requires ≥22.12 and Azure Functions Core Tools v4 requires ≤22)
 - **nvm** for switching Node versions: `nvm install 22`
 - Dev dependencies installed: `npm install` (the SWA CLI manages Azure Functions Core Tools when starting the local environment)
 
@@ -327,7 +327,7 @@ To get these values: Azure Portal → `gsc-corewebsite-swa` → Configuration �
 ### Known Issues
 
 - **`/admin*` routes reserved locally** — Azure Functions Core Tools reserves paths starting with `/admin`. The `adminRegister` function uses route `/api/manualRegister` to avoid this. Do not create new API routes starting with `admin`.
-- **Node version mismatch** — If you see "incompatible with your current Node.js", run `nvm use 22`
+- **Node version mismatch** — If you see "incompatible with your current Node.js", run `nvm install 22 && nvm use 22`
 - **First run downloads Core Tools** — SWA CLI downloads ~200MB of Azure Functions Core Tools on first run. This is cached for subsequent runs.
 
 ---
@@ -478,7 +478,7 @@ Once development stabilises and deploys are less frequent:
 5. **Workflow push failures** — generation workflows need `git pull --rebase` before push
 6. **CSP blocking resources** — update CSP in `staticwebapp.config.json` when adding external URLs
 7. **`/admin*` routes fail locally** — Azure Functions reserves these paths; use alternative route names (e.g. `manualRegister` not `adminRegister`)
-8. **Wrong Node version** — Local SWA CLI requires Node ≤22; run `nvm use 22` before starting
+8. **Wrong Node version** — Local development requires Node 22.12 or newer in the 22.x release line; run `nvm install 22 && nvm use 22` before starting
 9. **SWA route wildcard ordering** — `/api/*` catch-all must be the LAST route entry; placing it before specific routes causes build failures
 10. **Discord settings missing at runtime** — `DISCORD_BOT_TOKEN` and channel IDs must be set as **SWA Application Settings** (not just GitHub Secrets) for API functions to use them. Symptom: contact form returns "Failed to send message"
 11. **Async race conditions in dashboard** — Dashboard JS loads data via async `fetch()` calls; UI actions that depend on that data (like Edit Chapter needing the chapter slug) must wait for the fetch promise to resolve before proceeding

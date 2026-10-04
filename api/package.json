@@ -3,6 +3,9 @@
   "version": "2.0.0",
   "description": "Azure Functions API for Global Security Community",
   "main": "src/app.js",
+  "engines": {
+    "node": ">=22.12.0 <23"
+  },
   "scripts": {
     "start": "func start",
     "build": "echo \"No build step (JavaScript)\"",
@@ -18,10 +21,13 @@
     "@octokit/rest": "^22.0.1",
     "html-to-text": "^9.0.5",
     "qrcode": "^1.5.4",
-    "sanitize-html": "^2.17.5",
-    "sharp": "^0.35.3"
+    "sanitize-html": "^2.17.7",
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
+    "@babel/plugin-transform-export-namespace-from": "^7.27.1",
+    "@babel/plugin-transform-modules-commonjs": "^7.27.1",
+    "babel-jest": "^30.4.1",
     "jest": "^30.4.2"
   },
   "overrides": {
