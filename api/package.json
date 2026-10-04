@@ -28,7 +28,7 @@
     "@babel/plugin-transform-export-namespace-from": "^7.27.1",
     "@babel/plugin-transform-modules-commonjs": "^7.27.1",
     "babel-jest": "^30.4.1",
-    "jest": "^30.4.2"
+    "jest": "^30.5.2"
   },
   "overrides": {
     "postcss": "8.5.23"
