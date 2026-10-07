@@ -30,6 +30,17 @@ See [`.github/copilot-instructions.md`](.github/copilot-instructions.md) for det
 - **Rich text:** Quill.js editor on dashboard; HTML sanitised server-side via `sanitize-html`
 - **Audit logging:** All admin actions logged via `logAudit()` (fire-and-forget)
 
+## Dependency Maintenance
+
+Dependabot groups npm security fixes across the root and API lockfiles. Verified patch/minor
+security updates can auto-merge into `main` only after the required CI and CodeQL checks pass.
+Major updates and GitHub Actions updates require manual handling; alerts are not auto-dismissed.
+
+Keep CodeQL's `init`, `autobuild`, and `analyze` actions pinned to the same release commit.
+Dependabot groups their version and security updates so a pull request updates them together,
+avoiding incompatible mixed action versions. Production dependency fixes still require the
+separate release process below.
+
 ## Deployment
 
 Run the production release workflow when the tested changes on `main` are ready:
