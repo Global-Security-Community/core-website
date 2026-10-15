@@ -1,0 +1,47 @@
+name: Dependabot Security Auto-Merge
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions: {}
+
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  enable-auto-merge:
+    name: Enable Safe Auto-Merge
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Read verified Dependabot metadata
+        id: dependabot-metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3
+
+      - name: Enable auto-merge for safe grouped security updates
+        if: >-
+          steps.dependabot-metadata.outputs.package-ecosystem == 'npm' &&
+          steps.dependabot-metadata.outputs.dependency-group == 'npm-security-updates' &&
+          steps.dependabot-metadata.outputs.maintainer-changes == 'false' &&
+          (
+            steps.dependabot-metadata.outputs.update-type == 'version-update:semver-patch' ||
+            steps.dependabot-metadata.outputs.update-type == 'version-update:semver-minor'
+          )
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          if [ "$(gh pr view "$PR_URL" --json autoMergeRequest --jq '.autoMergeRequest == null')" = "true" ]; then
+            gh pr merge --auto --squash "$PR_URL"
+          else
+            echo "Auto-merge is already enabled"
+          fi
