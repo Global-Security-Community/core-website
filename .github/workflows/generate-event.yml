@@ -22,6 +22,7 @@ jobs:
       SLUG: ${{ github.event.client_payload.event_slug }}
       CHAPTER_SLUG: ${{ github.event.client_payload.chapter_slug }}
       PUBLICATION_ID: ${{ github.event.client_payload.publication.id }}
+      PUBLICATION_RESULT_URL: https://lively-desert-0f1f18c10.2.azurestaticapps.net/api/eventPublicationResult
     steps:
       - name: Validate publication request
         run: |
@@ -238,7 +239,7 @@ jobs:
               token: $token, runId: $runId, status: "generated"}')
           curl --fail-with-body --silent --show-error \
             --retry 3 --retry-all-errors --retry-delay 5 --max-time 120 \
-            -X POST "https://globalsecurity.community/api/eventPublicationResult" \
+            -X POST "$PUBLICATION_RESULT_URL" \
             -H "Content-Type: application/json" --data "$PAYLOAD"
 
       - name: Prepare isolated production release
@@ -370,7 +371,7 @@ jobs:
               token: $token, runId: $runId, productionSha: $productionSha, status: "published"}')
           curl --fail-with-body --silent --show-error \
             --retry 3 --retry-all-errors --retry-delay 10 --max-time 300 \
-            -X POST "https://globalsecurity.community/api/eventPublicationResult" \
+            -X POST "$PUBLICATION_RESULT_URL" \
             -H "Content-Type: application/json" --data "$PAYLOAD"
 
       - name: Record publication failure
@@ -387,6 +388,6 @@ jobs:
               error: "Event generation or production deployment failed. Check the workflow run."}')
           curl --fail-with-body --silent --show-error \
             --retry 3 --retry-all-errors --retry-delay 5 --max-time 120 \
-            -X POST "https://globalsecurity.community/api/eventPublicationResult" \
+            -X POST "$PUBLICATION_RESULT_URL" \
             -H "Content-Type: application/json" --data "$PAYLOAD" ||
             echo "::warning::Could not record publication failure; inspect this workflow run"
