@@ -64,6 +64,10 @@ updated source validator. Legacy dispatches without tracking fields continue gen
 
 Event callbacks use the existing `APPROVAL_TOKEN_SECRET` in SWA settings, scoped to one event,
 chapter, and publication attempt; callback tokens are masked before entering workflow logs.
+Workflow callbacks use the native Azure SWA HTTPS endpoint so Cloudflare's browser bot
+protection cannot block GitHub runners. The callback still requires its signed token, and
+post-deploy smoke checks verify that malformed and unsigned requests are rejected without
+creating events or sending notifications.
 No new shared secret is required. Failed or stalled event
 publication can be retried from the dashboard without creating a duplicate event. Only a
 verified deployment sends subscriber notifications; replayed callbacks do not resend them.
