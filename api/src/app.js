@@ -5,6 +5,8 @@ const chapterApplicationHandler = require('./functions/chapterApplication');
 const chapterApprovalHandler = require('./functions/chapterApproval');
 const rolesHandler = require('./functions/roles');
 const createEventHandler = require('./functions/createEvent');
+const eventPublicationHandler = require('./functions/eventPublication');
+const eventPublicationResultHandler = require('./functions/eventPublicationResult');
 const getEventHandler = require('./functions/getEvent');
 const registerEventHandler = require('./functions/registerEvent');
 const myTicketsHandler = require('./functions/myTickets');
@@ -54,6 +56,7 @@ function withCsrf(handler) {
 app.post('contactForm', { authLevel: 'anonymous', handler: withCsrf(contactFormHandler) });
 app.post('chapterApplication', { authLevel: 'anonymous', handler: withCsrf(chapterApplicationHandler) });
 app.get('chapterApproval', { authLevel: 'anonymous', handler: chapterApprovalHandler });
+app.post('eventPublicationResult', { authLevel: 'anonymous', handler: eventPublicationResultHandler });
 app.get('getEvent', { authLevel: 'anonymous', handler: getEventHandler });
 app.get('getSessionizeData', { authLevel: 'anonymous', handler: getSessionizeDataHandler });
 app.get('getCommunityPartners', { authLevel: 'anonymous', handler: getCommunityPartnersHandler });
@@ -75,6 +78,7 @@ app.post('chapterSubscribe', { authLevel: 'anonymous', handler: withCsrf(chapter
 
 // ─── Admin endpoints ───
 app.post('createEvent', { authLevel: 'anonymous', handler: withCsrf(createEventHandler) });
+app.http('eventPublication', { methods: ['GET', 'POST'], authLevel: 'anonymous', handler: eventPublicationHandler });
 app.post('checkIn', { authLevel: 'anonymous', handler: withCsrf(checkInHandler) });
 app.post('issueBadges', { authLevel: 'anonymous', handler: withCsrf(issueBadgesHandler) });
 app.http('eventAttendance', { methods: ['GET', 'POST'], authLevel: 'anonymous', handler: eventAttendanceHandler });

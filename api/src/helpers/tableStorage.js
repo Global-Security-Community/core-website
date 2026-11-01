@@ -1,4 +1,5 @@
 const { TableClient, AzureNamedKeyCredential } = require('@azure/data-tables');
+const { randomUUID } = require('crypto');
 
 const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING || '';
 
@@ -171,6 +172,8 @@ async function storeEvent(event) {
     sessionizeApiId: event.sessionizeApiId || '',
     registrationCap: event.registrationCap || 0,
     status: event.status || 'published',
+    publicationStatus: event.publicationStatus || '',
+    publicationNotificationStatus: event.publicationNotificationStatus || '',
     createdBy: event.createdBy,
     createdAt: new Date().toISOString()
   };
@@ -221,10 +224,94 @@ async function listEvents(chapterSlug) {
 async function updateEvent(chapterSlug, eventId, updates) {
   const client = getTableClient('Events');
   const entity = await client.getEntity(chapterSlug, eventId);
-  Object.assign(entity, updates);
-  entity.updatedAt = new Date().toISOString();
-  await client.updateEntity(entity, 'Merge');
-  return entity;
+  const changes = {
+    ...updates,
+    partitionKey: chapterSlug,
+    rowKey: eventId,
+    updatedAt: new Date().toISOString()
+  };
+  await client.updateEntity(changes, 'Merge');
+  return { ...entity, ...changes };
+}
+
+async function claimEventPublication(chapterSlug, eventId) {
+  const client = getTableClient('Events');
+  const event = await client.getEntity(chapterSlug, eventId);
+  const updatedAt = Date.parse(event.publicationUpdatedAt || '');
+  const ageMs = Number.isFinite(updatedAt) ? Date.now() - updatedAt : Infinity;
+  const active =
+    event.publicationStatus === 'published' ||
+    (event.publicationStatus === 'dispatching' && ageMs < 15 * 60 * 1000) ||
+    (['queued', 'generated'].includes(event.publicationStatus) && ageMs < 2 * 60 * 60 * 1000);
+
+  if (active || ['closed', 'completed'].includes(event.status)) {
+    return { claimed: false, event };
+  }
+
+  const now = new Date().toISOString();
+  const updated = {
+    ...event,
+    publicationId: randomUUID(),
+    publicationStatus: 'dispatching',
+    publicationAttempts: Number(event.publicationAttempts || 0) + 1,
+    publicationUpdatedAt: now,
+    publicationError: '',
+    publicationGeneratedAt: '',
+    publicationRunId: '',
+    updatedAt: now
+  };
+
+  try {
+    await client.updateEntity(updated, 'Merge', { etag: event.etag });
+    return { claimed: true, event: updated };
+  } catch (error) {
+    if (error.statusCode !== 412) throw error;
+    return { claimed: false, event: await client.getEntity(chapterSlug, eventId) };
+  }
+}
+
+async function updateEventPublication(chapterSlug, eventId, publicationId, status, details = {}) {
+  if (!['queued', 'generated', 'published', 'failed'].includes(status)) {
+    throw new Error('Invalid event publication status');
+  }
+
+  const client = getTableClient('Events');
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const event = await client.getEntity(chapterSlug, eventId);
+    if (event.publicationId !== publicationId ||
+        event.publicationStatus === 'published' ||
+        event.publicationStatus === status ||
+        (status === 'queued' && event.publicationStatus !== 'dispatching')) {
+      return { changed: false, event };
+    }
+
+    const now = new Date().toISOString();
+    const updated = {
+      ...event,
+      publicationStatus: status,
+      publicationUpdatedAt: now,
+      publicationError: '',
+      updatedAt: now
+    };
+    for (const key of ['publicationError', 'publicationDispatchedAt', 'publicationRunId', 'publicationProductionSha']) {
+      if (Object.prototype.hasOwnProperty.call(details, key)) updated[key] = details[key];
+    }
+    if (status === 'generated') updated.publicationGeneratedAt = now;
+    if (status === 'published') {
+      updated.publicationPublishedAt = now;
+      if (!event.status || event.status === 'draft') updated.status = 'published';
+      if (event.publicationNotificationStatus === 'pending') {
+        updated.publicationNotificationStatus = updated.status === 'published' ? 'sending' : 'not-required';
+      }
+    }
+
+    try {
+      await client.updateEntity(updated, 'Merge', { etag: event.etag });
+      return { changed: true, event: updated };
+    } catch (error) {
+      if (error.statusCode !== 412 || attempt === 4) throw error;
+    }
+  }
 }
 
 async function moveEventToChapter(oldChapterSlug, eventId, newChapterSlug) {
@@ -961,7 +1048,8 @@ async function getUserEmail(userId) {
 module.exports = {
   storeApplication, getApplication, updateApplicationStatus, rejectChapterApplication,
   claimChapterPublication, updateChapterPublication, getApprovedApplicationBySlug,
-  storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent, moveEventToChapter, deleteEvent,
+  storeEvent, getEvent, getEventById, getEventBySlug, listEvents, updateEvent,
+  claimEventPublication, updateEventPublication, moveEventToChapter, deleteEvent,
   storeRegistration, getRegistrationByTicketCode, getRegistrationsByUser,
   getRegistrationsByEvent, countRegistrations, countRegistrationsForEvents, updateRegistration,
   deleteRegistration, deleteDemographics,

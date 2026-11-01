@@ -3014,6 +3014,10 @@ a.event-card:hover { color: inherit; }
   margin: 0 auto;
   padding: var(--space-xl);
 }
+.pipeline-progress h3,
+.pipeline-note {
+  overflow-wrap: anywhere;
+}
 .pipeline-steps {
   list-style: none;
   padding: 0;
