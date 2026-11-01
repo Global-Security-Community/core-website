@@ -10,6 +10,10 @@
   var postEventDefaultTemplates = null;
   var postEventSaveTimer = null;
   var currentPostEventStatus = '';
+  var currentCreateEvent = null;
+  var publicationPollTimer = null;
+  var publicationRequestController = null;
+  var publicationPollVersion = 0;
 
   // Quill rich text editor configuration
   var quillToolbar = [
@@ -121,6 +125,9 @@
           html += '<p><span class="icon" aria-hidden="true">' + GSCIcons.calendar + '</span> ' + GSC.esc(ev.date) + ' &nbsp; <span class="icon" aria-hidden="true">' + GSCIcons.mapPin + '</span> ' + GSC.esc(ev.location) + '</p>';
           html += '<p><span class="icon" aria-hidden="true">' + GSCIcons.ticket + '</span> ' + ev.registrationCount + (ev.registrationCap > 0 ? ' / ' + ev.registrationCap : '') + ' registered</p>';
           html += '<span class="status-badge status-badge--' + GSC.esc(ev.status || 'default') + '">' + GSC.esc(ev.status) + '</span>';
+          if (ev.publication && ['failed', 'stalled'].indexOf(ev.publication.status) !== -1) {
+            html += '<p class="text-muted">Publication needs attention. Open this event to retry.</p>';
+          }
           html += '</div>';
         });
         html += '</div>';
@@ -330,11 +337,13 @@
         var isClosed = evtStatus === 'closed';
         var isCompleted = evtStatus === 'completed';
         var needsPublish = isDraft || isCompleted || isClosed;
+        var publicationStatus = data.publication ? data.publication.status : 'untracked';
+        var publicationActive = ['dispatching', 'queued', 'generated'].indexOf(publicationStatus) !== -1;
         document.getElementById('detail-panel').innerHTML =
           '<div class="card stat-card"><p class="stat-number">' + data.total + '</p><p class="stat-label">Registered</p></div>' +
           '<div class="card stat-card"><p class="stat-number">' + data.checkedIn + '</p><p class="stat-label">Checked In</p></div>' +
           '<div class="action-card card">' +
-            (needsPublish ? '<button id="btn-publish" class="btn-success btn-full">' + (isDraft ? 'Publish Event' : 'Re-publish Event') + '</button>' : '') +
+            (needsPublish ? '<button id="btn-publish" class="btn-success btn-full">' + (isDraft ? (publicationActive ? 'View publication progress' : 'Publish Event') : 'Re-publish Event') + '</button>' : '') +
             '<button id="btn-export" class="btn-full">Export CSV</button>' +
             '<a href="/scanner/?event=' + encodeURIComponent(eventId) + '" class="btn-link btn-full">Open Scanner</a>' +
           '</div>' +
@@ -351,6 +360,9 @@
 
         var actionsEl = document.getElementById('detail-actions');
         actionsEl.innerHTML = '';
+        if (isDraft && data.publication && data.publication.error) {
+          actionsEl.innerHTML = '<p role="status">' + GSC.esc(data.publication.error) + '</p>';
+        }
 
         document.getElementById('btn-export').addEventListener('click', function() { exportCSV(eventId); });
         if (isPublished) {
@@ -367,7 +379,9 @@
           });
         }
         if (needsPublish) {
-          document.getElementById('btn-publish').addEventListener('click', function() { publishEvent(eventId, chapterSlug); });
+          document.getElementById('btn-publish').addEventListener('click', function() {
+            publishEvent(eventId, chapterSlug, isDraft, publicationActive);
+          });
         }
 
         // Sessionize refresh button
@@ -655,7 +669,35 @@
       .catch(function() {});
   }
 
-  function publishEvent(eventId, chapterSlug) {
+  function publishEvent(eventId, chapterSlug, isDraft, publicationActive) {
+    if (isDraft) {
+      if (!publicationActive && !confirm('Publish this event after its required checks and deployment complete?')) return;
+      var url = '/api/eventPublication';
+      var options = { cache: 'no-store' };
+      if (publicationActive) {
+        url += '?eventId=' + encodeURIComponent(eventId) + '&chapterSlug=' + encodeURIComponent(chapterSlug);
+      } else {
+        options.method = 'POST';
+        options.headers = { 'Content-Type': 'application/json' };
+        options.body = JSON.stringify({ eventId: eventId, chapterSlug: chapterSlug });
+      }
+      GSC.fetch(url, options)
+        .then(function(response) {
+          return response.json().then(function(data) {
+            if (!data.event || data.event.id !== eventId || data.event.chapterSlug !== chapterSlug) {
+              throw new Error(data.error || 'Could not read publication progress for this event.');
+            }
+            return data.event;
+          });
+        })
+        .then(function(event) {
+          showSection('create');
+          showCreateProgress(event);
+          loadEvents();
+        })
+        .catch(function(error) { alert(error.message || 'Could not read event publication progress.'); });
+      return;
+    }
     if (!confirm('Publish this event? It will become visible to the public.')) return;
     GSC.fetch('/api/eventAttendance', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -1142,7 +1184,7 @@
     })
     .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
     .then(function(res) {
-      if (res.ok) {
+      if (res.data.event) {
         showCreateProgress(res.data.event);
         loadEvents();
       } else {
@@ -1172,82 +1214,207 @@
     else icon.innerHTML = '<span class="icon" aria-hidden="true">' + GSCIcons.hourglass + '</span>';
   }
 
-  function showCreateProgress(event) {
+  function stopPublicationPolling() {
+    publicationPollVersion++;
+    clearTimeout(publicationPollTimer);
+    publicationPollTimer = null;
+    if (publicationRequestController) publicationRequestController.abort();
+    publicationRequestController = null;
+  }
+
+  function publicationProgressError(message, action) {
+    document.querySelector('.pipeline-note').textContent = message;
+    var retry = document.getElementById('create-publication-retry-btn');
+    retry.textContent = action === 'retry' ? 'Retry publication' : 'Check progress';
+    retry.dataset.action = action;
+    retry.disabled = false;
+    retry.classList.remove('is-hidden');
+    document.getElementById('create-another-btn').classList.remove('is-hidden');
+  }
+
+  function renderPublicationProgress(event) {
+    if (!event.publication || typeof event.publication.status !== 'string') {
+      throw new Error('The server did not return publication progress.');
+    }
+    currentCreateEvent = event;
+    var publication = event.publication;
+    var state = publication.status;
+    document.getElementById('create-publication-retry-btn').classList.add('is-hidden');
+    document.getElementById('create-another-btn').classList.add('is-hidden');
+    var note = document.querySelector('.pipeline-note');
+    var workflow = document.getElementById('create-workflow-link');
+    if (publication.runUrl && /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/runs\/[0-9]+$/.test(publication.runUrl)) {
+      workflow.href = publication.runUrl;
+      workflow.classList.remove('is-hidden');
+    }
+    if (state === 'published') {
+      setStepState('step-page', 'done');
+      setStepState('step-live', 'done');
+      var link = document.getElementById('create-progress-link');
+      link.href = '/events/' + encodeURIComponent(event.slug) + '/';
+      link.classList.remove('is-hidden');
+      document.getElementById('create-another-btn').classList.remove('is-hidden');
+      note.textContent = publication.notificationStatus === 'failed'
+        ? 'The event page is live, but subscriber notifications failed. ' + (publication.notificationError || 'Check the server logs.')
+        : publication.notificationStatus === 'sending'
+          ? 'The event page is live. Subscriber notifications are being sent.'
+          : 'The event page is verified and live.';
+      return publication.notificationStatus === 'sending';
+    }
+    if (state === 'failed' || state === 'stalled') {
+      setStepState('step-page', publication.generatedAt ? 'done' : 'error');
+      setStepState('step-live', publication.generatedAt ? 'error' : 'pending');
+      publicationProgressError(publication.error || 'Publication failed. Check the workflow and retry publication.', 'retry');
+      return false;
+    }
+    if (state === 'pending' || state === 'untracked') {
+      setStepState('step-page', 'pending');
+      setStepState('step-live', 'pending');
+      publicationProgressError('The event is saved, but publication has not been confirmed. Start publication to deploy and verify its page.', 'retry');
+      return false;
+    }
+    if (state === 'generated') {
+      setStepState('step-page', 'done');
+      setStepState('step-live', 'active');
+      note.textContent = 'The event page was generated and tested. Waiting for the protected production release and deployment.';
+      return true;
+    }
+    if (state === 'dispatching' || state === 'queued') {
+      setStepState('step-page', 'active');
+      setStepState('step-live', 'pending');
+      note.textContent = 'The event is saved. Page generation and required checks are in progress.';
+      return true;
+    }
+    throw new Error('The server returned an unknown publication state.');
+  }
+
+  function showCreateProgress(event, forceCheck) {
+    stopPublicationPolling();
+    currentCreateEvent = event;
+    var version = publicationPollVersion;
     document.getElementById('create-form-wrap').style.display = 'none';
     document.getElementById('create-message').style.display = 'none';
     var progress = document.getElementById('create-progress');
     progress.style.display = 'block';
     document.getElementById('create-progress-title').textContent = event.title;
-
-    // Step 1: Stored — already done
+    document.getElementById('create-progress-title').focus();
+    document.getElementById('create-progress-link').classList.add('is-hidden');
+    document.getElementById('create-workflow-link').classList.add('is-hidden');
+    document.getElementById('create-publication-retry-btn').classList.add('is-hidden');
+    document.getElementById('create-publication-retry-btn').disabled = false;
+    document.getElementById('create-another-btn').classList.add('is-hidden');
     setStepState('step-stored', 'done');
-
-    // Step 2: Page generation triggered
-    setStepState('step-page', 'active');
-
-    // Poll for event page to come live
-    var slug = event.slug;
-    var pageUrl = '/events/' + slug + '/';
+    setStepState('step-page', 'pending');
+    setStepState('step-live', 'pending');
     var attempts = 0;
-    var maxAttempts = 30; // ~2.5 minutes
+    var reloaded = false;
 
-    var pollTimer = setInterval(function() {
-      attempts++;
-      fetch(pageUrl, { method: 'HEAD' })
-        .then(function(r) {
-          if (r.ok) {
-            clearInterval(pollTimer);
-            setStepState('step-page', 'done');
-            setStepState('step-live', 'done');
-            var link = document.getElementById('create-progress-link');
-            link.href = pageUrl;
-            link.classList.remove('is-hidden');
-            document.getElementById('create-another-btn').classList.remove('is-hidden');
-            // Publish the event now that its page is live
-            if (event.id && event.chapterSlug) {
-              fetch('/api/eventAttendance', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ eventId: event.id, chapterSlug: event.chapterSlug, status: 'published' })
-              }).then(function(r) {
-                loadEvents();
-                if (!r.ok) {
-                  document.querySelector('.pipeline-note').textContent = 'Event page is live! Note: status update encountered an error — the event may still appear as draft in the dashboard until you refresh.';
-                }
-              }).catch(function() {
-                document.querySelector('.pipeline-note').textContent = 'Event page is live! Note: status update failed — the event may still appear as draft in the dashboard until you refresh.';
-              });
-            }
-          } else if (attempts >= maxAttempts) {
-            clearInterval(pollTimer);
-            setStepState('step-page', 'done');
-            setStepState('step-live', 'error');
-            document.querySelector('.pipeline-note').textContent = 'Page generation is taking longer than expected. It may still be deploying — check back in a few minutes.';
-            document.getElementById('create-another-btn').style.display = 'inline-block';
-          }
-        })
-        .catch(function() {
-          if (attempts >= maxAttempts) {
-            clearInterval(pollTimer);
-            setStepState('step-page', 'done');
-            setStepState('step-live', 'error');
-            document.querySelector('.pipeline-note').textContent = 'Could not verify page deployment. It may still be in progress.';
-            document.getElementById('create-another-btn').style.display = 'inline-block';
-          }
-        });
-    }, 5000);
-
-    // Mark page generation as done after ~15s (workflow dispatch is near-instant)
-    setTimeout(function() {
-      if (document.getElementById('step-page').classList.contains('active')) {
-        setStepState('step-page', 'done');
-        setStepState('step-live', 'active');
+    function updateProgress(updated) {
+      var keepPolling = renderPublicationProgress(updated);
+      if (updated.publication.status === 'published' && !reloaded) {
+        reloaded = true;
+        loadEvents();
       }
-    }, 15000);
+      return keepPolling;
+    }
+
+    function schedulePoll() {
+      if (attempts >= 120) {
+        publicationProgressError('Publication is still waiting for checks or deployment. Your event is saved; check progress again later.', 'check');
+        return;
+      }
+      publicationPollTimer = setTimeout(poll, 5000);
+    }
+
+    function poll() {
+      attempts++;
+      var controller = new AbortController();
+      publicationRequestController = controller;
+      var timeout = setTimeout(function() { controller.abort(); }, 30000);
+      GSC.fetch('/api/eventPublication?eventId=' + encodeURIComponent(event.id) +
+        '&chapterSlug=' + encodeURIComponent(event.chapterSlug), { cache: 'no-store', signal: controller.signal })
+        .then(function(response) {
+          return response.json().then(function(data) {
+            if (!response.ok) throw new Error(data.error || 'Could not read publication progress.');
+            if (!data.event || data.event.id !== event.id || data.event.slug !== event.slug ||
+                data.event.chapterSlug !== event.chapterSlug) {
+              throw new Error('The server did not return progress for this event.');
+            }
+            return data.event;
+          });
+        })
+        .then(function(updated) {
+          clearTimeout(timeout);
+          if (version !== publicationPollVersion) return;
+          publicationRequestController = null;
+          if (updateProgress(updated)) schedulePoll();
+        })
+        .catch(function(error) {
+          clearTimeout(timeout);
+          if (version !== publicationPollVersion) return;
+          publicationRequestController = null;
+          console.error('Publication progress request failed:', error);
+          publicationProgressError('Could not read publication progress. Your event is saved; check your connection or sign in again, then check progress.', 'check');
+        });
+    }
+
+    try {
+      if (updateProgress(event) || forceCheck) poll();
+    } catch (error) {
+      console.error('Publication progress failed:', error);
+      publicationProgressError('Could not read publication progress. Your event is saved; check progress to try again.', 'check');
+      if (forceCheck) poll();
+    }
   }
+
+  document.getElementById('create-publication-retry-btn').addEventListener('click', function() {
+    if (!currentCreateEvent) return;
+    var event = currentCreateEvent;
+    if (this.dataset.action === 'check') {
+      showCreateProgress(event, true);
+      return;
+    }
+    this.disabled = true;
+    stopPublicationPolling();
+    var version = publicationPollVersion;
+    var controller = new AbortController();
+    publicationRequestController = controller;
+    var timeout = setTimeout(function() { controller.abort(); }, 30000);
+    GSC.fetch('/api/eventPublication', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId: event.id, chapterSlug: event.chapterSlug }),
+      signal: controller.signal
+    })
+      .then(function(response) {
+        return response.json().then(function(data) {
+          if (!data.event || data.event.id !== event.id || data.event.slug !== event.slug ||
+              data.event.chapterSlug !== event.chapterSlug) {
+            throw new Error(data.error || 'Could not read publication progress for this event.');
+          }
+          return data.event;
+        });
+      })
+      .then(function(updated) {
+        clearTimeout(timeout);
+        if (version !== publicationPollVersion) return;
+        publicationRequestController = null;
+        showCreateProgress(updated);
+        loadEvents();
+      })
+      .catch(function(error) {
+        clearTimeout(timeout);
+        if (version !== publicationPollVersion) return;
+        publicationRequestController = null;
+        console.error('Publication retry failed:', error);
+        publicationProgressError(error.message || 'Could not retry publication. Your event is still saved.', 'retry');
+      });
+  });
 
   // "Create Another Event" resets the form
   document.getElementById('create-another-btn').addEventListener('click', function() {
+    stopPublicationPolling();
+    currentCreateEvent = null;
     createSubmitting = false;
     document.getElementById('create-form-wrap').style.display = '';
     document.getElementById('create-progress').style.display = 'none';
@@ -1262,6 +1429,8 @@
     // Reset pipeline steps
     ['step-stored','step-page','step-live'].forEach(function(id) { setStepState(id, 'pending'); });
     document.getElementById('create-progress-link').classList.add('is-hidden');
+    document.getElementById('create-workflow-link').classList.add('is-hidden');
+    document.getElementById('create-publication-retry-btn').classList.add('is-hidden');
     document.getElementById('create-another-btn').classList.add('is-hidden');
   });
 
