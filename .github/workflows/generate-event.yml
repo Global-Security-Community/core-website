@@ -9,14 +9,51 @@ permissions:
   actions: write
   pull-requests: write
 
+concurrency:
+  group: generate-event-${{ github.event.client_payload.event_slug }}
+  cancel-in-progress: false
+
 jobs:
   generate:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      EVENT_ID: ${{ github.event.client_payload.event_id }}
+      SLUG: ${{ github.event.client_payload.event_slug }}
+      CHAPTER_SLUG: ${{ github.event.client_payload.chapter_slug }}
+      PUBLICATION_ID: ${{ github.event.client_payload.publication.id }}
     steps:
+      - name: Validate publication request
+        run: |
+          PUBLICATION_TOKEN=$(jq -r '.client_payload.publication.token // ""' "$GITHUB_EVENT_PATH")
+          if ! [[ "$EVENT_ID" =~ ^[a-zA-Z0-9-]{1,128}$ ]] ||
+             ! [[ "$SLUG" =~ ^[a-z0-9]([a-z0-9-]{0,78}[a-z0-9])?$ ]] ||
+             ! [[ "$CHAPTER_SLUG" =~ ^[a-z0-9][a-z0-9-]{0,60}[a-z0-9]$ ]]; then
+            echo "::error::Invalid event publication request"
+            exit 1
+          fi
+          if [ -z "$PUBLICATION_ID" ] && [ -z "$PUBLICATION_TOKEN" ]; then
+            echo "::warning::Legacy event dispatch: generating on main only. Release normally until the publication API is deployed."
+            echo "TRACK_PUBLICATION=false" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          if ! [[ "$PUBLICATION_ID" =~ ^[a-f0-9-]{36}$ ]] ||
+             ! [[ "$PUBLICATION_TOKEN" =~ ^[0-9]+\.[a-f0-9]{64}$ ]]; then
+            echo "::error::Invalid event publication tracking fields"
+            exit 1
+          fi
+          echo "::add-mask::$PUBLICATION_TOKEN"
+          echo "PUBLICATION_TOKEN=$PUBLICATION_TOKEN" >> "$GITHUB_ENV"
+          echo "TRACK_PUBLICATION=true" >> "$GITHUB_ENV"
+
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: main
           fetch-depth: 0
+
+      - name: Update main checkout
+        run: git pull --ff-only origin main
 
       - name: Geocode event location
         run: |
@@ -53,7 +90,7 @@ jobs:
           CHAPTER_SLUG: ${{ github.event.client_payload.chapter_slug }}
         run: |
           # Validate slug format (alphanumeric and hyphens only)
-          if ! [[ "$SLUG" =~ ^[a-z0-9][a-z0-9-]{0,78}[a-z0-9]$ ]]; then
+          if ! [[ "$SLUG" =~ ^[a-z0-9]([a-z0-9-]{0,78}[a-z0-9])?$ ]]; then
             echo "::error::Invalid event slug format: must be at most 80 lowercase alphanumeric characters and hyphens"
             exit 1
           fi
@@ -110,11 +147,20 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Pull latest changes before branching
-          git pull --rebase origin main
-          git add .
-          git diff --cached --quiet && echo "No changes" && exit 0
-          BRANCH="auto/event-${SLUG}"
+          EVENT_PATH="src/events/${SLUG}/index.md"
+          echo "EVENT_PATH=${EVENT_PATH}" >> "$GITHUB_ENV"
+          git add "$EVENT_PATH"
+          if git diff --cached --quiet; then
+            SOURCE_SHA=$(git log -1 --format=%H -- "$EVENT_PATH")
+            if ! [[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]; then
+              echo "::error::Unchanged event page has no source commit"
+              exit 1
+            fi
+            echo "Event page already exists on main at ${SOURCE_SHA}"
+            echo "SOURCE_SHA=${SOURCE_SHA}" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          BRANCH="auto/event-${SLUG}-${GITHUB_RUN_ID}"
           git checkout -b "${BRANCH}"
           git commit -m "Add event page: ${EVENT_TITLE}
 
@@ -154,11 +200,13 @@ jobs:
           gh pr merge "$PR_NUMBER" --auto --squash
 
           echo "Waiting for PR #$PR_NUMBER to merge..."
-          for i in $(seq 1 40); do
+          MERGED=false
+          for i in $(seq 1 80); do
             STATE=$(gh pr view "$PR_NUMBER" --json state -q .state)
             if [ "$STATE" = "MERGED" ]; then
               echo "✅ PR #$PR_NUMBER merged"
-              exit 0
+              MERGED=true
+              break
             fi
             if [ "$STATE" = "CLOSED" ]; then
               echo "::error::PR #$PR_NUMBER was closed without merging"
@@ -166,5 +214,179 @@ jobs:
             fi
             sleep 15
           done
-          echo "::error::Timed out waiting for PR #$PR_NUMBER to merge (CI may have failed)"
+          if [ "$MERGED" != "true" ]; then
+            echo "::error::Timed out waiting for PR #$PR_NUMBER to merge (CI may have failed)"
+            exit 1
+          fi
+          SOURCE_SHA=$(gh pr view "$PR_NUMBER" --json mergeCommit -q .mergeCommit.oid)
+          if ! [[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "::error::Could not resolve the merged event source commit"
+            exit 1
+          fi
+          echo "SOURCE_SHA=${SOURCE_SHA}" >> "$GITHUB_ENV"
+
+      - name: Record generated page
+        if: env.TRACK_PUBLICATION == 'true'
+        run: |
+          PAYLOAD=$(jq -n \
+            --arg eventId "$EVENT_ID" \
+            --arg chapterSlug "$CHAPTER_SLUG" \
+            --arg publicationId "$PUBLICATION_ID" \
+            --arg token "$PUBLICATION_TOKEN" \
+            --arg runId "$GITHUB_RUN_ID" \
+            '{eventId: $eventId, chapterSlug: $chapterSlug, publicationId: $publicationId,
+              token: $token, runId: $runId, status: "generated"}')
+          curl --fail-with-body --silent --show-error \
+            --retry 3 --retry-all-errors --retry-delay 5 --max-time 120 \
+            -X POST "https://globalsecurity.community/api/eventPublicationResult" \
+            -H "Content-Type: application/json" --data "$PAYLOAD"
+
+      - name: Prepare isolated production release
+        if: env.TRACK_PUBLICATION == 'true'
+        env:
+          EVENT_TITLE: ${{ github.event.client_payload.event_title }}
+        run: |
+          if ! [[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "::error::Invalid event source SHA"
+            exit 1
+          fi
+
+          git fetch origin live-version-swa main
+          RELEASE_BRANCH="auto/release-event-${SLUG}-${GITHUB_RUN_ID}"
+          git checkout -B "$RELEASE_BRANCH" origin/live-version-swa
+          git checkout "$SOURCE_SHA" -- "$EVENT_PATH"
+          git add "$EVENT_PATH"
+
+          if git diff --cached --quiet; then
+            echo "Event page is already present on the production branch"
+            echo "RELEASE_NEEDED=false" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          git commit -m "Release event page: ${EVENT_TITLE}
+
+          Source-main-sha: ${SOURCE_SHA}
+
+          Co-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>"
+          git push origin "$RELEASE_BRANCH"
+          echo "RELEASE_BRANCH=${RELEASE_BRANCH}" >> "$GITHUB_ENV"
+          echo "RELEASE_NEEDED=true" >> "$GITHUB_ENV"
+
+      - name: Open protected production pull request
+        if: env.RELEASE_NEEDED == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_PR_TOKEN }}
+          EVENT_TITLE: ${{ github.event.client_payload.event_title }}
+        run: |
+          gh pr create \
+            --base live-version-swa \
+            --head "$RELEASE_BRANCH" \
+            --title "Release event page: ${EVENT_TITLE}" \
+            --body "Publishes this event page without including unrelated changes from \`main\`.
+
+          <!-- automated-event-release -->
+          <!-- event-slug:${SLUG} -->
+          <!-- source-main-sha:${SOURCE_SHA} -->"
+          PR_NUMBER=$(gh pr view "$RELEASE_BRANCH" --json number -q .number)
+          gh pr merge "$PR_NUMBER" --auto --merge
+
+          MERGED=false
+          for i in $(seq 1 80); do
+            STATE=$(gh pr view "$PR_NUMBER" --json state -q .state)
+            if [ "$STATE" = "MERGED" ]; then
+              MERGED=true
+              break
+            fi
+            if [ "$STATE" = "CLOSED" ]; then
+              echo "::error::Production PR #$PR_NUMBER was closed without merging"
+              exit 1
+            fi
+            sleep 15
+          done
+          if [ "$MERGED" != "true" ]; then
+            echo "::error::Timed out waiting for production PR #$PR_NUMBER"
+            exit 1
+          fi
+          PRODUCTION_SHA=$(gh pr view "$PR_NUMBER" --json mergeCommit -q .mergeCommit.oid)
+          echo "PRODUCTION_SHA=${PRODUCTION_SHA}" >> "$GITHUB_ENV"
+
+      - name: Redeploy an already released event
+        if: env.RELEASE_NEEDED == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PRODUCTION_SHA=$(gh api "repos/${GITHUB_REPOSITORY}/commits/live-version-swa" --jq .sha)
+          echo "PRODUCTION_SHA=${PRODUCTION_SHA}" >> "$GITHUB_ENV"
+          echo "DEPLOY_REQUESTED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+          gh workflow run azure-static-web-apps-lively-desert-0f1f18c10.yml --ref live-version-swa
+
+      - name: Wait for production deployment
+        if: env.TRACK_PUBLICATION == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! [[ "$PRODUCTION_SHA" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "::error::Invalid production SHA"
+            exit 1
+          fi
+          for i in $(seq 1 80); do
+            RUNS=$(gh run list \
+              --workflow azure-static-web-apps-lively-desert-0f1f18c10.yml \
+              --branch live-version-swa \
+              --commit "$PRODUCTION_SHA" \
+              --limit 10 \
+              --json status,conclusion,url,event,createdAt)
+            RUN=$(echo "$RUNS" | jq -c --arg since "${DEPLOY_REQUESTED_AT:-}" \
+              '[.[] | select((.event == "push" or .event == "workflow_dispatch") and
+                .createdAt >= $since)][0] // empty')
+            if [ -n "$RUN" ]; then
+              STATUS=$(echo "$RUN" | jq -r .status)
+              CONCLUSION=$(echo "$RUN" | jq -r '.conclusion // ""')
+              if [ "$STATUS" = "completed" ] && [ "$CONCLUSION" = "success" ]; then
+                echo "Production deployment completed: $(echo "$RUN" | jq -r .url)"
+                exit 0
+              fi
+              if [ "$STATUS" = "completed" ]; then
+                echo "::error::Production deployment concluded with ${CONCLUSION}"
+                exit 1
+              fi
+            fi
+            sleep 15
+          done
+          echo "::error::Timed out waiting for production deployment"
           exit 1
+
+      - name: Verify live event and publish notifications
+        if: env.TRACK_PUBLICATION == 'true'
+        run: |
+          PAYLOAD=$(jq -n \
+            --arg eventId "$EVENT_ID" \
+            --arg chapterSlug "$CHAPTER_SLUG" \
+            --arg publicationId "$PUBLICATION_ID" \
+            --arg token "$PUBLICATION_TOKEN" \
+            --arg runId "$GITHUB_RUN_ID" \
+            --arg productionSha "$PRODUCTION_SHA" \
+            '{eventId: $eventId, chapterSlug: $chapterSlug, publicationId: $publicationId,
+              token: $token, runId: $runId, productionSha: $productionSha, status: "published"}')
+          curl --fail-with-body --silent --show-error \
+            --retry 3 --retry-all-errors --retry-delay 10 --max-time 300 \
+            -X POST "https://globalsecurity.community/api/eventPublicationResult" \
+            -H "Content-Type: application/json" --data "$PAYLOAD"
+
+      - name: Record publication failure
+        if: (failure() || cancelled()) && env.TRACK_PUBLICATION == 'true'
+        run: |
+          PAYLOAD=$(jq -n \
+            --arg eventId "$EVENT_ID" \
+            --arg chapterSlug "$CHAPTER_SLUG" \
+            --arg publicationId "$PUBLICATION_ID" \
+            --arg token "$PUBLICATION_TOKEN" \
+            --arg runId "$GITHUB_RUN_ID" \
+            '{eventId: $eventId, chapterSlug: $chapterSlug, publicationId: $publicationId,
+              token: $token, runId: $runId, status: "failed",
+              error: "Event generation or production deployment failed. Check the workflow run."}')
+          curl --fail-with-body --silent --show-error \
+            --retry 3 --retry-all-errors --retry-delay 5 --max-time 120 \
+            -X POST "https://globalsecurity.community/api/eventPublicationResult" \
+            -H "Content-Type: application/json" --data "$PAYLOAD" ||
+            echo "::warning::Could not record publication failure; inspect this workflow run"

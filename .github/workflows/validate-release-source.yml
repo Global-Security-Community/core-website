@@ -47,42 +47,52 @@ jobs:
             exit 0
           fi
 
-          if [[ "$HEAD_REF" != auto/release-chapter-* ]] ||
-             [[ "$PR_BODY" != *"<!-- automated-chapter-release -->"* ]]; then
-            echo "::error::Production releases must come from main or the chapter automation"
+          if [[ "$HEAD_REF" == auto/release-chapter-* ]] &&
+             [[ "$PR_BODY" == *"<!-- automated-chapter-release -->"* ]]; then
+            SLUG_PATTERN='<!-- chapter-slug:([a-z0-9][a-z0-9-]{0,60}[a-z0-9]) -->'
+            PAGE_DIRECTORY="chapters"
+          elif [[ "$HEAD_REF" == auto/release-event-* ]] &&
+               [[ "$PR_BODY" == *"<!-- automated-event-release -->"* ]]; then
+            SLUG_PATTERN='<!-- event-slug:([a-z0-9]([a-z0-9-]{0,78}[a-z0-9])?) -->'
+            PAGE_DIRECTORY="events"
+          else
+            echo "::error::Production releases must come from main or the chapter/event automation"
             exit 1
           fi
-
-          if ! [[ "$PR_BODY" =~ chapter-slug:([a-z0-9][a-z0-9-]{0,60}[a-z0-9]) ]]; then
-            echo "::error::Automated chapter release has an invalid slug"
+          if ! [[ "$PR_BODY" =~ $SLUG_PATTERN ]]; then
+            echo "::error::Automated page release has an invalid slug"
             exit 1
           fi
           SLUG="${BASH_REMATCH[1]}"
-          if ! [[ "$PR_BODY" =~ source-main-sha:([a-f0-9]{40}) ]]; then
-            echo "::error::Automated chapter release has no valid main source SHA"
+          SOURCE_PATTERN='<!-- source-main-sha:([a-f0-9]{40}) -->'
+          if ! [[ "$PR_BODY" =~ $SOURCE_PATTERN ]]; then
+            echo "::error::Automated page release has no valid main source SHA"
             exit 1
           fi
           SOURCE_SHA="${BASH_REMATCH[1]}"
-          CHAPTER_PATH="src/chapters/${SLUG}/index.md"
+          PAGE_PATH="src/${PAGE_DIRECTORY}/${SLUG}/index.md"
 
           git fetch origin main
           if ! git merge-base --is-ancestor "$SOURCE_SHA" origin/main; then
-            echo "::error::Chapter source commit is not present on main"
+            echo "::error::Page source commit is not present on main"
             exit 1
           fi
 
-          mapfile -t CHANGED_FILES < <(gh api \
+          CHANGED_FILES=$(gh api \
             "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" \
             --paginate \
-            --jq '.[].filename')
-          if [ "${#CHANGED_FILES[@]}" -ne 1 ] || [ "${CHANGED_FILES[0]}" != "$CHAPTER_PATH" ]; then
-            echo "::error::Automated chapter releases may change only ${CHAPTER_PATH}"
-            printf 'Changed file: %s\n' "${CHANGED_FILES[@]}"
+            --slurp)
+          if ! jq -e --arg path "$PAGE_PATH" \
+            'add | length == 1 and .[0].filename == $path and
+              (.[0].status == "added" or .[0].status == "modified")' \
+            <<< "$CHANGED_FILES" >/dev/null; then
+            echo "::error::Automated page releases may add or modify only ${PAGE_PATH}"
+            echo "$CHANGED_FILES" | jq -r '.[][] | .filename'
             exit 1
           fi
 
-          git show "${SOURCE_SHA}:${CHAPTER_PATH}" > /tmp/source-chapter
-          if ! cmp --silent /tmp/source-chapter "$CHAPTER_PATH"; then
-            echo "::error::Production chapter page differs from the approved main source"
+          git show "${SOURCE_SHA}:${PAGE_PATH}" > /tmp/source-page
+          if ! cmp -s /tmp/source-page "$PAGE_PATH"; then
+            echo "::error::Production page differs from the approved main source"
             exit 1
           fi

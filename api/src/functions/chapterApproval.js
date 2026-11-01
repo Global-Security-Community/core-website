@@ -13,6 +13,7 @@ const { ensureChapterBadgeTheme, ACTIVE_BADGE_THEME_YEAR } = require('../helpers
 const { isImageConfigured } = require('../helpers/aiProvider');
 const { Octokit } = require('@octokit/rest');
 const { createAppAuth } = require('@octokit/auth-app');
+const { dispatchWithRetry } = require('../helpers/githubDispatch');
 
 function chapterSlug(city) {
   return city
@@ -49,22 +50,6 @@ function buildLeads(application) {
 function logError(context, message) {
   if (typeof context.error === 'function') context.error(message);
   else context.log(message);
-}
-
-function isRetryableGitHubError(error) {
-  return error.status === 429 || error.status >= 500 || !error.status;
-}
-
-async function dispatchWithRetry(octokit, request) {
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    try {
-      await octokit.repos.createDispatchEvent(request);
-      return;
-    } catch (error) {
-      if (attempt === 3 || !isRetryableGitHubError(error)) throw error;
-      await new Promise(resolve => setTimeout(resolve, attempt * 250));
-    }
-  }
 }
 
 module.exports = async function (request, context) {

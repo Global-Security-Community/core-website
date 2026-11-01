@@ -1,14 +1,12 @@
 const { randomUUID } = require('crypto');
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess } = require('../helpers/auth');
-const { storeEvent, getSubscriptionsByChapter, updateEvent, getApprovedApplicationBySlug, getEventBySlug } = require('../helpers/tableStorage');
-const { sanitiseFields, sanitiseRichText, stripHtml } = require('../helpers/sanitise');
+const { storeEvent, getApprovedApplicationBySlug, getEventBySlug } = require('../helpers/tableStorage');
+const { sanitiseFields, sanitiseRichText } = require('../helpers/sanitise');
 const { sendMessage } = require('../helpers/discordBot');
-const { sendEventNotificationEmail } = require('../helpers/emailService');
 const { logAudit } = require('../helpers/auditLog');
+const { queueEventPublication, eventPublicationResponse } = require('../helpers/eventPublication');
 // AI image generation disabled until reliable workflow is established
 // const { generateEventBadgeBackground } = require('../helpers/imageGenerator');
-const { Octokit } = require('@octokit/rest');
-const { createAppAuth } = require('@octokit/auth-app');
 
 const MAX_EVENT_SLUG_LENGTH = 80;
 const EVENT_SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$/;
@@ -22,6 +20,7 @@ function appendSlugSuffix(slug, suffix) {
 
 module.exports = async function (request, context) {
   context.log('Create event request received');
+  let savedEvent;
 
   try {
     const user = getAuthUser(request);
@@ -138,10 +137,16 @@ module.exports = async function (request, context) {
       sessionizeApiId: sessionizeApiId || '',
       registrationCap: parseInt(registrationCap) || 0,
       status: 'draft',
+      publicationStatus: 'pending',
+      publicationNotificationStatus: 'pending',
       createdBy: user.userId
     };
 
-    await storeEvent(event);
+    savedEvent = await storeEvent(event);
+    logAudit('event', eventId, 'event_created', user.userDetails, {
+      chapterSlug: event.chapterSlug, title: safe.title, slug, date
+    }, context);
+    const publication = await queueEventPublication(event.chapterSlug, eventId, user.userDetails, context);
 
     // AI image generation disabled until reliable workflow is established
     // To re-enable: uncomment the imageGenerator import and the block below
@@ -155,42 +160,6 @@ module.exports = async function (request, context) {
     // } catch (imgErr) {
     //   context.log(`Badge background generation failed (non-critical): ${imgErr.message}`);
     // }
-
-    // Trigger GitHub Action to generate event page
-    const appId = process.env.GITHUB_APP_ID;
-    const privateKey = (process.env.GITHUB_APP_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-    const installationId = process.env.GITHUB_APP_INSTALLATION_ID;
-    const repoOwner = process.env.GITHUB_REPO_OWNER;
-    const repoName = process.env.GITHUB_REPO_NAME;
-
-    if (appId && privateKey && installationId && repoOwner && repoName) {
-      try {
-        const octokit = new Octokit({
-          authStrategy: createAppAuth,
-          auth: { appId, privateKey, installationId }
-        });
-
-        await octokit.repos.createDispatchEvent({
-          owner: repoOwner,
-          repo: repoName,
-          event_type: 'event-created',
-          client_payload: {
-            event_id: eventId,
-            event_title: safe.title,
-            event_slug: slug,
-            event_date: date,
-            event_location: location,
-            event_description: stripHtml(safeDescription),
-            event_sessionize_id: sessionizeApiId || '',
-            event_registration_cap: (parseInt(registrationCap) || 0).toString(),
-            chapter_slug: chapterSlug.toLowerCase().trim()
-          }
-        });
-        context.log(`GitHub dispatch sent for event ${slug}`);
-      } catch (ghErr) {
-        context.log(`GitHub dispatch failed: ${ghErr.message}`);
-      }
-    }
 
     // Notify Discord
     const notifChannel = process.env.DISCORD_NOTIFICATIONS_CHANNEL_ID;
@@ -215,33 +184,21 @@ module.exports = async function (request, context) {
       }
     }
 
-    // Notify chapter subscribers (non-blocking)
-    try {
-      const subscribers = await getSubscriptionsByChapter(chapterSlug.toLowerCase().trim());
-      if (subscribers.length > 0) {
-        context.log(`Sending event notifications to ${subscribers.length} chapter subscribers`);
-        for (const sub of subscribers) {
-          try {
-            await sendEventNotificationEmail(sub.email, event, context);
-          } catch (emailErr) {
-            context.log(`Notification to ${sub.email} failed: ${emailErr.message}`);
-          }
-        }
-      }
-    } catch (notifErr) {
-      context.log(`Chapter notification failed (non-critical): ${notifErr.message}`);
-    }
-
-    logAudit('event', eventId, 'event_created', user.userDetails, { chapterSlug: chapterSlug.toLowerCase().trim(), title: safe.title, slug, date }, context);
-
     return {
-      status: 201,
+      status: publication.error ? 502 : 201,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: true, event: { id: eventId, slug, title: safe.title, chapterSlug: chapterSlug.toLowerCase().trim() } })
+      body: JSON.stringify({
+        success: !publication.error,
+        ...(publication.error ? { error: 'The event was saved as a draft, but publication could not be started. Retry publication instead of creating another event.' } : {}),
+        event: eventPublicationResponse(publication.event)
+      })
     };
   } catch (error) {
     context.log(`createEvent error: ${error.message}`);
     return { status: 500, headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ error: 'Internal server error' }) };
+             body: JSON.stringify({
+               error: savedEvent ? 'The event was saved, but publication could not be completed. Check its publication progress before retrying.' : 'Internal server error',
+               ...(savedEvent ? { event: eventPublicationResponse(savedEvent) } : {})
+             }) };
   }
 };
