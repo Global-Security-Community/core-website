@@ -6,6 +6,7 @@ const { execFileSync } = require('child_process');
 const root = path.resolve(__dirname, '../..');
 const generate = fs.readFileSync(path.join(root, '.github/workflows/generate-event.yml'), 'utf8');
 const validate = fs.readFileSync(path.join(root, '.github/workflows/validate-release-source.yml'), 'utf8');
+const deploy = fs.readFileSync(path.join(root, '.github/workflows/azure-static-web-apps-lively-desert-0f1f18c10.yml'), 'utf8');
 const validationScript = validate.split('        run: |')[1]
   .split('\n').map(line => line.replace(/^          /, '')).join('\n')
   .replaceAll('/tmp/source-page', '"$SOURCE_PAGE"');
@@ -106,6 +107,17 @@ describe('event automation contracts', () => {
     expect(generate).toContain("if: (failure() || cancelled()) && env.TRACK_PUBLICATION == 'true'");
     expect(generate).toContain('publicationId: $publicationId');
     expect(generate).toContain('Legacy event dispatch: generating on main only');
+  });
+
+  test('delivers every signed callback through Azure and smoke-tests handler authentication', () => {
+    const origin = 'https://lively-desert-0f1f18c10.2.azurestaticapps.net/api/eventPublicationResult';
+    expect(generate).toContain(`PUBLICATION_RESULT_URL: ${origin}`);
+    expect(generate.match(/-X POST "\$PUBLICATION_RESULT_URL"/g)).toHaveLength(3);
+    expect(generate).not.toContain('https://globalsecurity.community/api/eventPublicationResult');
+    expect(deploy).toContain(`PUBLICATION_RESULT_URL: ${origin}`);
+    expect(deploy).toContain('Smoke test - Publication callback');
+    expect(deploy).toContain("check_callback '{}' 400 'Invalid publication result'");
+    expect(deploy).toContain('check_callback "$PAYLOAD" 403 \'Invalid or expired publication token\'');
   });
 
   test('registers both endpoints and protects admin progress before the API catch-all', () => {
