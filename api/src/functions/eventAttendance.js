@@ -1,6 +1,7 @@
 const { getAuthUser, hasRole, unauthorised, forbidden, verifyChapterAccess, verifyCsrfHeader, isSuperAdmin, resolveEmail } = require('../helpers/auth');
 const { getRegistrationsByEvent, countRegistrations, getEvent, getEventById, listEvents, updateEvent, getApprovedApplicationByEmail } = require('../helpers/tableStorage');
 const { logAudit } = require('../helpers/auditLog');
+const { eventPublicationResponse } = require('../helpers/eventPublication');
 
 /**
  * GET /api/eventAttendance?eventId={eventId}&chapterSlug={chapterSlug}
@@ -46,7 +47,10 @@ module.exports = async function (request, context) {
       }
       // Validate status transitions: draft→published, published→closed, published→completed, closed→completed
       // Also allow re-publishing from closed/completed (to fix accidental status changes)
-      const currentEvent = await getEventById(chapterSlug, eventId);
+      const currentEvent = await getEvent(chapterSlug, eventId);
+      if (!currentEvent) {
+        return { status: 400, jsonBody: { error: 'Event not found' } };
+      }
       if (currentEvent) {
         const current = currentEvent.status || 'draft';
         const validTransitions = {
@@ -58,6 +62,9 @@ module.exports = async function (request, context) {
         if (validTransitions[current] && !validTransitions[current].includes(status)) {
           return { status: 400, headers: { 'Content-Type': 'application/json' },
                    body: JSON.stringify({ error: 'Invalid status transition from ' + current + ' to ' + status }) };
+        }
+        if (status === 'published' && current === 'draft' && currentEvent.publicationStatus !== 'published') {
+          return { status: 409, jsonBody: { error: 'The event page must be deployed and verified before publishing. Start publication from the dashboard.' } };
         }
       }
       const updated = await updateEvent(chapterSlug, eventId, { status });
@@ -100,7 +107,8 @@ module.exports = async function (request, context) {
           status: ev.status,
           registrationCap: ev.registrationCap || 0,
           registrationCount: count,
-          sessionizeApiId: ev.sessionizeApiId || ''
+          sessionizeApiId: ev.sessionizeApiId || '',
+          publication: eventPublicationResponse(ev).publication
         });
       }
 
@@ -161,6 +169,7 @@ module.exports = async function (request, context) {
       body: JSON.stringify({
         eventId,
         eventStatus: event ? event.status : undefined,
+        publication: event ? eventPublicationResponse(event).publication : undefined,
         eventDate: event ? event.date : undefined,
         hasBadgeArtwork: Boolean(event && event.badgeImageUrl),
         total,
@@ -180,7 +189,7 @@ module.exports = async function (request, context) {
     };
   } catch (error) {
     context.log(`eventAttendance error: ${error.message}`);
-    return { status: 500, headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ error: 'Internal server error' }) };
+    return { status: error.statusCode === 404 ? 400 : 500, headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ error: error.statusCode === 404 ? 'Event not found' : 'Internal server error' }) };
   }
 };

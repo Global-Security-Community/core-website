@@ -77,7 +77,7 @@ title: Dashboard
       <button id="create-btn" type="button">Create Event</button>
     </div>
     <div id="create-progress" class="pipeline-progress is-hidden">
-      <h3 id="create-progress-title"></h3>
+      <h3 id="create-progress-title" tabindex="-1"></h3>
       <ul class="pipeline-steps">
         <li id="step-stored" class="pipeline-step pending">
           <span class="step-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg></span></span>
@@ -85,15 +85,17 @@ title: Dashboard
         </li>
         <li id="step-page" class="pipeline-step pending">
           <span class="step-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg></span></span>
-          <span class="step-label">Event page generation triggered</span>
+          <span class="step-label">Event page generated and tested</span>
         </li>
         <li id="step-live" class="pipeline-step pending">
           <span class="step-icon"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg></span></span>
           <span class="step-label">Event page deployed &amp; live</span>
         </li>
       </ul>
-      <p class="pipeline-note">Page generation typically takes 1–2 minutes. You can navigate away — the pipeline will continue in the background.</p>
+      <p class="pipeline-note" role="status" aria-live="polite" aria-atomic="true">Publication takes several minutes while required checks and deployment complete. You can return to this event to check progress.</p>
+      <a id="create-workflow-link" class="is-hidden" target="_blank" rel="noopener noreferrer">View publication workflow</a>
       <a id="create-progress-link" href="#" class="btn is-hidden inline-mt">View Event Page →</a>
+      <button id="create-publication-retry-btn" type="button" class="is-hidden inline-mt-sm">Retry publication</button>
       <button id="create-another-btn" type="button" class="is-hidden inline-mt-sm">Create Another Event</button>
     </div>
   </div>

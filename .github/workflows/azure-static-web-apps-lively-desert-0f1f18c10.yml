@@ -149,6 +149,33 @@ jobs:
             fi
           fi
 
+      - name: Smoke test - Publication callback
+        env:
+          PUBLICATION_RESULT_URL: https://lively-desert-0f1f18c10.2.azurestaticapps.net/api/eventPublicationResult
+        run: |
+          check_callback() {
+            local RESPONSE STATUS BODY
+            RESPONSE=$(curl --silent --show-error --max-time 30 \
+              -X POST "$PUBLICATION_RESULT_URL" \
+              -H "Content-Type: application/json" --data "$1" \
+              --write-out '\n%{http_code}')
+            STATUS=${RESPONSE##*$'\n'}
+            BODY=${RESPONSE%$'\n'*}
+            if [ "$STATUS" != "$2" ] ||
+               ! jq -e --arg error "$3" '.error == $error' <<< "$BODY" >/dev/null; then
+              echo "::error::Publication callback returned unexpected HTTP ${STATUS} or response content"
+              exit 1
+            fi
+            echo "Publication callback correctly returned HTTP ${STATUS}"
+          }
+
+          check_callback '{}' 400 'Invalid publication result'
+          PAYLOAD=$(jq -nc --arg token "0.$(printf '%064d' 0)" \
+            '{eventId: "publication-smoke-test", chapterSlug: "melbourne",
+              publicationId: "00000000-0000-0000-0000-000000000000", token: $token,
+              status: "generated", runId: "1"}')
+          check_callback "$PAYLOAD" 403 'Invalid or expired publication token'
+
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest

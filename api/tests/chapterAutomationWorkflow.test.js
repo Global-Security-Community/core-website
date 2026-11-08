@@ -30,10 +30,10 @@ describe('chapter automation workflow contracts', () => {
   test('validates the automated release source and exact file scope', () => {
     expect(validateWorkflow).toContain('git merge-base --is-ancestor "$SOURCE_SHA" origin/main');
     expect(validateWorkflow).toContain(
-      'Automated chapter releases may change only ${CHAPTER_PATH}'
+      'Automated page releases may add or modify only ${PAGE_PATH}'
     );
     expect(validateWorkflow).toContain(
-      'cmp --silent /tmp/source-chapter "$CHAPTER_PATH"'
+      'cmp -s /tmp/source-page "$PAGE_PATH"'
     );
   });
 

@@ -147,6 +147,11 @@ jest.mock('@octokit/rest', () => ({
 
 jest.mock('@octokit/auth-app', () => ({ createAppAuth: jest.fn() }));
 
+jest.mock('../src/helpers/eventPublication', () => ({
+  ...jest.requireActual('../src/helpers/eventPublication'),
+  queueEventPublication: jest.fn()
+}));
+
 jest.mock('qrcode', () => ({ toDataURL: jest.fn().mockResolvedValue('data:image/png;base64,mockQR') }));
 
 const storage = require('../src/helpers/tableStorage');
@@ -948,6 +953,16 @@ describe('createEvent function', () => {
     storage.getApprovedApplicationByEmail.mockResolvedValue({ city: 'Perth', country: 'Australia' });
     storage.getApprovedApplicationsByEmail.mockResolvedValue([{ city: 'Perth' }]);
     storage.getApprovedApplicationBySlug.mockResolvedValue({ city: 'Perth', country: 'Australia' });
+    storage.storeEvent.mockImplementation(async event => ({
+      ...event, rowKey: event.id, partitionKey: event.chapterSlug
+    }));
+    require('../src/helpers/eventPublication').queueEventPublication.mockImplementation(async (chapter, id) => ({
+      queued: true,
+      event: {
+        ...storage.storeEvent.mock.calls[0][0], rowKey: id, partitionKey: chapter,
+        publicationStatus: 'queued', publicationUpdatedAt: new Date().toISOString()
+      }
+    }));
   });
 
   const validBody = {
@@ -1219,7 +1234,10 @@ describe('issueBadges function', () => {
 describe('eventAttendance function', () => {
   const eventAttendance = require('../src/functions/eventAttendance');
 
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    storage.getEvent.mockResolvedValue({ status: 'published' });
+  });
 
   test('rejects unauthenticated requests', async () => {
     const req = makeRequest('GET');
@@ -1250,7 +1268,7 @@ describe('eventAttendance function', () => {
   });
 
   test('POST: updates event status', async () => {
-    storage.getEventById.mockResolvedValueOnce({ status: 'published' });
+    storage.getEvent.mockResolvedValueOnce({ status: 'published' });
     storage.updateEvent.mockResolvedValueOnce({ status: 'closed' });
     const res = await eventAttendance(makeAuthRequest('POST', {
       eventId: 'ev-1', chapterSlug: 'perth', status: 'closed'

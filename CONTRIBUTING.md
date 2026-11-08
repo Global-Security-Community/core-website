@@ -51,14 +51,37 @@ gh workflow run release-production.yml
 
 The workflow opens a pull request from `main` into `live-version-swa` and enables merge-commit
 auto-merge. GitHub releases it after the required source, CI, CodeQL, and deployment-preview
-checks pass. Generated event pages remain unreleased until the normal production release.
-Approved chapters use an isolated automated release: the generated page is squash-merged into
+checks pass. New events and approved chapters use isolated automated releases: each generated page is squash-merged into
 `main`, copied alone into a protected production pull request, and deployed after all required
-checks pass. The manual workflow remains available for non-chapter releases.
+checks pass. Event publication also verifies the live page's event-specific content before
+marking it published and emailing chapter subscribers. The manual workflow remains available
+for code changes and other releases.
+
+Deploy the complete event-publication change through the normal `main` to `live-version-swa`
+release before relying on event-only releases: production needs both the callback API and the
+updated source validator. Legacy dispatches without tracking fields continue generating on
+`main` and explicitly require a normal release during rollout.
+
+Event callbacks use the existing `APPROVAL_TOKEN_SECRET` in SWA settings, scoped to one event,
+chapter, and publication attempt; callback tokens are masked before entering workflow logs.
+Workflow callbacks use the native Azure SWA HTTPS endpoint so Cloudflare's browser bot
+protection cannot block GitHub runners. The callback still requires its signed token, and
+post-deploy smoke checks verify that malformed and unsigned requests are rejected without
+creating events or sending notifications.
+No new shared secret is required. Failed or stalled event
+publication can be retried from the dashboard without creating a duplicate event. Only a
+verified deployment sends subscriber notifications; replayed callbacks do not resend them.
 
 ## Tests
 
 ```bash
 cd api && npm test          # Jest (API unit tests)
 npm run test:e2e            # Playwright (E2E, requires SWA running)
+```
+
+Publication regression tests use mocked API/auth routes and the real built dashboard, so they
+do not require SWA or send real emails:
+
+```bash
+npm run build && npx playwright test e2e/event-publication.spec.js
 ```

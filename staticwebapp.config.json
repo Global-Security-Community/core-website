@@ -74,6 +74,16 @@
       "headers": { "Cache-Control": "private, no-store" }
     },
     {
+      "route": "/api/eventPublication",
+      "allowedRoles": ["admin"],
+      "headers": { "Cache-Control": "private, no-store" }
+    },
+    {
+      "route": "/api/eventPublicationResult",
+      "allowedRoles": ["anonymous"],
+      "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }
+    },
+    {
       "route": "/api/checkIn",
       "allowedRoles": ["admin", "volunteer"],
       "headers": { "Cache-Control": "private, no-store" }
