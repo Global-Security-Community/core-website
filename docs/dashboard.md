@@ -59,12 +59,20 @@ Requires the **admin** role. Only approved chapter leads are automatically assig
 
 1. Fill in the event details on the dashboard
 2. Click "Create Event"
-3. The system:
-   - Stores the event in the database
-   - Triggers a GitHub Action to generate a dedicated event page
-   - Sends notification emails to chapter subscribers
-   - Posts a notification to the chapter's Discord channel
-4. The event appears on the website within a few minutes
+3. The system saves a draft and queues a GitHub Action to generate and test the event page
+4. The generated page merges into `main`, then is copied alone into a protected production pull request
+5. After all required checks and production deployment succeed, the system verifies the event-specific page content
+6. The event becomes published and notification emails are sent to chapter subscribers
+
+The progress panel reflects confirmed stages rather than elapsed time or an HTTP 200 response.
+Missing event URLs can return the homepage, so status alone is not proof of publication.
+Publication takes several minutes, and you can return to the draft event and choose
+**View publication progress** while it is running.
+
+If publication fails, the event remains saved. Use **Retry publication** in the progress panel
+or **Publish Event** on the draft to retry the same event. The workflow link identifies failed
+checks or deployment. **Check progress** refreshes a delayed or unavailable status without
+starting another workflow. Subscriber delivery failures are shown separately from publication.
 
 ## Related Pages
 

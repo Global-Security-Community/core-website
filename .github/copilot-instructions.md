@@ -244,14 +244,17 @@ The chapters listing page (`/chapters/`) features an interactive map powered by 
 ## Branching Strategy
 
 - **`main`** — Development branch. All day-to-day work, feature branches, and generation workflows target `main`.
-- **`live-version-swa`** — Protected production branch. Deployed to Azure SWA. Only updated by a pull request from `main`.
+- **`live-version-swa`** — Protected production branch. Deployed to Azure SWA. Updated only by validated pull requests from `main` or the isolated page-release automation.
 - **Feature branches** — For larger features, create a branch off `main`, work on it, then PR back to `main`.
 - **Releasing to production:**
   ```bash
   gh workflow run release-production.yml
   ```
-- **Generation workflows** (`generate-event.yml`, `generate-chapter.yml`, `delete-chapter.yml`) create squash-auto-merge PRs into `main`. They do not release to production automatically.
+- **Generation workflows** (`generate-event.yml`, `generate-chapter.yml`, `delete-chapter.yml`) create squash-auto-merge PRs into `main`. Event and chapter creation then release their generated page alone through a protected production pull request; other changes still require a normal release.
 - After a generated chapter merges into `main`, `generate-chapter.yml` creates an isolated pull request containing only that chapter page against `live-version-swa`. Required source validation, CI, CodeQL, and SWA checks must pass before auto-merge and production deployment. No second approval is required.
+- New events use the same isolated release pattern in `generate-event.yml`. Signed, attempt-scoped callbacks to `POST /api/eventPublicationResult` record generation and deployment outcomes. Only verified live event content can mark the event published and send subscriber notifications.
+- `GET /api/eventPublication` exposes chapter-scoped admin progress; `POST /api/eventPublication` safely retries publication of the existing event. The callback route is anonymous at SWA but verifies an HMAC token using `APPROVAL_TOKEN_SECRET`; never wrap it with browser CSRF checks or expose its token to clients.
+- Deploy the callback API and updated source validator in a normal production release before using the new flow. Legacy dispatches without tracking fields generate on `main` only during rollout.
 - **Never push directly to `main` or `live-version-swa`** — both branches require pull requests and passing checks.
 
 ---
@@ -261,7 +264,7 @@ The chapters listing page (`/chapters/`) features an interactive map powered by 
 - **Frontend:** Eleventy builds to `_site/`, deployed by Azure SWA GitHub Action
 - **API:** Azure Functions in `api/` deployed alongside SWA
 - **SWA deploy triggers** on push to `live-version-swa` or PRs targeting it
-- **Generation workflows** use protected squash-auto-merge PRs into `main`; production release is explicit
+- **Generation workflows** use protected squash-auto-merge PRs into `main`; event/chapter creation automatically releases only the generated page, while general production releases remain explicit
 
 ---
 

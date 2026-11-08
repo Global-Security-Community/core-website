@@ -42,6 +42,8 @@ jest.mock('../src/helpers/tableStorage', () => ({
   claimChapterPublication: jest.fn(),
   updateChapterPublication: jest.fn().mockResolvedValue({}),
   storeEvent: jest.fn().mockResolvedValue({}),
+  claimEventPublication: jest.fn(),
+  updateEventPublication: jest.fn(),
   getEvent: jest.fn(),
   getEventById: jest.fn(),
   getEventBySlug: jest.fn(),
@@ -420,6 +422,22 @@ describe('createEvent — GitHub dispatch integration', () => {
     clearGitHubEnv();
     storage.getEventBySlug.mockResolvedValue(null);
     storage.getApprovedApplicationBySlug.mockResolvedValue({ city: 'Perth', country: 'Australia' });
+    let stored;
+    storage.storeEvent.mockImplementation(async event => {
+      stored = { ...event, rowKey: event.id, partitionKey: event.chapterSlug };
+      return stored;
+    });
+    storage.claimEventPublication.mockImplementation(async () => {
+      stored = {
+        ...stored, publicationId: '11111111-1111-4111-8111-111111111111',
+        publicationStatus: 'dispatching', publicationAttempts: 1
+      };
+      return { claimed: true, event: stored };
+    });
+    storage.updateEventPublication.mockImplementation(async (chapter, id, publicationId, status, details) => {
+      stored = { ...stored, ...details, publicationStatus: status, publicationUpdatedAt: new Date().toISOString() };
+      return { changed: true, event: stored };
+    });
   });
 
   test('instantiates Octokit with createAppAuth strategy', async () => {
@@ -475,20 +493,22 @@ describe('createEvent — GitHub dispatch integration', () => {
     expect(payload.event_sessionize_id).toBe('sess-123');
   });
 
-  test('skips dispatch when GitHub env vars are missing', async () => {
+  test('reports a saved draft with failed publication when GitHub env vars are missing', async () => {
     clearGitHubEnv();
     const res = await createEvent(makeAuthRequest('POST', validBody, ['admin']), context);
-    expect(res.status).toBe(201);
+    expect(res.status).toBe(502);
+    expect(JSON.parse(res.body).event.publication.status).toBe('failed');
     expect(mockOctokitConstructor).not.toHaveBeenCalled();
   });
 
-  test('continues on dispatch failure (non-critical)', async () => {
+  test('reports dispatch failure without losing the saved event', async () => {
     setGitHubEnv();
-    mockCreateDispatchEvent.mockRejectedValueOnce(new Error('Network error'));
+    mockCreateDispatchEvent.mockRejectedValueOnce(Object.assign(new Error('Forbidden'), { status: 403 }));
     const res = await createEvent(makeAuthRequest('POST', validBody, ['admin']), context);
 
-    expect(res.status).toBe(201);
-    expect(context.log).toHaveBeenCalledWith(expect.stringContaining('GitHub dispatch failed'));
+    expect(res.status).toBe(502);
+    expect(JSON.parse(res.body).event.status).toBe('draft');
+    expect(context.log).toHaveBeenCalledWith(expect.stringContaining('publication dispatch failed'));
   });
 });
 
@@ -636,8 +656,8 @@ describe('eventAttendance — status transitions', () => {
     jest.clearAllMocks();
   });
 
-  test('allows draft → published', async () => {
-    storage.getEventById.mockResolvedValueOnce({ status: 'draft' });
+  test('allows a verified draft → published', async () => {
+    storage.getEvent.mockResolvedValueOnce({ status: 'draft', publicationStatus: 'published' });
     storage.updateEvent.mockResolvedValueOnce({ status: 'published' });
     const res = await eventAttendance(makeAuthRequest('POST', {
       eventId: 'ev-1', chapterSlug: 'perth', status: 'published'
@@ -646,7 +666,7 @@ describe('eventAttendance — status transitions', () => {
   });
 
   test('blocks draft → completed', async () => {
-    storage.getEventById.mockResolvedValueOnce({ status: 'draft' });
+    storage.getEvent.mockResolvedValueOnce({ status: 'draft' });
     const res = await eventAttendance(makeAuthRequest('POST', {
       eventId: 'ev-1', chapterSlug: 'perth', status: 'completed'
     }, ['admin']), context);
@@ -655,7 +675,7 @@ describe('eventAttendance — status transitions', () => {
   });
 
   test('blocks draft → closed', async () => {
-    storage.getEventById.mockResolvedValueOnce({ status: 'draft' });
+    storage.getEvent.mockResolvedValueOnce({ status: 'draft' });
     const res = await eventAttendance(makeAuthRequest('POST', {
       eventId: 'ev-1', chapterSlug: 'perth', status: 'closed'
     }, ['admin']), context);
@@ -664,7 +684,7 @@ describe('eventAttendance — status transitions', () => {
   });
 
   test('allows published → closed', async () => {
-    storage.getEventById.mockResolvedValueOnce({ status: 'published' });
+    storage.getEvent.mockResolvedValueOnce({ status: 'published' });
     storage.updateEvent.mockResolvedValueOnce({ status: 'closed' });
     const res = await eventAttendance(makeAuthRequest('POST', {
       eventId: 'ev-1', chapterSlug: 'perth', status: 'closed'
@@ -673,7 +693,7 @@ describe('eventAttendance — status transitions', () => {
   });
 
   test('allows published → completed', async () => {
-    storage.getEventById.mockResolvedValueOnce({ status: 'published' });
+    storage.getEvent.mockResolvedValueOnce({ status: 'published' });
     storage.updateEvent.mockResolvedValueOnce({ status: 'completed' });
     const res = await eventAttendance(makeAuthRequest('POST', {
       eventId: 'ev-1', chapterSlug: 'perth', status: 'completed'
@@ -682,7 +702,7 @@ describe('eventAttendance — status transitions', () => {
   });
 
   test('allows closed → completed', async () => {
-    storage.getEventById.mockResolvedValueOnce({ status: 'closed' });
+    storage.getEvent.mockResolvedValueOnce({ status: 'closed' });
     storage.updateEvent.mockResolvedValueOnce({ status: 'completed' });
     const res = await eventAttendance(makeAuthRequest('POST', {
       eventId: 'ev-1', chapterSlug: 'perth', status: 'completed'
@@ -691,7 +711,7 @@ describe('eventAttendance — status transitions', () => {
   });
 
   test('allows closed → published (re-open)', async () => {
-    storage.getEventById.mockResolvedValueOnce({ status: 'closed' });
+    storage.getEvent.mockResolvedValueOnce({ status: 'closed' });
     storage.updateEvent.mockResolvedValueOnce({ status: 'published' });
     const res = await eventAttendance(makeAuthRequest('POST', {
       eventId: 'ev-1', chapterSlug: 'perth', status: 'published'
@@ -700,7 +720,7 @@ describe('eventAttendance — status transitions', () => {
   });
 
   test('blocks completed → published (re-publish)', async () => {
-    storage.getEventById.mockResolvedValueOnce({ status: 'completed' });
+    storage.getEvent.mockResolvedValueOnce({ status: 'completed' });
     const res = await eventAttendance(makeAuthRequest('POST', {
       eventId: 'ev-1', chapterSlug: 'perth', status: 'published'
     }, ['admin']), context);
@@ -709,7 +729,7 @@ describe('eventAttendance — status transitions', () => {
   });
 
   test('blocks completed → closed', async () => {
-    storage.getEventById.mockResolvedValueOnce({ status: 'completed' });
+    storage.getEvent.mockResolvedValueOnce({ status: 'completed' });
     const res = await eventAttendance(makeAuthRequest('POST', {
       eventId: 'ev-1', chapterSlug: 'perth', status: 'closed'
     }, ['admin']), context);
@@ -718,7 +738,7 @@ describe('eventAttendance — status transitions', () => {
   });
 
   test('treats event with no status field as draft', async () => {
-    storage.getEventById.mockResolvedValueOnce({});
+    storage.getEvent.mockResolvedValueOnce({ publicationStatus: 'published' });
     storage.updateEvent.mockResolvedValueOnce({ status: 'published' });
     const res = await eventAttendance(makeAuthRequest('POST', {
       eventId: 'ev-1', chapterSlug: 'perth', status: 'published'
@@ -726,12 +746,12 @@ describe('eventAttendance — status transitions', () => {
     expect(res.status).toBe(200);
   });
 
-  test('allows status update when event not found (new event)', async () => {
-    storage.getEventById.mockResolvedValueOnce(null);
+  test('rejects a status update when the event does not exist', async () => {
+    storage.getEvent.mockResolvedValueOnce(null);
     storage.updateEvent.mockResolvedValueOnce({ status: 'published' });
     const res = await eventAttendance(makeAuthRequest('POST', {
       eventId: 'ev-1', chapterSlug: 'perth', status: 'published'
     }, ['admin']), context);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
   });
 });
